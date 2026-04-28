@@ -23,7 +23,7 @@ const LOG_CHANNEL = "1496011804634120372";
 
 // ⭐ ALERTS STILL GO HERE
 const ALERT_CHANNEL = "1496324911084470473";
-const PING_USER = "775991906173452288";
+const PING_USER = "967946056572747776";
 
 // ⭐ Dynamic threshold
 let dupeThreshold = 20;
@@ -87,6 +87,12 @@ client.on("messageCreate", async (message) => {
 
   // ⭐ Ignore webhook messages everywhere EXCEPT celestial logs
   if (message.webhookId && message.channel.id !== LOG_CHANNEL) return;
+
+  // ⭐ Ignore system/echo webhook messages (empty or ping-only)
+  if (
+    message.channel.id === LOG_CHANNEL &&
+    !message.content.includes("User:")
+  ) return;
 
   const isCommand =
     message.content.startsWith("!") &&
