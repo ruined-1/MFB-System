@@ -29,6 +29,26 @@ const PING_USER = "967946056572747776";
 // ⭐ Dynamic threshold
 let dupeThreshold = 20;
 
+// ⭐ Cooldown system
+const alertCooldowns = new Map();
+let COOLDOWN_TIME = 5 * 60 * 1000; // 5 minutes
+
+function isOnCooldown(userId) {
+  const last = alertCooldowns.get(userId);
+  if (!last) return false;
+  return Date.now() - last < COOLDOWN_TIME;
+}
+
+function setCooldown(userId) {
+  alertCooldowns.set(userId, Date.now());
+}
+
+function getCooldownRemaining(userId) {
+  const last = alertCooldowns.get(userId);
+  if (!last) return 0;
+  return Math.max(0, COOLDOWN_TIME - (Date.now() - last));
+}
+
 // ------------------------------------------------------------
 // AUTO‑DEPLOY SLASH COMMANDS (GUILD — INSTANT)
 // ------------------------------------------------------------
@@ -190,6 +210,9 @@ client.on("messageCreate", async (message) => {
     };
 
     const userField = extract("User");
+    const idMatch = userField?.match(/\(ID:\s*(\d+)\)/i);
+    const realUserId = idMatch ? idMatch[1] : "unknown";
+
     const brainrotField = extract("Brainrot");
     const amountField = extract("Amount owned");
     const upgradeField = extract("Upgrade");
@@ -201,6 +224,20 @@ client.on("messageCreate", async (message) => {
     const amountOwned = parseInt(amountField.match(/\d+/)?.[0] || "0", 10);
 
     if (amountOwned >= dupeThreshold) {
+
+      // ⭐ Cooldown check
+      const remaining = getCooldownRemaining(realUserId);
+      if (remaining > 0) {
+        console.log(`Cooldown active for ${realUserId}, skipping alert.`);
+        return;
+      }
+
+      setCooldown(realUserId);
+
+      const minutes = Math.ceil(COOLDOWN_TIME / 60000);
+      const endTime = new Date(Date.now() + COOLDOWN_TIME)
+        .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+
       const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
 
       const embedAlert = new EmbedBuilder()
@@ -212,7 +249,8 @@ client.on("messageCreate", async (message) => {
           `• **Amount owned:** ${amountOwned}\n` +
           `• **Upgrade:** ${upgradeField || "Unknown"}\n` +
           `• **Playtime:** ${playtimeField || "Unknown"}\n` +
-          `• **Cash:** ${cashField || "Unknown"}\n` +
+          `• **Cash:** ${cashField || "Unknown"}\n\n` +
+          `• **Cooldown:** ${minutes} minutes (ends at ${endTime})\n\n` +
           `• **Source:** <#${LOG_CHANNEL}> — [Jump to message](${message.url})`
         )
         .setTimestamp();
