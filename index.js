@@ -164,19 +164,18 @@ client.once("ready", () => {
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
 
-  // ⭐ WEBHOOK-SAFE COMMANDS
-  // Ignore ALL webhook messages for commands
-  if (message.webhookId) {
-    // But still allow celestial logs to be parsed
-    if (message.channel.id !== LOG_CHANNEL) return;
-  }
+  // ⭐ BLOCK COMMANDS IN LOG CHANNEL
+  if (message.channel.id === LOG_CHANNEL && message.content.startsWith("!")) return;
 
-  const isCommand = message.content.startsWith("!") && !message.webhookId;
+  // ⭐ BLOCK ALL WEBHOOK/SYSTEM MESSAGES FROM COMMANDS
+  if (message.webhookId || message.system) return;
+
+  const isCommand = message.content.startsWith("!");
   const isCelestial = message.channel.id === LOG_CHANNEL;
 
   if (!isCommand && !isCelestial) return;
 
-  // ⭐ DEDUPE CHECK
+  // ⭐ DEDUPE CHECK FOR CELESTIAL LOGS
   if (isCelestial && dedupe(message)) return;
 
   const args = message.content.trim().split(/\s+/);
@@ -189,7 +188,7 @@ client.on("messageCreate", async (message) => {
     const value = parseInt(args[0], 10);
 
     if (isNaN(value) || value < 1) {
-      return message.reply("Please provide a valid number greater than 0.");
+      return message.reply("Please mention a valid number greater than 0.");
     }
 
     dupeThreshold = value;
