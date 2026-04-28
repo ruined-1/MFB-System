@@ -53,6 +53,23 @@ function resetCooldown(userId) {
 }
 
 // ------------------------------------------------------------
+// ⭐ DEDUPE SYSTEM — THE REAL FIX FOR DOUBLE ALERTS
+// ------------------------------------------------------------
+const processedMessages = new Set();
+const MESSAGE_CACHE_TIME = 10 * 1000; // 10 seconds
+
+function dedupe(message) {
+  if (processedMessages.has(message.id)) {
+    console.log("Duplicate message detected, skipping:", message.id);
+    return true;
+  }
+
+  processedMessages.add(message.id);
+  setTimeout(() => processedMessages.delete(message.id), MESSAGE_CACHE_TIME);
+  return false;
+}
+
+// ------------------------------------------------------------
 // AUTO‑DEPLOY SLASH COMMANDS
 // ------------------------------------------------------------
 async function deploySlashCommands() {
@@ -137,25 +154,6 @@ client.once("ready", () => {
 });
 
 // ------------------------------------------------------------
-// RAW DEBUG MODE
-// ------------------------------------------------------------
-client.on("raw", (packet) => {
-  if (
-    packet.t === "MESSAGE_CREATE" &&
-    packet.d?.channel_id !== LOG_CHANNEL
-  ) {
-    return;
-  }
-
-  console.log("🔥 RAW EVENT:", packet.t);
-
-  if (packet.t === "MESSAGE_CREATE") {
-    console.log("🔥 RAW MESSAGE_CREATE PACKET:");
-    console.log(JSON.stringify(packet.d, null, 2));
-  }
-});
-
-// ------------------------------------------------------------
 // MESSAGE HANDLER
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
@@ -164,6 +162,9 @@ client.on("messageCreate", async (message) => {
 
   if (!isCommand && !isCelestial) return;
   if (message.author.bot && !isCelestial) return;
+
+  // ⭐ DEDUPE CHECK — prevents double alerts
+  if (isCelestial && dedupe(message)) return;
 
   const args = message.content.trim().split(/\s+/);
   const cmd = args.shift()?.toLowerCase();
@@ -274,9 +275,9 @@ client.on("messageCreate", async (message) => {
     if (amountOwned >= dupeThreshold) {
       const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
 
-      // ⭐ REAL cooldown key
       const userId = realUserId || "unknown";
 
+      // ⭐ COOLDOWN CHECK
       if (isOnCooldown(userId)) {
         console.log(`⏳ Cooldown active for ${userId}, skipping alert.`);
         return;
