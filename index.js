@@ -1,3 +1,4 @@
+console.log("FILE LOADED");
 import {
   Client,
   GatewayIntentBits,
