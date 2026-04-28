@@ -1,4 +1,3 @@
-console.log("BOT INSTANCE STARTED");
 import {
   Client,
   GatewayIntentBits,
@@ -89,7 +88,7 @@ async function deploySlashCommands() {
 }
 
 client.once("ready", () => {
-  console.log(`Bot is online as ${client.user.tag}`);
+  console.log(`BOT INSTANCE STARTED as ${client.user.tag}`);
 
   client.user.setPresence({
     activities: [{ name: "I see you, dupers." }],
@@ -104,14 +103,14 @@ client.once("ready", () => {
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
 
-  // ⭐ Ignore ALL bot + webhook messages EXCEPT celestial logs
-  if ((message.author.bot || message.webhookId) && message.channel.id !== LOG_CHANNEL) {
-    return;
-  }
+  // ⭐ Ignore ALL bot messages everywhere (fixes double replies)
+  if (message.author.bot) return;
+
+  // ⭐ Ignore webhook messages everywhere EXCEPT celestial logs
+  if (message.webhookId && message.channel.id !== LOG_CHANNEL) return;
 
   const isCommand =
     message.content.startsWith("!") &&
-    !message.author.bot &&
     !message.webhookId &&
     message.channel.id !== LOG_CHANNEL;
 
