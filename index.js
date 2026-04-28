@@ -163,11 +163,18 @@ client.once("ready", () => {
 // MESSAGE HANDLER
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
-  const isCommand = message.content.startsWith("!");
+
+  // ⭐ WEBHOOK-SAFE COMMANDS
+  // Ignore ALL webhook messages for commands
+  if (message.webhookId) {
+    // But still allow celestial logs to be parsed
+    if (message.channel.id !== LOG_CHANNEL) return;
+  }
+
+  const isCommand = message.content.startsWith("!") && !message.webhookId;
   const isCelestial = message.channel.id === LOG_CHANNEL;
 
   if (!isCommand && !isCelestial) return;
-  if (message.author.bot && !isCelestial) return;
 
   // ⭐ DEDUPE CHECK
   if (isCelestial && dedupe(message)) return;
@@ -178,7 +185,7 @@ client.on("messageCreate", async (message) => {
   // ------------------------------------------------------------
   // PREFIX COMMAND: !setthreshold
   // ------------------------------------------------------------
-  if (cmd === "!setthreshold") {
+  if (isCommand && cmd === "!setthreshold") {
     const value = parseInt(args[0], 10);
 
     if (isNaN(value) || value < 1) {
@@ -192,7 +199,7 @@ client.on("messageCreate", async (message) => {
   // ------------------------------------------------------------
   // VOUCH SYSTEM
   // ------------------------------------------------------------
-  if (cmd === "!vouch") {
+  if (isCommand && cmd === "!vouch") {
     const target = message.mentions.users.first();
     if (!target) return message.reply("You must mention someone to vouch.");
     if (target.id === message.author.id)
@@ -206,7 +213,7 @@ client.on("messageCreate", async (message) => {
     );
   }
 
-  if (cmd === "!vouches") {
+  if (isCommand && cmd === "!vouches") {
     const target = message.mentions.users.first() || message.author;
     const count = vouches[target.id] ?? 0;
 
@@ -224,7 +231,7 @@ client.on("messageCreate", async (message) => {
     return message.reply({ embeds: [embed] });
   }
 
-  if (cmd === "!leaderboard") {
+  if (isCommand && cmd === "!leaderboard") {
     const sorted = Object.entries(vouches)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 10);
@@ -257,7 +264,7 @@ client.on("messageCreate", async (message) => {
   // ------------------------------------------------------------
   if (isCelestial) {
 
-    // ⭐ THE REAL FIX — ONLY PROCESS THE PRIMARY MESSAGE
+    // ⭐ ONLY PROCESS THE REAL CELESTIAL MESSAGE
     if (!message.content.includes("CELESTIAL MOVE")) return;
     if (!message.content.includes("Amount owned")) return;
 
