@@ -78,12 +78,12 @@ client.once("ready", () => {
 });
 
 // ------------------------------------------------------------
-// MESSAGE HANDLER (CLEANED + FIXED)
+// MESSAGE HANDLER (CLEAN + WEBHOOK‑SAFE)
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
 
-  // ⭐ Ignore ALL bot messages everywhere
-  if (message.author.bot) return;
+  // ⭐ Ignore bot messages, but NOT webhook messages
+  if (message.author.bot && !message.webhookId) return;
 
   // ⭐ Ignore webhook messages everywhere EXCEPT celestial logs
   if (message.webhookId && message.channel.id !== LOG_CHANNEL) return;
