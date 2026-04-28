@@ -82,9 +82,8 @@ client.once("ready", () => {
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
 
-  // ⭐ Ignore ALL bot messages (fixes prefix duplication)
-  // Webhook messages are NOT blocked here because they have no author.bot
-  if (message.author.bot) return;
+  // ⭐ Ignore ALL messages sent by THIS bot (fixes prefix duplication)
+  if (message.author.id === client.user.id) return;
 
   // ⭐ Ignore webhook messages everywhere EXCEPT celestial logs
   if (message.webhookId && message.channel.id !== LOG_CHANNEL) return;
