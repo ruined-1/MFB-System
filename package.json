@@ -1,0 +1,13 @@
+{
+  "name": "mfb-system",
+  "version": "1.0.0",
+  "description": "MFB System Discord Bot",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "discord.js": "^14.26.3"
+  }
+}
