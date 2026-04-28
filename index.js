@@ -25,14 +25,14 @@ const client = new Client({
 // ------------------------------------------------------------
 // CONSTANTS
 // ------------------------------------------------------------
-const LOG_CHANNEL = "1496011804634120372";     // Celestial Logs
-const ALERT_CHANNEL = "1496324911084470473";   // Alert channel
-const PING_USER = "967946056572747776";        // Staff ping
+const LOG_CHANNEL = "1496011804634120372";
+const ALERT_CHANNEL = "1496324911084470473";
+const PING_USER = "967946056572747776";
 
 let dupeThreshold = 20;
 
 // ------------------------------------------------------------
-// ⭐ COOLDOWN SYSTEM (FULL)
+// ⭐ COOLDOWN SYSTEM
 // ------------------------------------------------------------
 const alertCooldowns = new Map();
 let COOLDOWN_TIME = 5 * 60 * 1000; // default 5 minutes
@@ -110,8 +110,8 @@ async function deploySlashCommands() {
 
     await rest.put(
       Routes.applicationGuildCommands(
-        "1490173403032977519", // Application ID
-        "1139943473437495457"  // Guild ID
+        "1490173403032977519",
+        "1139943473437495457"
       ),
       { body: commands }
     );
@@ -137,7 +137,7 @@ client.once("ready", () => {
 });
 
 // ------------------------------------------------------------
-// RAW DEBUG MODE (ONLY CELESTIAL LOGS)
+// RAW DEBUG MODE
 // ------------------------------------------------------------
 client.on("raw", (packet) => {
   if (
@@ -164,8 +164,6 @@ client.on("messageCreate", async (message) => {
 
   if (!isCommand && !isCelestial) return;
   if (message.author.bot && !isCelestial) return;
-
-  console.log("MESSAGE SEEN:", message.channel.id, message.content);
 
   const args = message.content.trim().split(/\s+/);
   const cmd = args.shift()?.toLowerCase();
@@ -260,27 +258,24 @@ client.on("messageCreate", async (message) => {
     };
 
     const userField = extract("User");
+    const idMatch = userField?.match(/\(ID:\s*(\d+)\)/i);
+    const realUserId = idMatch ? idMatch[1] : null;
+
     const brainrotField = extract("Brainrot");
     const amountField = extract("Amount owned");
     const upgradeField = extract("Upgrade");
     const playtimeField = extract("Playtime");
     const cashField = extract("Cash");
 
-    if (!amountField) {
-      console.log("❌ No amount field detected — formatting mismatch");
-      return;
-    }
+    if (!amountField) return;
 
     const amountOwned = parseInt(amountField.match(/\d+/)?.[0] || "0", 10);
-    console.log("Parsed amountOwned =", amountOwned);
 
     if (amountOwned >= dupeThreshold) {
       const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
 
-      // ------------------------------------------------------------
-      // ⭐ APPLY COOLDOWN BEFORE ALERTING
-      // ------------------------------------------------------------
-      const userId = userField || "unknown";
+      // ⭐ REAL cooldown key
+      const userId = realUserId || "unknown";
 
       if (isOnCooldown(userId)) {
         console.log(`⏳ Cooldown active for ${userId}, skipping alert.`);
