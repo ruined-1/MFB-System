@@ -1,3 +1,4 @@
+console.log("BOT INSTANCE STARTED");
 import {
   Client,
   GatewayIntentBits,
