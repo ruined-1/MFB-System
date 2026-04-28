@@ -9,6 +9,9 @@ import {
 import { vouches } from "./vouches.js";
 import { saveVouches } from "./saveVouches.js";
 
+// ------------------------------------------------------------
+// CLIENT + INTENTS
+// ------------------------------------------------------------
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -19,18 +22,38 @@ const client = new Client({
   ]
 });
 
-// ⭐ ONLY WATCH THIS CHANNEL
-const LOG_CHANNEL = "1496011804634120372";
+// ------------------------------------------------------------
+// CONSTANTS
+// ------------------------------------------------------------
+const LOG_CHANNEL = "1496011804634120372";     // Celestial Logs
+const ALERT_CHANNEL = "1496324911084470473";   // Alert channel
+const PING_USER = "967946056572747776";        // Staff ping
 
-// ⭐ ALERTS STILL GO HERE
-const ALERT_CHANNEL = "1496324911084470473";
-const PING_USER = "967946056572747776";
-
-// ⭐ Dynamic threshold
 let dupeThreshold = 20;
 
 // ------------------------------------------------------------
-// AUTO‑DEPLOY SLASH COMMANDS (GUILD — INSTANT)
+// ⭐ COOLDOWN SYSTEM (FULL)
+// ------------------------------------------------------------
+const alertCooldowns = new Map();
+let COOLDOWN_TIME = 5 * 60 * 1000; // default 5 minutes
+
+function isOnCooldown(userId) {
+  const now = Date.now();
+  const last = alertCooldowns.get(userId);
+  if (!last) return false;
+  return now - last < COOLDOWN_TIME;
+}
+
+function setCooldown(userId) {
+  alertCooldowns.set(userId, Date.now());
+}
+
+function resetCooldown(userId) {
+  alertCooldowns.delete(userId);
+}
+
+// ------------------------------------------------------------
+// AUTO‑DEPLOY SLASH COMMANDS
 // ------------------------------------------------------------
 async function deploySlashCommands() {
   const commands = [
@@ -41,15 +64,46 @@ async function deploySlashCommands() {
         {
           name: "number",
           description: "Minimum amount owned to trigger an alert",
-          type: 4, // INTEGER
+          type: 4,
           required: true
         }
       ]
+    },
+    {
+      name: "setcooldown",
+      description: "Set cooldown duration (in minutes)",
+      options: [
+        {
+          name: "minutes",
+          description: "Cooldown duration in minutes",
+          type: 4,
+          required: true
+        }
+      ]
+    },
+    {
+      name: "cooldown",
+      description: "Show current cooldown duration"
+    },
+    {
+      name: "resetcooldown",
+      description: "Reset cooldown for a specific user",
+      options: [
+        {
+          name: "userid",
+          description: "User ID to reset",
+          type: 3,
+          required: true
+        }
+      ]
+    },
+    {
+      name: "cooldowns",
+      description: "Show all users currently on cooldown"
     }
   ];
 
-    const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
-
+  const rest = new REST({ version: "10" }).setToken(process.env.TOKEN);
 
   try {
     console.log("Deploying slash commands to guild…");
@@ -68,10 +122,12 @@ async function deploySlashCommands() {
   }
 }
 
+// ------------------------------------------------------------
+// READY EVENT
+// ------------------------------------------------------------
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
 
-  // ⭐ Set bot status
   client.user.setPresence({
     activities: [{ name: "I see you, dupers." }],
     status: "online"
@@ -81,14 +137,14 @@ client.once("ready", () => {
 });
 
 // ------------------------------------------------------------
-// 🔥 RAW DEBUG MODE — IGNORE EVERYTHING EXCEPT CELESTIAL LOGS
+// RAW DEBUG MODE (ONLY CELESTIAL LOGS)
 // ------------------------------------------------------------
 client.on("raw", (packet) => {
   if (
     packet.t === "MESSAGE_CREATE" &&
     packet.d?.channel_id !== LOG_CHANNEL
   ) {
-    return; // ignore all other channels
+    return;
   }
 
   console.log("🔥 RAW EVENT:", packet.t);
@@ -106,10 +162,7 @@ client.on("messageCreate", async (message) => {
   const isCommand = message.content.startsWith("!");
   const isCelestial = message.channel.id === LOG_CHANNEL;
 
-  // ⭐ Ignore ALL messages except Celestial Logs + commands
   if (!isCommand && !isCelestial) return;
-
-  // Ignore bot/webhook messages everywhere EXCEPT Celestial Logs
   if (message.author.bot && !isCelestial) return;
 
   console.log("MESSAGE SEEN:", message.channel.id, message.content);
@@ -195,7 +248,7 @@ client.on("messageCreate", async (message) => {
   }
 
   // ------------------------------------------------------------
-  // CELESTIAL LOG PARSER (ONLY CHANNEL WE WATCH)
+  // CELESTIAL LOG PARSER
   // ------------------------------------------------------------
   if (isCelestial) {
     const text = message.content;
@@ -219,11 +272,22 @@ client.on("messageCreate", async (message) => {
     }
 
     const amountOwned = parseInt(amountField.match(/\d+/)?.[0] || "0", 10);
-
     console.log("Parsed amountOwned =", amountOwned);
 
     if (amountOwned >= dupeThreshold) {
       const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
+
+      // ------------------------------------------------------------
+      // ⭐ APPLY COOLDOWN BEFORE ALERTING
+      // ------------------------------------------------------------
+      const userId = userField || "unknown";
+
+      if (isOnCooldown(userId)) {
+        console.log(`⏳ Cooldown active for ${userId}, skipping alert.`);
+        return;
+      }
+
+      setCooldown(userId);
 
       const embedAlert = new EmbedBuilder()
         .setColor("#FFCC00")
@@ -253,6 +317,7 @@ client.on("messageCreate", async (message) => {
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
+  // /setthreshold
   if (interaction.commandName === "setthreshold") {
     const value = interaction.options.getInteger("number");
 
@@ -268,6 +333,70 @@ client.on("interactionCreate", async (interaction) => {
     return interaction.reply(
       `Dupe alert threshold updated to **${dupeThreshold}**.`
     );
+  }
+
+  // /setcooldown
+  if (interaction.commandName === "setcooldown") {
+    const minutes = interaction.options.getInteger("minutes");
+
+    if (minutes < 1) {
+      return interaction.reply({
+        content: "Cooldown must be at least 1 minute.",
+        ephemeral: true
+      });
+    }
+
+    COOLDOWN_TIME = minutes * 60 * 1000;
+
+    return interaction.reply(
+      `Cooldown duration updated to **${minutes} minutes**.`
+    );
+  }
+
+  // /cooldown
+  if (interaction.commandName === "cooldown") {
+    const minutes = Math.floor(COOLDOWN_TIME / 60000);
+
+    return interaction.reply(
+      `Current cooldown duration is **${minutes} minutes**.`
+    );
+  }
+
+  // /resetcooldown
+  if (interaction.commandName === "resetcooldown") {
+    const userId = interaction.options.getString("userid");
+
+    if (!alertCooldowns.has(userId)) {
+      return interaction.reply({
+        content: `No cooldown found for user ID **${userId}**.`,
+        ephemeral: true
+      });
+    }
+
+    resetCooldown(userId);
+
+    return interaction.reply(
+      `Cooldown reset for user ID **${userId}**.`
+    );
+  }
+
+  // /cooldowns
+  if (interaction.commandName === "cooldowns") {
+    if (alertCooldowns.size === 0) {
+      return interaction.reply("No users are currently on cooldown.");
+    }
+
+    let list = "";
+    const now = Date.now();
+
+    for (const [userId, timestamp] of alertCooldowns.entries()) {
+      const remaining = Math.max(0, COOLDOWN_TIME - (now - timestamp));
+      const minutes = Math.ceil(remaining / 60000);
+
+      list += `• **${userId}** — ${minutes} min remaining\n`;
+    }
+
+    return interaction.reply(list);
   }
 });
 
