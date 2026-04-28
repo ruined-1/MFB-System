@@ -27,7 +27,7 @@ const client = new Client({
 // ------------------------------------------------------------
 const LOG_CHANNEL = "1496011804634120372";
 const ALERT_CHANNEL = "1496324911084470473";
-const PING_USER = "967946056572747776";
+const PING_USER = "775991906173452288"; // ⭐ UPDATED PING ID
 
 let dupeThreshold = 20;
 
@@ -35,7 +35,7 @@ let dupeThreshold = 20;
 // ⭐ COOLDOWN SYSTEM
 // ------------------------------------------------------------
 const alertCooldowns = new Map();
-let COOLDOWN_TIME = 5 * 60 * 1000; // default 5 minutes
+let COOLDOWN_TIME = 5 * 60 * 1000;
 
 function isOnCooldown(userId) {
   const now = Date.now();
@@ -257,11 +257,9 @@ client.on("messageCreate", async (message) => {
   // ------------------------------------------------------------
   if (isCelestial) {
 
-    // ⭐ Ignore fallback webhook messages
-    if (!message.content.includes("CELESTIAL MOVE")) {
-      console.log("Ignored non‑primary webhook message");
-      return;
-    }
+    // ⭐ THE REAL FIX — ONLY PROCESS THE PRIMARY MESSAGE
+    if (!message.content.includes("CELESTIAL MOVE")) return;
+    if (!message.content.includes("Amount owned")) return;
 
     const text = message.content;
 
