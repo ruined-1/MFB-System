@@ -9,9 +9,6 @@ import {
 import { vouches } from "./vouches.js";
 import { saveVouches } from "./saveVouches.js";
 
-// ------------------------------------------------------------
-// CLIENT + INTENTS
-// ------------------------------------------------------------
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -22,61 +19,18 @@ const client = new Client({
   ]
 });
 
-// ------------------------------------------------------------
-// CONSTANTS
-// ------------------------------------------------------------
+// ⭐ ONLY WATCH THIS CHANNEL FOR CELESTIAL LOGS
 const LOG_CHANNEL = "1496011804634120372";
-const ALERT_CHANNEL = "1496324911084470473";
-const PING_USER = "775991906173452288"; // ⭐ UPDATED PING ID
 
+// ⭐ ALERTS STILL GO HERE
+const ALERT_CHANNEL = "1496324911084470473";
+const PING_USER = "967946056572747776";
+
+// ⭐ Dynamic threshold
 let dupeThreshold = 20;
 
 // ------------------------------------------------------------
-// ⭐ COOLDOWN SYSTEM
-// ------------------------------------------------------------
-const alertCooldowns = new Map();
-let COOLDOWN_TIME = 5 * 60 * 1000;
-
-function isOnCooldown(userId) {
-  const now = Date.now();
-  const last = alertCooldowns.get(userId);
-  if (!last) return false;
-  return now - last < COOLDOWN_TIME;
-}
-
-function setCooldown(userId) {
-  alertCooldowns.set(userId, Date.now());
-}
-
-function resetCooldown(userId) {
-  alertCooldowns.delete(userId);
-}
-
-function getCooldownRemaining(userId) {
-  const last = alertCooldowns.get(userId);
-  if (!last) return 0;
-  return Math.max(0, COOLDOWN_TIME - (Date.now() - last));
-}
-
-// ------------------------------------------------------------
-// ⭐ DEDUPE SYSTEM
-// ------------------------------------------------------------
-const processedMessages = new Set();
-const MESSAGE_CACHE_TIME = 10 * 1000;
-
-function dedupe(message) {
-  if (processedMessages.has(message.id)) {
-    console.log("Duplicate message detected, skipping:", message.id);
-    return true;
-  }
-
-  processedMessages.add(message.id);
-  setTimeout(() => processedMessages.delete(message.id), MESSAGE_CACHE_TIME);
-  return false;
-}
-
-// ------------------------------------------------------------
-// AUTO‑DEPLOY SLASH COMMANDS
+// AUTO‑DEPLOY SLASH COMMANDS (GUILD — INSTANT)
 // ------------------------------------------------------------
 async function deploySlashCommands() {
   const commands = [
@@ -91,38 +45,6 @@ async function deploySlashCommands() {
           required: true
         }
       ]
-    },
-    {
-      name: "setcooldown",
-      description: "Set cooldown duration (in minutes)",
-      options: [
-        {
-          name: "minutes",
-          description: "Cooldown duration in minutes",
-          type: 4,
-          required: true
-        }
-      ]
-    },
-    {
-      name: "cooldown",
-      description: "Show current cooldown duration"
-    },
-    {
-      name: "resetcooldown",
-      description: "Reset cooldown for a specific user",
-      options: [
-        {
-          name: "userid",
-          description: "User ID to reset",
-          type: 3,
-          required: true
-        }
-      ]
-    },
-    {
-      name: "cooldowns",
-      description: "Show all users currently on cooldown"
     }
   ];
 
@@ -145,9 +67,6 @@ async function deploySlashCommands() {
   }
 }
 
-// ------------------------------------------------------------
-// READY EVENT
-// ------------------------------------------------------------
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
 
@@ -160,113 +79,108 @@ client.once("ready", () => {
 });
 
 // ------------------------------------------------------------
-// MESSAGE HANDLER
+// MESSAGE HANDLER (CLEANED + FIXED)
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
 
-  // ⭐ BLOCK COMMANDS IN LOG CHANNEL
-  if (message.channel.id === LOG_CHANNEL && message.content.startsWith("!")) return;
+  // ⭐ Ignore ALL bot + webhook messages EXCEPT celestial logs
+  if ((message.author.bot || message.webhookId) && message.channel.id !== LOG_CHANNEL) {
+    return;
+  }
 
-  // ⭐ BLOCK ALL WEBHOOK/SYSTEM MESSAGES FROM COMMANDS
-  if (message.webhookId || message.system) return;
+  const isCommand =
+    message.content.startsWith("!") &&
+    !message.author.bot &&
+    !message.webhookId &&
+    message.channel.id !== LOG_CHANNEL;
 
-  const isCommand = message.content.startsWith("!");
   const isCelestial = message.channel.id === LOG_CHANNEL;
 
-  if (!isCommand && !isCelestial) return;
-
-  // ⭐ DEDUPE CHECK FOR CELESTIAL LOGS
-  if (isCelestial && dedupe(message)) return;
-
-  const args = message.content.trim().split(/\s+/);
-  const cmd = args.shift()?.toLowerCase();
-
   // ------------------------------------------------------------
-  // PREFIX COMMAND: !setthreshold
+  // PREFIX COMMANDS (NOW WORKING PROPERLY)
   // ------------------------------------------------------------
-  if (isCommand && cmd === "!setthreshold") {
-    const value = parseInt(args[0], 10);
+  if (isCommand) {
+    const args = message.content.trim().split(/\s+/);
+    const cmd = args.shift()?.toLowerCase();
 
-    if (isNaN(value) || value < 1) {
-      return message.reply("Please mention a valid number greater than 0.");
+    if (cmd === "!setthreshold") {
+      const value = parseInt(args[0], 10);
+
+      if (isNaN(value) || value < 1) {
+        return message.reply("Please provide a valid number greater than 0.");
+      }
+
+      dupeThreshold = value;
+      return message.reply(`Dupe alert threshold updated to **${dupeThreshold}**.`);
     }
 
-    dupeThreshold = value;
-    return message.reply(`Dupe alert threshold updated to **${dupeThreshold}**.`);
-  }
+    if (cmd === "!vouch") {
+      const target = message.mentions.users.first();
+      if (!target) return message.reply("You must mention someone to vouch.");
+      if (target.id === message.author.id)
+        return message.reply("You cannot vouch yourself.");
 
-  // ------------------------------------------------------------
-  // VOUCH SYSTEM
-  // ------------------------------------------------------------
-  if (isCommand && cmd === "!vouch") {
-    const target = message.mentions.users.first();
-    if (!target) return message.reply("You must mention someone to vouch.");
-    if (target.id === message.author.id)
-      return message.reply("You cannot vouch yourself.");
+      vouches[target.id] = (vouches[target.id] ?? 0) + 1;
+      saveVouches(vouches);
 
-    vouches[target.id] = (vouches[target.id] ?? 0) + 1;
-    saveVouches(vouches);
-
-    return message.reply(
-      `You vouched for **${target.tag}**. They now have **${vouches[target.id]}** vouches.`
-    );
-  }
-
-  if (isCommand && cmd === "!vouches") {
-    const target = message.mentions.users.first() || message.author;
-    const count = vouches[target.id] ?? 0;
-
-    const embed = new EmbedBuilder()
-      .setColor("#00AEEF")
-      .setTitle(`${target.username}'s Vouch Profile`)
-      .setThumbnail(target.displayAvatarURL({ size: 1024 }))
-      .addFields(
-        { name: "Total Vouches", value: `${count}`, inline: true },
-        { name: "User ID", value: target.id, inline: true }
-      )
-      .setFooter({ text: "Vouch System" })
-      .setTimestamp();
-
-    return message.reply({ embeds: [embed] });
-  }
-
-  if (isCommand && cmd === "!leaderboard") {
-    const sorted = Object.entries(vouches)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-
-    if (sorted.length === 0)
-      return message.reply("No vouches have been recorded yet.");
-
-    let description = "";
-    let position = 1;
-
-    for (const [userId, count] of sorted) {
-      const user = message.guild.members.cache.get(userId)?.user;
-      const name = user ? user.tag : `Unknown User (${userId})`;
-      description += `**${position}.** ${name} — **${count}** vouches\n`;
-      position++;
+      return message.reply(
+        `You vouched for **${target.tag}**. They now have **${vouches[target.id]}** vouches.`
+      );
     }
 
-    const embed = new EmbedBuilder()
-      .setColor("#FFD700")
-      .setTitle("🏆 Vouch Leaderboard")
-      .setDescription(description)
-      .setFooter({ text: "Top vouched users" })
-      .setTimestamp();
+    if (cmd === "!vouches") {
+      const target = message.mentions.users.first() || message.author;
+      const count = vouches[target.id] ?? 0;
 
-    return message.reply({ embeds: [embed] });
+      const embed = new EmbedBuilder()
+        .setColor("#00AEEF")
+        .setTitle(`${target.username}'s Vouch Profile`)
+        .setThumbnail(target.displayAvatarURL({ size: 1024 }))
+        .addFields(
+          { name: "Total Vouches", value: `${count}`, inline: true },
+          { name: "User ID", value: target.id, inline: true }
+        )
+        .setFooter({ text: "Vouch System" })
+        .setTimestamp();
+
+      return message.reply({ embeds: [embed] });
+    }
+
+    if (cmd === "!leaderboard") {
+      const sorted = Object.entries(vouches)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      if (sorted.length === 0)
+        return message.reply("No vouches have been recorded yet.");
+
+      let description = "";
+      let position = 1;
+
+      for (const [userId, count] of sorted) {
+        const user = message.guild.members.cache.get(userId)?.user;
+        const name = user ? user.tag : `Unknown User (${userId})`;
+        description += `**${position}.** ${name} — **${count}** vouches\n`;
+        position++;
+      }
+
+      const embed = new EmbedBuilder()
+        .setColor("#FFD700")
+        .setTitle("🏆 Vouch Leaderboard")
+        .setDescription(description)
+        .setFooter({ text: "Top vouched users" })
+        .setTimestamp();
+
+      return message.reply({ embeds: [embed] });
+    }
+
+    return; // end command handling
   }
 
   // ------------------------------------------------------------
-  // CELESTIAL LOG PARSER
+  // CELESTIAL LOG PARSER (CLEAN + SAFE)
   // ------------------------------------------------------------
   if (isCelestial) {
-
-    // ⭐ ONLY PROCESS THE REAL CELESTIAL MESSAGE
-    if (!message.content.includes("CELESTIAL MOVE")) return;
-    if (!message.content.includes("Amount owned")) return;
-
     const text = message.content;
 
     const extract = (label) => {
@@ -276,9 +190,6 @@ client.on("messageCreate", async (message) => {
     };
 
     const userField = extract("User");
-    const idMatch = userField?.match(/\(ID:\s*(\d+)\)/i);
-    const realUserId = idMatch ? idMatch[1] : null;
-
     const brainrotField = extract("Brainrot");
     const amountField = extract("Amount owned");
     const upgradeField = extract("Upgrade");
@@ -292,21 +203,6 @@ client.on("messageCreate", async (message) => {
     if (amountOwned >= dupeThreshold) {
       const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
 
-      const userId = realUserId || "unknown";
-
-      // ⭐ COOLDOWN CHECK
-      const remaining = getCooldownRemaining(userId);
-      if (remaining > 0) {
-        console.log(`⏳ Cooldown active for ${userId}, skipping alert.`);
-        return;
-      }
-
-      setCooldown(userId);
-
-      const minutes = Math.ceil(COOLDOWN_TIME / 60000);
-      const endTime = new Date(Date.now() + COOLDOWN_TIME)
-        .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-
       const embedAlert = new EmbedBuilder()
         .setColor("#FFCC00")
         .setTitle("⚠️ Possible dupe detected")
@@ -316,8 +212,7 @@ client.on("messageCreate", async (message) => {
           `• **Amount owned:** ${amountOwned}\n` +
           `• **Upgrade:** ${upgradeField || "Unknown"}\n` +
           `• **Playtime:** ${playtimeField || "Unknown"}\n` +
-          `• **Cash:** ${cashField || "Unknown"}\n\n` +
-          `**Cooldown:** ${minutes} minutes (ends at ${endTime})\n\n` +
+          `• **Cash:** ${cashField || "Unknown"}\n` +
           `• **Source:** <#${LOG_CHANNEL}> — [Jump to message](${message.url})`
         )
         .setTimestamp();
@@ -336,7 +231,6 @@ client.on("messageCreate", async (message) => {
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
-  // /setthreshold
   if (interaction.commandName === "setthreshold") {
     const value = interaction.options.getInteger("number");
 
@@ -352,70 +246,6 @@ client.on("interactionCreate", async (interaction) => {
     return interaction.reply(
       `Dupe alert threshold updated to **${dupeThreshold}**.`
     );
-  }
-
-  // /setcooldown
-  if (interaction.commandName === "setcooldown") {
-    const minutes = interaction.options.getInteger("minutes");
-
-    if (minutes < 1) {
-      return interaction.reply({
-        content: "Cooldown must be at least 1 minute.",
-        ephemeral: true
-      });
-    }
-
-    COOLDOWN_TIME = minutes * 60 * 1000;
-
-    return interaction.reply(
-      `Cooldown duration updated to **${minutes} minutes**.`
-    );
-  }
-
-  // /cooldown
-  if (interaction.commandName === "cooldown") {
-    const minutes = Math.floor(COOLDOWN_TIME / 60000);
-
-    return interaction.reply(
-      `Current cooldown duration is **${minutes} minutes**.`
-    );
-  }
-
-  // /resetcooldown
-  if (interaction.commandName === "resetcooldown") {
-    const userId = interaction.options.getString("userid");
-
-    if (!alertCooldowns.has(userId)) {
-      return interaction.reply({
-        content: `No cooldown found for user ID **${userId}**.`,
-        ephemeral: true
-      });
-    }
-
-    resetCooldown(userId);
-
-    return interaction.reply(
-      `Cooldown reset for user ID **${userId}**.`
-    );
-  }
-
-  // /cooldowns
-  if (interaction.commandName === "cooldowns") {
-    if (alertCooldowns.size === 0) {
-      return interaction.reply("No users are currently on cooldown.");
-    }
-
-    let list = "";
-    const now = Date.now();
-
-    for (const [userId, timestamp] of alertCooldowns.entries()) {
-      const remaining = Math.max(0, COOLDOWN_TIME - (now - timestamp));
-      const minutes = Math.ceil(remaining / 60000);
-
-      list += `• **${userId}** — ${minutes} min remaining\n`;
-    }
-
-    return interaction.reply(list);
   }
 });
 
