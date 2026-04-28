@@ -52,11 +52,17 @@ function resetCooldown(userId) {
   alertCooldowns.delete(userId);
 }
 
+function getCooldownRemaining(userId) {
+  const last = alertCooldowns.get(userId);
+  if (!last) return 0;
+  return Math.max(0, COOLDOWN_TIME - (Date.now() - last));
+}
+
 // ------------------------------------------------------------
-// ⭐ DEDUPE SYSTEM — THE REAL FIX FOR DOUBLE ALERTS
+// ⭐ DEDUPE SYSTEM
 // ------------------------------------------------------------
 const processedMessages = new Set();
-const MESSAGE_CACHE_TIME = 10 * 1000; // 10 seconds
+const MESSAGE_CACHE_TIME = 10 * 1000;
 
 function dedupe(message) {
   if (processedMessages.has(message.id)) {
@@ -163,7 +169,7 @@ client.on("messageCreate", async (message) => {
   if (!isCommand && !isCelestial) return;
   if (message.author.bot && !isCelestial) return;
 
-  // ⭐ DEDUPE CHECK — prevents double alerts
+  // ⭐ DEDUPE CHECK
   if (isCelestial && dedupe(message)) return;
 
   const args = message.content.trim().split(/\s+/);
@@ -250,6 +256,13 @@ client.on("messageCreate", async (message) => {
   // CELESTIAL LOG PARSER
   // ------------------------------------------------------------
   if (isCelestial) {
+
+    // ⭐ Ignore fallback webhook messages
+    if (!message.content.includes("CELESTIAL MOVE")) {
+      console.log("Ignored non‑primary webhook message");
+      return;
+    }
+
     const text = message.content;
 
     const extract = (label) => {
@@ -278,12 +291,17 @@ client.on("messageCreate", async (message) => {
       const userId = realUserId || "unknown";
 
       // ⭐ COOLDOWN CHECK
-      if (isOnCooldown(userId)) {
+      const remaining = getCooldownRemaining(userId);
+      if (remaining > 0) {
         console.log(`⏳ Cooldown active for ${userId}, skipping alert.`);
         return;
       }
 
       setCooldown(userId);
+
+      const minutes = Math.ceil(COOLDOWN_TIME / 60000);
+      const endTime = new Date(Date.now() + COOLDOWN_TIME)
+        .toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
       const embedAlert = new EmbedBuilder()
         .setColor("#FFCC00")
@@ -294,7 +312,8 @@ client.on("messageCreate", async (message) => {
           `• **Amount owned:** ${amountOwned}\n` +
           `• **Upgrade:** ${upgradeField || "Unknown"}\n` +
           `• **Playtime:** ${playtimeField || "Unknown"}\n` +
-          `• **Cash:** ${cashField || "Unknown"}\n` +
+          `• **Cash:** ${cashField || "Unknown"}\n\n` +
+          `**Cooldown:** ${minutes} minutes (ends at ${endTime})\n\n` +
           `• **Source:** <#${LOG_CHANNEL}> — [Jump to message](${message.url})`
         )
         .setTimestamp();
