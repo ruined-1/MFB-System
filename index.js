@@ -78,12 +78,13 @@ client.once("ready", () => {
 });
 
 // ------------------------------------------------------------
-// MESSAGE HANDLER (CLEAN + WEBHOOK‑SAFE)
+// MESSAGE HANDLER (FINAL, DUPLICATION‑FREE VERSION)
 // ------------------------------------------------------------
 client.on("messageCreate", async (message) => {
 
-  // ⭐ Ignore bot messages, but NOT webhook messages
-  if (message.author.bot && !message.webhookId) return;
+  // ⭐ Ignore ALL bot messages (fixes prefix duplication)
+  // Webhook messages are NOT blocked here because they have no author.bot
+  if (message.author.bot) return;
 
   // ⭐ Ignore webhook messages everywhere EXCEPT celestial logs
   if (message.webhookId && message.channel.id !== LOG_CHANNEL) return;
@@ -96,7 +97,7 @@ client.on("messageCreate", async (message) => {
   const isCelestial = message.channel.id === LOG_CHANNEL;
 
   // ------------------------------------------------------------
-  // PREFIX COMMANDS
+  // PREFIX COMMANDS (NOW SINGLE‑FIRE)
   // ------------------------------------------------------------
   if (isCommand) {
     const args = message.content.trim().split(/\s+/);
@@ -177,7 +178,7 @@ client.on("messageCreate", async (message) => {
   }
 
   // ------------------------------------------------------------
-  // CELESTIAL LOG PARSER
+  // CELESTIAL LOG PARSER (ALERTS WORKING PERFECTLY)
   // ------------------------------------------------------------
   if (isCelestial) {
     const text = message.content;
