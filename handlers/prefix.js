@@ -1,7 +1,8 @@
 console.log("prefix handler loaded");
-console.log("MSG:", message.content);
 
 export default function prefixHandler(message, client) {
+  console.log("MSG:", message.content);
+
   if (!message || !message.content) return;
   if (message.author?.bot) return;
   if (message.webhookId) return;
