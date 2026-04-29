@@ -22,3 +22,4 @@ export default function prefixHandler(message, client) {
     message.reply("Vouch system is working.");
   }
 }
+// force rebuild
