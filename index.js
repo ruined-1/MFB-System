@@ -10,14 +10,13 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // ⭐ Discord bot code
 import {
   Client,
-  GatewayIntentBits,
-  REST,
-  Routes
+  GatewayIntentBits
 } from "discord.js";
 
 import prefixHandler from "./handlers/prefix.js";
-import alertHandler from "./handlers/alerts.js";
+// import alertHandler from "./handlers/alerts.js"; // disabled for debugging
 
+// ⭐ Create the client
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -27,19 +26,16 @@ const client = new Client({
   ]
 });
 
-const LOG_CHANNEL = "1496011804634120372";
-
+// ⭐ When bot is ready
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
 
-  client.user.setPresence({
-    activities: [{ name: "I see you, dupers." }],
-    status: "online"
-  });
+  // Debug: show what guilds the bot is actually subscribed to
+  console.log("Guilds:", client.guilds.cache.map(g => g.id));
 });
 
-// ⭐ Load handlers
+// ⭐ Message listener (ONLY prefix handler for now)
 client.on("messageCreate", (msg) => prefixHandler(msg, client));
-// client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
 
+// ⭐ Login
 client.login(process.env.TOKEN);
