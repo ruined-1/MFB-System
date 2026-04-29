@@ -1,17 +1,14 @@
 console.log("prefix handler loaded");
-// handlers/prefix.js
 
 export default function prefixHandler(message, client) {
-
-  // Ignore bot, webhook, system, or empty messages
   if (!message || !message.content) return;
   if (message.author?.bot) return;
   if (message.webhookId) return;
   if (message.system) return;
 
-  // HARD LOCK: prevents duplicates from overlapping Render instances
-  if (message._prefixHandled) return;
-  message._prefixHandled = true;
+  // Prevent ONLY prefix duplicates
+  if (message._prefixProcessed) return;
+  message._prefixProcessed = true;
 
   const prefix = "!";
   if (!message.content.startsWith(prefix)) return;
