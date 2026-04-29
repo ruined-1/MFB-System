@@ -1,19 +1,25 @@
 console.log("prefix handler loaded");
 
 export default function prefixHandler(message, client) {
-  console.log("MSG:", message.content);
+  // Log EVERYTHING the bot sees
+  console.log("RAW MSG:", {
+    id: message.id,
+    content: message.content,
+    authorId: message.author?.id,
+    authorBot: message.author?.bot,
+    webhookId: message.webhookId,
+    channelId: message.channelId,
+  });
 
-  if (!message || !message.content) return;
+  // Ignore bots (including itself)
   if (message.author?.bot) return;
+
+  // Ignore webhooks
   if (message.webhookId) return;
-  if (message.system) return;
 
-  // Prevent ONLY prefix duplicates
-  if (message._prefixProcessed) return;
-  message._prefixProcessed = true;
-
+  // Basic prefix handling
   const prefix = "!";
-  if (!message.content.startsWith(prefix)) return;
+  if (!message.content?.startsWith(prefix)) return;
 
   const args = message.content.slice(prefix.length).trim().split(/\s+/);
   const cmd = args.shift()?.toLowerCase();
@@ -22,4 +28,3 @@ export default function prefixHandler(message, client) {
     message.reply("Vouch system is working.");
   }
 }
-// force rebuild
