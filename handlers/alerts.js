@@ -1,3 +1,4 @@
+// handlers/alerts.js
 import { EmbedBuilder } from "discord.js";
 
 const ALERT_CHANNEL = "1496324911084470473";
@@ -8,15 +9,19 @@ const cooldowns = new Map();
 
 export default function alertHandler(message, client, LOG_CHANNEL) {
 
+  // HARD LOCK: prevent duplicate firing from overlapping instances
+  if (message._handledAlert) return;
+  message._handledAlert = true;
+
   // Only process webhook messages in the log channel
   if (message.channel.id !== LOG_CHANNEL) return;
   if (!message.webhookId) return;
 
-  // Detect real celestial logs (markdown-safe)
-  if (!/\*\*?User\*\*?:/i.test(message.content)) return;
+  // Remove broken regex — your logs ALWAYS contain "**User:**"
+  if (!message.content.includes("**User:**")) return;
 
   const extract = (label) => {
-    const regex = new RegExp(`\\*\\*?${label}\\*\\*?:\\s*([^\\n]+)`, "i");
+    const regex = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, "i");
     const match = message.content.match(regex);
     return match ? match[1].trim() : null;
   };
@@ -50,6 +55,7 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   cooldowns.set(userId, now + cooldownTime);
 
   const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
+  if (!alertChannel) return;
 
   // Initial embed
   const embedAlert = new EmbedBuilder()
