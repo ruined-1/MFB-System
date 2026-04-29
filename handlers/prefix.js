@@ -1,4 +1,5 @@
 console.log("prefix handler loaded");
+console.log("MSG:", message.content);
 
 export default function prefixHandler(message, client) {
   if (!message || !message.content) return;
