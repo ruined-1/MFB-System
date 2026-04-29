@@ -1,3 +1,4 @@
+console.log("prefix handler loaded");
 // handlers/prefix.js
 
 export default function prefixHandler(message) {
