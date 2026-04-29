@@ -10,6 +10,9 @@ export default function prefixHandler(message, client) {
   // Ignore webhook messages
   if (message.webhookId) return;
 
+  // Ignore empty/system messages (prevents prefix doubling)
+  if (!message.content || message.content.trim() === "") return;
+
   // Only prefix commands
   if (!message.content.startsWith("!")) return;
 
