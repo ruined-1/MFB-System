@@ -10,31 +10,36 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // ⭐ Discord bot code
 import {
   Client,
-  GatewayIntentBits
+  GatewayIntentBits,
+  Partials
 } from "discord.js";
 
 import prefixHandler from "./handlers/prefix.js";
-// import alertHandler from "./handlers/alerts.js"; // disabled for debugging
 
-// ⭐ Create the client
+// ⭐ Create the client with FULL gateway subscription
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,          // ⭐ REQUIRED for full guild subscription
     GatewayIntentBits.GuildMessageReactions
+  ],
+  partials: [
+    Partials.Channel,
+    Partials.Message,
+    Partials.GuildMember,
+    Partials.User
   ]
 });
 
 // ⭐ When bot is ready
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
-
-  // Debug: show what guilds the bot is actually subscribed to
   console.log("Guilds:", client.guilds.cache.map(g => g.id));
 });
 
-// ⭐ Message listener (ONLY prefix handler for now)
+// ⭐ Message listener
 client.on("messageCreate", (msg) => prefixHandler(msg, client));
 
 // ⭐ Login
