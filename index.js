@@ -40,6 +40,6 @@ client.once("ready", () => {
 
 // ⭐ Load handlers
 client.on("messageCreate", (msg) => prefixHandler(msg, client));
-client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
+// client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
 
 client.login(process.env.TOKEN);
