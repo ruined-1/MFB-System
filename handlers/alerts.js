@@ -49,11 +49,9 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
 
   cooldowns.set(userId, now + cooldownTime);
 
-  const minutes = Math.floor(cooldownTime / 60000);
-  const seconds = Math.floor((cooldownTime % 60000) / 1000);
-
   const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
 
+  // Initial embed
   const embedAlert = new EmbedBuilder()
     .setColor("#FFCC00")
     .setTitle("⚠️ Possible dupe detected")
@@ -64,7 +62,7 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
       `• **Upgrade:** ${upgradeField}\n` +
       `• **Playtime:** ${playtimeField}\n` +
       `• **Cash:** ${cashField}\n\n` +
-      `⏳ **Cooldown:** ${minutes}m ${seconds}s\n` +
+      `⏳ **Cooldown:** 5m 0s\n` +
       `• **Source:** <#${LOG_CHANNEL}> — [Jump](${message.url})`
     )
     .setTimestamp();
@@ -72,5 +70,38 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   alertChannel.send({
     content: `<@${PING_USER}>`,
     embeds: [embedAlert]
+  }).then((msg) => {
+
+    let remaining = cooldownTime;
+
+    const interval = setInterval(() => {
+      remaining -= 1000;
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        return;
+      }
+
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+
+      const updated = EmbedBuilder.from(embedAlert)
+        .setDescription(
+          `• **User:** ${userField}\n` +
+          `• **Brainrot:** ${brainrotField}\n` +
+          `• **Amount owned:** ${amountOwned}\n` +
+          `• **Upgrade:** ${upgradeField}\n` +
+          `• **Playtime:** ${playtimeField}\n` +
+          `• **Cash:** ${cashField}\n\n` +
+          `⏳ **Cooldown:** ${mins}m ${secs}s\n` +
+          `• **Source:** <#${LOG_CHANNEL}> — [Jump](${message.url})`
+        );
+
+      msg.edit({
+        content: `<@${PING_USER}>`,
+        embeds: [updated]
+      });
+
+    }, 1000);
   });
 }
