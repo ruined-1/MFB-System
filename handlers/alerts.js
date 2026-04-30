@@ -120,16 +120,17 @@ export default async function alertHandler(ctx) {
   const embedAlert = new EmbedBuilder()
     .setColor(severityColors[severity])
     .setTitle(`⚠️ Possible dupe detected — ${severity} severity`)
-    .setDescription(
-      `• **User:** ${userField}\n` +
-      `• **Brainrot:** ${brainrotField}\n` +
-      `• **Amount owned:** ${amountOwned}\n` +
-      `• **Upgrade:** ${upgradeField}\n` +
-      `• **Playtime:** ${playtimeField}\n` +
-      `• **Cash:** ${cashField}\n\n` +
-      `⏳ **Cooldown ends:** ${cooldownTimestamp}\n` +
-      `• **Source:** <#${logChannelId}>`
-    )
+  .setDescription(
+  `• **User:** ${userField}\n` +
+  `• **Brainrot:** ${brainrotField}\n` +
+  `• **Amount owned:** ${amountOwned}\n` +
+  `• **Upgrade:** ${upgradeField}\n` +
+  `• **Playtime:** ${playtimeField}\n` +
+  `• **Cash:** ${cashField}\n\n` +
+  `⏳ **Cooldown ends:** ${cooldownTimestamp}\n` +
+  `• **Source:** <#${logChannelId}> — [Jump to message](${message.url})`
+)
+
     .setTimestamp();
 
   // ⭐ Reset cooldown button
