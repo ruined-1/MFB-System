@@ -26,21 +26,23 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
 
-  // Only process webhook logs
+  // ⭐ Only process Celestial logs
+  if (!message.content.includes("CELESTIAL MOVE")) return;
+
+  // ⭐ Only process messages in the log channel
   if (message.channel.id !== LOG_CHANNEL) return;
-  if (!message.webhookId) return;
 
-  const content = message.content;
+  // ⭐ Remove markdown so extractors always match
+  const content = message.content.replace(/\*\*/g, "");
 
-  // ⭐ Extract fields safely (bulletproof)
-  const userField = extractText("User", content);
-  const brainrotField = extractText("Brainrot", content);
-  const amountOwned = extractNumber("Amount owned", content);
-  const upgradeField = extractText("Upgrade", content);
-  const playtimeField = extractText("Playtime", content);
-  const cashField = extractText("Cash", content);
+  // ⭐ Extract fields safely
+  const userField = extractText("User:", content);
+  const brainrotField = extractText("Brainrot:", content);
+  const amountOwned = extractNumber("Amount owned:", content);
+  const upgradeField = extractText("Upgrade:", content);
+  const playtimeField = extractText("Playtime:", content);
+  const cashField = extractText("Cash:", content);
 
-  // If no amount found, ignore
   if (!amountOwned) return;
 
   const threshold = global.dupeThreshold ?? 20;
