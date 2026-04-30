@@ -27,4 +27,8 @@ export default function prefixHandler(message, client) {
   if (cmd === "vouches") {
     message.reply("Vouch system is working.");
   }
+
+  if (cmd === "ping") {
+    message.reply("Pong!");
+  }
 }
