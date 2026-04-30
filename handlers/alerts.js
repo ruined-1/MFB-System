@@ -4,20 +4,18 @@ import { EmbedBuilder } from "discord.js";
 const ALERT_CHANNEL = "1496324911084470473";
 const PING_USER = "967946056572747776";
 
-// Cooldown map
 const cooldowns = new Map();
 
 export default function alertHandler(message, client, LOG_CHANNEL) {
 
-  // HARD LOCK: prevent duplicate firing from overlapping instances
-  if (message._handledAlert) return;
-  message._handledAlert = true;
+  // Prevent double firing (namespaced)
+  if (message._mfbAlertHandled) return;
+  message._mfbAlertHandled = true;
 
   // Only process webhook messages in the log channel
   if (message.channel.id !== LOG_CHANNEL) return;
   if (!message.webhookId) return;
 
-  // Remove broken regex — your logs ALWAYS contain "**User:**"
   if (!message.content.includes("**User:**")) return;
 
   const extract = (label) => {
@@ -40,14 +38,12 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
 
   if (amountOwned < threshold) return;
 
-  // Extract user ID from "(ID: 123456789)"
   const idMatch = userField.match(/ID:\s*(\d+)/i);
   const userId = idMatch ? idMatch[1] : null;
   if (!userId) return;
 
-  // Cooldown logic
   const now = Date.now();
-  const cooldownTime = 5 * 60 * 1000; // 5 minutes
+  const cooldownTime = 5 * 60 * 1000;
   const expiresAt = cooldowns.get(userId);
 
   if (expiresAt && now < expiresAt) return;
@@ -57,7 +53,6 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
   if (!alertChannel) return;
 
-  // Initial embed
   const embedAlert = new EmbedBuilder()
     .setColor("#FFCC00")
     .setTitle("⚠️ Possible dupe detected")
