@@ -43,16 +43,12 @@ export default async function alertHandler(ctx) {
     }
   }
 
-  // If still empty, give up
   if (!content || content.length === 0) return;
 
-  // Remove markdown
   content = content.replace(/\*\*/g, "");
 
-  // Only process Celestial logs
   if (!content.includes("CELESTIAL MOVE")) return;
 
-  // Extract fields
   const userField = extractText("User:", content);
   const brainrotField = extractText("Brainrot:", content);
   const amountOwned = extractNumber("Amount owned:", content);
