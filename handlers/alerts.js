@@ -6,11 +6,10 @@ import {
   ButtonStyle
 } from "discord.js";
 
-const ALERT_CHANNEL = "1496324911084470473";
-const PING_USER = "967946056572747776";
-const ESCALATION_PING = "775991906173452288";
+// Track processed messages by ID (prevents duplicates)
+const handledMessages = new Set();
 
-const handledMessages = new WeakSet();
+// Cooldown map (exported)
 const cooldowns = new Map();
 
 // Extract helpers
@@ -35,7 +34,10 @@ function determineSeverity(amountOwned, playtimeField, cashField, upgradeField, 
   else if (amountOwned >= 20) severity = "YELLOW";
 
   const playtimeLow = /0h/i.test(playtimeField);
+
+  // qd allowed; qn and above suspicious
   const cashHigh = /(qn|sx|sp|oc|inf)$/i.test(cashField);
+
   const upgradeHigh = parseInt(upgradeField) > 200;
   const brainrotSuspicious = /moneypuggy/i.test(brainrotField);
 
@@ -53,8 +55,12 @@ export default async function alertHandler(ctx) {
   const { message, logChannelId } = ctx;
   if (!message || !message.id) return;
 
-  if (handledMessages.has(message)) return;
-  handledMessages.add(message);
+  // Prevent duplicates across messageCreate, messageUpdate, webhook_update
+  if (handledMessages.has(message.id)) return;
+  handledMessages.add(message.id);
+
+  // Debounce to ensure final webhook content
+  await new Promise(res => setTimeout(res, 50));
 
   if (!message.channel || message.channel.id !== logChannelId) return;
 
@@ -91,7 +97,7 @@ export default async function alertHandler(ctx) {
   const userId = idMatch ? idMatch[1] : null;
   if (!userId) return;
 
-  // ⭐ Severity-based cooldown durations
+  // Severity-based cooldown durations
   const severity = determineSeverity(amountOwned, playtimeField, cashField, upgradeField, brainrotField);
 
   let cooldownTime = 5 * 60 * 1000; // YELLOW default
@@ -112,7 +118,7 @@ export default async function alertHandler(ctx) {
     RED: "#FF3B30"
   };
 
-  const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
+  const alertChannel = message.guild.channels.cache.get(logChannelId);
   if (!alertChannel) return;
 
   const cooldownTimestamp = `<t:${Math.floor(cooldownEnd / 1000)}:R>`;
@@ -120,20 +126,19 @@ export default async function alertHandler(ctx) {
   const embedAlert = new EmbedBuilder()
     .setColor(severityColors[severity])
     .setTitle(`⚠️ Possible dupe detected — ${severity} severity`)
-  .setDescription(
-  `• **User:** ${userField}\n` +
-  `• **Brainrot:** ${brainrotField}\n` +
-  `• **Amount owned:** ${amountOwned}\n` +
-  `• **Upgrade:** ${upgradeField}\n` +
-  `• **Playtime:** ${playtimeField}\n` +
-  `• **Cash:** ${cashField}\n\n` +
-  `⏳ **Cooldown ends:** ${cooldownTimestamp}\n` +
-  `• **Source:** <#${logChannelId}> — [Jump to message](${message.url})`
-)
-
+    .setDescription(
+      `• **User:** ${userField}\n` +
+      `• **Brainrot:** ${brainrotField}\n` +
+      `• **Amount owned:** ${amountOwned}\n` +
+      `• **Upgrade:** ${upgradeField}\n` +
+      `• **Playtime:** ${playtimeField}\n` +
+      `• **Cash:** ${cashField}\n\n` +
+      `⏳ **Cooldown ends:** ${cooldownTimestamp}\n` +
+      `• **Source:** <#${logChannelId}> — [Jump to message](${message.url})`
+    )
     .setTimestamp();
 
-  // ⭐ Reset cooldown button
+  // Reset cooldown button
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
       .setCustomId(`resetCooldown_${userId}`)
@@ -143,8 +148,8 @@ export default async function alertHandler(ctx) {
 
   const pingString =
     severity === "RED"
-      ? `<@${PING_USER}> <@${ESCALATION_PING}>`
-      : `<@${PING_USER}>`;
+      ? `<@967946056572747776> <@775991906173452288>`
+      : `<@967946056572747776>`;
 
   await alertChannel.send({
     content: pingString,
@@ -152,4 +157,6 @@ export default async function alertHandler(ctx) {
     components: [row]
   });
 }
+
+// Export cooldowns for index.js
 export { cooldowns };
