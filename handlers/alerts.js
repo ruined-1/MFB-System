@@ -20,18 +20,19 @@ function extractText(label, content) {
   return match ? match[0].replace(label, "").trim() : null;
 }
 
-export default async function alertHandler(message, client, LOG_CHANNEL) {
-
+// ⭐ Core handler
+export default async function alertHandler(ctx) {
+  const { type, message, client, logChannelId } = ctx;
   if (!message || !message.id) return;
 
-  // Prevent double firing
+  // Prevent double‑handling per message instance
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
 
-  // Only process logs in the log channel
-  if (message.channel.id !== LOG_CHANNEL) return;
+  // Only care about the log channel
+  if (!message.channel || message.channel.id !== logChannelId) return;
 
-  // ⭐ FETCH THE REAL MESSAGE FROM REST API
+  // ⭐ Always REST‑fetch the full message to bypass suppression
   let fullMsg;
   try {
     fullMsg = await message.channel.messages.fetch(message.id);
@@ -42,9 +43,10 @@ export default async function alertHandler(message, client, LOG_CHANNEL) {
 
   if (!fullMsg || !fullMsg.content) return;
 
+  // Strip markdown for easier parsing
   const content = fullMsg.content.replace(/\*\*/g, "");
 
-  // ⭐ Only process Celestial logs
+  // Only process Celestial logs
   if (!content.includes("CELESTIAL MOVE")) return;
 
   // ⭐ Extract fields
@@ -65,7 +67,7 @@ export default async function alertHandler(message, client, LOG_CHANNEL) {
   const userId = idMatch ? idMatch[1] : null;
   if (!userId) return;
 
-  // ⭐ Cooldown logic
+  // ⭐ Cooldown logic per user
   const now = Date.now();
   const cooldownTime = 5 * 60 * 1000;
   const expiresAt = cooldowns.get(userId);
@@ -74,10 +76,10 @@ export default async function alertHandler(message, client, LOG_CHANNEL) {
 
   cooldowns.set(userId, now + cooldownTime);
 
-  const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
+  const alertChannel = fullMsg.guild.channels.cache.get(ALERT_CHANNEL);
   if (!alertChannel) return;
 
-  // ⭐ Initial embed
+  // ⭐ Build alert embed
   const embedAlert = new EmbedBuilder()
     .setColor("#FFCC00")
     .setTitle("⚠️ Possible dupe detected (Celestial)")
@@ -89,11 +91,11 @@ export default async function alertHandler(message, client, LOG_CHANNEL) {
       `• **Playtime:** ${playtimeField}\n` +
       `• **Cash:** ${cashField}\n\n` +
       `⏳ **Cooldown:** 5m 0s\n` +
-      `• **Source:** <#${LOG_CHANNEL}> — [Jump](${fullMsg.url})`
+      `• **Source:** <#${logChannelId}> — [Jump](${fullMsg.url})`
     )
     .setTimestamp();
 
-  alertChannel.send({
+  await alertChannel.send({
     content: `<@${PING_USER}>`,
     embeds: [embedAlert]
   });
