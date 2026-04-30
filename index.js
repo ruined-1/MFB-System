@@ -25,17 +25,21 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent
   ],
-  partials: [Partials.Message, Partials.Channel, Partials.User]
+  partials: [
+    Partials.Message,
+    Partials.Channel,
+    Partials.User
+  ]
 });
 
 
-// ⭐ RAW DEBUG MODE
+// ⭐ RAW DEBUG MODE — shows what Discord is actually sending
 client.on("raw", (packet) => {
   console.log("RAW EVENT:", packet.t);
 });
 
 
-// ⭐ Auto reconnect
+// ⭐ Auto‑reconnect logic
 client.on("error", console.error);
 client.on("shardError", console.error);
 
@@ -50,37 +54,21 @@ client.on("shardDisconnect", () => {
 });
 
 
-// ⭐ When ready
+// ⭐ When bot is ready
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
 });
 
 
-// ⭐ Normal listeners
-client.on("messageCreate", (msg) => prefixHandler(msg, client));
-client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
-client.on("messageUpdate", (oldMsg, newMsg) => alertHandler(newMsg, client, LOG_CHANNEL));
+// ⭐ Message listeners
+client.on("messageCreate", (msg) => {
+  prefixHandler(msg, client);
+  alertHandler(msg, client, LOG_CHANNEL);
+});
 
-
-// ⭐ POLLING SYSTEM — catches hidden Celestial logs
-let lastMessageId = null;
-
-setInterval(async () => {
-  try {
-    const channel = await client.channels.fetch(LOG_CHANNEL);
-    const messages = await channel.messages.fetch({ limit: 1 });
-
-    const msg = messages.first();
-    if (!msg) return;
-
-    if (msg.id !== lastMessageId) {
-      lastMessageId = msg.id;
-      alertHandler(msg, client, LOG_CHANNEL);
-    }
-  } catch (err) {
-    console.error("Polling error:", err);
-  }
-}, 2000);
+client.on("messageUpdate", (oldMsg, newMsg) => {
+  alertHandler(newMsg, client, LOG_CHANNEL);
+});
 
 
 // ⭐ Login
