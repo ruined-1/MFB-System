@@ -15,6 +15,11 @@ import {
 } from "discord.js";
 
 import prefixHandler from "./handlers/prefix.js";
+import alertHandler from "./handlers/alerts.js";   // ⭐ ADD THIS
+
+// ⭐ Your log channel ID for alerts
+const LOG_CHANNEL = "1496324911084470473";         // ⭐ MAKE SURE THIS IS CORRECT
+
 
 // ⭐ Create the client with FULL gateway subscription
 const client = new Client({
@@ -22,7 +27,7 @@ const client = new Client({
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,          // ⭐ REQUIRED for full guild subscription
+    GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessageReactions
   ],
   partials: [
@@ -33,14 +38,18 @@ const client = new Client({
   ]
 });
 
+
 // ⭐ When bot is ready
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
   console.log("Guilds:", client.guilds.cache.map(g => g.id));
 });
 
-// ⭐ Message listener
+
+// ⭐ Message listeners (BOTH handlers, clean + separate)
 client.on("messageCreate", (msg) => prefixHandler(msg, client));
+client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
+
 
 // ⭐ Login
 client.login(process.env.TOKEN);
