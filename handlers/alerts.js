@@ -6,14 +6,14 @@ const PING_USER = "967946056572747776";
 
 const cooldowns = new Map();
 
-// ⭐ Extracts the FIRST number after the label, ignoring all extra text
+// ⭐ Extract first number after label
 function extractNumber(label, content) {
   const regex = new RegExp(`${label}[^\\d]*(\\d+)`, "i");
   const match = content.match(regex);
   return match ? parseInt(match[1], 10) : null;
 }
 
-// ⭐ Extracts the full line after the label (text only)
+// ⭐ Extract full line after label
 function extractText(label, content) {
   const regex = new RegExp(`${label}[^\\n]*`, "i");
   const match = content.match(regex);
@@ -29,13 +29,13 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   // ⭐ Only process Celestial logs
   if (!message.content.includes("CELESTIAL MOVE")) return;
 
-  // ⭐ Only process messages in the log channel
+  // ⭐ Only process logs in the log channel
   if (message.channel.id !== LOG_CHANNEL) return;
 
   // ⭐ Remove markdown so extractors always match
   const content = message.content.replace(/\*\*/g, "");
 
-  // ⭐ Extract fields safely
+  // ⭐ Extract fields
   const userField = extractText("User:", content);
   const brainrotField = extractText("Brainrot:", content);
   const amountOwned = extractNumber("Amount owned:", content);
@@ -43,6 +43,7 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const playtimeField = extractText("Playtime:", content);
   const cashField = extractText("Cash:", content);
 
+  // If no amount found, ignore
   if (!amountOwned) return;
 
   const threshold = global.dupeThreshold ?? 20;
@@ -53,7 +54,7 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const userId = idMatch ? idMatch[1] : null;
   if (!userId) return;
 
-  // Cooldown logic
+  // ⭐ Cooldown logic
   const now = Date.now();
   const cooldownTime = 5 * 60 * 1000;
   const expiresAt = cooldowns.get(userId);
@@ -65,10 +66,10 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
   if (!alertChannel) return;
 
-  // Initial embed
+  // ⭐ Initial embed
   const embedAlert = new EmbedBuilder()
     .setColor("#FFCC00")
-    .setTitle("⚠️ Possible dupe detected")
+    .setTitle("⚠️ Possible dupe detected (Celestial)")
     .setDescription(
       `• **User:** ${userField}\n` +
       `• **Brainrot:** ${brainrotField}\n` +
