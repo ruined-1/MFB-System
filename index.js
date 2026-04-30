@@ -17,36 +17,25 @@ import {
 import prefixHandler from "./handlers/prefix.js";
 import alertHandler from "./handlers/alerts.js";
 
-
-// ⭐ Your log channel ID for alerts
 const LOG_CHANNEL = "1496324911084470473";
 
-
-// ⭐ Create the client with FULL gateway subscription
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent,
-    GatewayIntentBits.GuildMembers,
-    GatewayIntentBits.GuildMessageReactions
+    GatewayIntentBits.MessageContent
   ],
-  partials: [
-    Partials.Channel,
-    Partials.Message,
-    Partials.GuildMember,
-    Partials.User
-  ]
+  partials: [Partials.Message, Partials.Channel, Partials.User]
 });
 
 
-// ⭐ RAW DEBUG MODE — prints EVERY gateway event
+// ⭐ RAW DEBUG MODE
 client.on("raw", (packet) => {
   console.log("RAW EVENT:", packet.t);
 });
 
 
-// ⭐ Auto‑reconnect logic
+// ⭐ Auto reconnect
 client.on("error", console.error);
 client.on("shardError", console.error);
 
@@ -61,16 +50,37 @@ client.on("shardDisconnect", () => {
 });
 
 
-// ⭐ When bot is ready
+// ⭐ When ready
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
 });
 
 
-// ⭐ Message listeners
+// ⭐ Normal listeners
 client.on("messageCreate", (msg) => prefixHandler(msg, client));
 client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
 client.on("messageUpdate", (oldMsg, newMsg) => alertHandler(newMsg, client, LOG_CHANNEL));
+
+
+// ⭐ POLLING SYSTEM — catches hidden Celestial logs
+let lastMessageId = null;
+
+setInterval(async () => {
+  try {
+    const channel = await client.channels.fetch(LOG_CHANNEL);
+    const messages = await channel.messages.fetch({ limit: 1 });
+
+    const msg = messages.first();
+    if (!msg) return;
+
+    if (msg.id !== lastMessageId) {
+      lastMessageId = msg.id;
+      alertHandler(msg, client, LOG_CHANNEL);
+    }
+  } catch (err) {
+    console.error("Polling error:", err);
+  }
+}, 2000);
 
 
 // ⭐ Login
