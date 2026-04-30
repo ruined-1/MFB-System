@@ -18,7 +18,8 @@ import {
 import prefixHandler from "./handlers/prefix.js";
 import alertHandler from "./handlers/alerts.js";
 
-const LOG_CHANNEL = "1496324911084470473";
+// ⭐ THIS WAS MISSING — the channel where CELESTIAL SNITCHER POSTS
+const LOG_CHANNEL = "PUT_YOUR_CELESTIAL_LOGS_CHANNEL_ID_HERE";
 
 const client = new Client({
   intents: [
@@ -34,7 +35,7 @@ const client = new Client({
 });
 
 
-// ⭐ RAW DEBUG — see what events are firing
+// ⭐ RAW DEBUG — shows what events are firing
 client.on("raw", (packet) => {
   console.log("RAW EVENT:", packet.t);
 });
@@ -76,8 +77,7 @@ client.on("messageUpdate", (oldMsg, newMsg) => {
 client.on("raw", async (packet) => {
   if (packet.t !== "WEBHOOKS_UPDATE") return;
 
-  const data = packet.d;
-  const channelId = data.channel_id;
+  const channelId = packet.d.channel_id;
   if (channelId !== LOG_CHANNEL) return;
 
   try {
