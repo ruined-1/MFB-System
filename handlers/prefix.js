@@ -1,3 +1,4 @@
+console.log("PREFIX HANDLER VERSION 999");
 console.log("prefix handler loaded");
 
 // In‑memory storage
