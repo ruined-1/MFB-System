@@ -3,7 +3,7 @@ import { EmbedBuilder } from "discord.js";
 
 const ALERT_CHANNEL = "1496324911084470473";
 const PING_USER = "967946056572747776";
-const ESCALATION_PING = "750441339195490335";
+const ESCALATION_PING = "775991906173452288";
 
 const cooldowns = new Map();
 
