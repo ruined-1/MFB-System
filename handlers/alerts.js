@@ -8,11 +8,9 @@ const cooldowns = new Map();
 
 export default function alertHandler(message, client, LOG_CHANNEL) {
 
-  // Prevent double firing (namespaced)
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
 
-  // Only process webhook messages in the log channel
   if (message.channel.id !== LOG_CHANNEL) return;
   if (!message.webhookId) return;
 
@@ -39,7 +37,7 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   if (amountOwned < threshold) return;
 
   const idMatch = userField.match(/ID:\s*(\d+)/i);
-  const userId = idMatch ? idMatch[1] : null;
+  const userId = idMatch ? userId : null;
   if (!userId) return;
 
   const now = Date.now();
