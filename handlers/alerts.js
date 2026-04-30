@@ -6,6 +6,13 @@ import {
   ButtonStyle
 } from "discord.js";
 
+// ⭐ CHANNELS
+// LOGS CHANNEL (where Celestial Snitcher posts)
+const LOG_CHANNEL = "PUT_YOUR_LOG_CHANNEL_ID_HERE";
+
+// ALERT CHANNEL (where the bot should send dupe alerts)
+const ALERT_CHANNEL = "1496324911084470473";
+
 // Track processed messages by ID (prevents duplicates)
 const handledMessages = new Set();
 
@@ -52,7 +59,7 @@ function determineSeverity(amountOwned, playtimeField, cashField, upgradeField, 
 }
 
 export default async function alertHandler(ctx) {
-  const { message, logChannelId } = ctx;
+  const { message } = ctx;
   if (!message || !message.id) return;
 
   // Prevent duplicates across messageCreate, messageUpdate, webhook_update
@@ -62,7 +69,8 @@ export default async function alertHandler(ctx) {
   // Debounce to ensure final webhook content
   await new Promise(res => setTimeout(res, 50));
 
-  if (!message.channel || message.channel.id !== logChannelId) return;
+  // Only process messages from the logs channel
+  if (!message.channel || message.channel.id !== LOG_CHANNEL) return;
 
   let content = message.content?.trim();
 
@@ -118,7 +126,7 @@ export default async function alertHandler(ctx) {
     RED: "#FF3B30"
   };
 
-  const alertChannel = message.guild.channels.cache.get(logChannelId);
+  const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
   if (!alertChannel) return;
 
   const cooldownTimestamp = `<t:${Math.floor(cooldownEnd / 1000)}:R>`;
@@ -134,7 +142,7 @@ export default async function alertHandler(ctx) {
       `• **Playtime:** ${playtimeField}\n` +
       `• **Cash:** ${cashField}\n\n` +
       `⏳ **Cooldown ends:** ${cooldownTimestamp}\n` +
-      `• **Source:** <#${logChannelId}> — [Jump to message](${message.url})`
+      `• **Source:** <#${LOG_CHANNEL}> — [Jump to message](${message.url})`
     )
     .setTimestamp();
 
@@ -148,7 +156,7 @@ export default async function alertHandler(ctx) {
 
   const pingString =
     severity === "RED"
-      ? `<@967946056572747776> <@775991906173452288>`
+      ? `<@967946056572747776> <@750441339195490335>`
       : `<@967946056572747776>`;
 
   await alertChannel.send({
