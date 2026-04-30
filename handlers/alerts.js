@@ -156,8 +156,8 @@ export default async function alertHandler(ctx) {
 
   const pingString =
     severity === "RED"
-      ? `<@775991906173452288> <@775991906173452288>`
-      : `<@775991906173452288>`;
+      ? `<@967946056572747776> <@750441339195490335>`
+      : `<@967946056572747776>`;
 
   await alertChannel.send({
     content: pingString,
