@@ -1,10 +1,15 @@
-console.log("PREFIX HANDLER VERSION 2000");
+console.log("PREFIX HANDLER VERSION 3000");
 
 const vouches = new Map();        // userId → number
 const cooldowns = new Map();      // userId → timestamp
 let cooldownDuration = 10;        // seconds
 
 export default function prefixHandler(message, client) {
+  // Prevent double firing
+  if (!message || !message.content) return;
+  if (message._handledPrefix) return;
+  message._handledPrefix = true;
+
   if (message.author?.bot) return;
   if (message.webhookId) return;
 
@@ -24,7 +29,7 @@ export default function prefixHandler(message, client) {
   }
 
   // -----------------------------
-  // ⭐ VOUCH
+  // ⭐ VOUCH (mention required)
   // -----------------------------
   if (cmd === "vouch") {
     const target = message.mentions.users.first();
