@@ -27,7 +27,7 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   message._mfbAlertHandled = true;
 
   // ⭐ Only process Celestial logs
-  if (!message.content.includes("CELESTIAL MOVE")) return;
+  if (!message.content || !message.content.includes("CELESTIAL MOVE")) return;
 
   // ⭐ Only process logs in the log channel
   if (message.channel.id !== LOG_CHANNEL) return;
@@ -43,7 +43,6 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const playtimeField = extractText("Playtime:", content);
   const cashField = extractText("Cash:", content);
 
-  // If no amount found, ignore
   if (!amountOwned) return;
 
   const threshold = global.dupeThreshold ?? 20;
