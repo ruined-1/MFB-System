@@ -40,6 +40,12 @@ const client = new Client({
 });
 
 
+// ⭐ RAW DEBUG MODE — prints EVERY gateway event
+client.on("raw", (packet) => {
+  console.log("RAW EVENT:", packet.t);
+});
+
+
 // ⭐ Auto‑reconnect logic
 client.on("error", console.error);
 client.on("shardError", console.error);
@@ -61,9 +67,10 @@ client.once("ready", () => {
 });
 
 
-// ⭐ Message listeners (BOTH handlers)
+// ⭐ Message listeners
 client.on("messageCreate", (msg) => prefixHandler(msg, client));
 client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
+client.on("messageUpdate", (oldMsg, newMsg) => alertHandler(newMsg, client, LOG_CHANNEL));
 
 
 // ⭐ Login
