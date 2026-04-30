@@ -19,7 +19,7 @@ import prefixHandler from "./handlers/prefix.js";
 import alertHandler from "./handlers/alerts.js";
 
 // ⭐ THIS WAS MISSING — the channel where CELESTIAL SNITCHER POSTS
-const LOG_CHANNEL = "PUT_YOUR_CELESTIAL_LOGS_CHANNEL_ID_HERE";
+const LOG_CHANNEL = "1496011804634120372";
 
 const client = new Client({
   intents: [
