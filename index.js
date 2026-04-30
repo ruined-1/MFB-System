@@ -1,3 +1,4 @@
+// index.js
 // ⭐ Fake web server for Render (required for free Web Service)
 import express from "express";
 const app = express();
@@ -33,7 +34,7 @@ const client = new Client({
 });
 
 
-// ⭐ RAW DEBUG MODE — shows what Discord is actually sending
+// ⭐ RAW DEBUG — see what events are firing
 client.on("raw", (packet) => {
   console.log("RAW EVENT:", packet.t);
 });
@@ -60,14 +61,37 @@ client.once("ready", () => {
 });
 
 
-// ⭐ Message listeners
+// ⭐ Normal messages → prefix + alerts
 client.on("messageCreate", (msg) => {
   prefixHandler(msg, client);
-  alertHandler(msg, client, LOG_CHANNEL);
+  alertHandler({ type: "message", message: msg, client, logChannelId: LOG_CHANNEL });
 });
 
+// ⭐ Edited messages → alerts
 client.on("messageUpdate", (oldMsg, newMsg) => {
-  alertHandler(newMsg, client, LOG_CHANNEL);
+  alertHandler({ type: "message", message: newMsg, client, logChannelId: LOG_CHANNEL });
+});
+
+// ⭐ Webhook updates → alerts (for game‑linked webhooks)
+client.on("raw", async (packet) => {
+  if (packet.t !== "WEBHOOKS_UPDATE") return;
+
+  const data = packet.d;
+  const channelId = data.channel_id;
+  if (channelId !== LOG_CHANNEL) return;
+
+  try {
+    const channel = await client.channels.fetch(channelId);
+    if (!channel || !channel.isTextBased()) return;
+
+    const messages = await channel.messages.fetch({ limit: 1 });
+    const msg = messages.first();
+    if (!msg) return;
+
+    alertHandler({ type: "webhook_update", message: msg, client, logChannelId: LOG_CHANNEL });
+  } catch (err) {
+    console.error("WEBHOOKS_UPDATE handler error:", err);
+  }
 });
 
 
