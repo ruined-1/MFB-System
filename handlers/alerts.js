@@ -8,7 +8,7 @@ import {
 
 // ⭐ CHANNELS
 // LOGS CHANNEL (where Celestial Snitcher posts)
-const LOG_CHANNEL = "PUT_YOUR_LOG_CHANNEL_ID_HERE";
+const LOG_CHANNEL = "1496011804634120372";
 
 // ALERT CHANNEL (where the bot should send dupe alerts)
 const ALERT_CHANNEL = "1496324911084470473";
