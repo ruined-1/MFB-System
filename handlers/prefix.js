@@ -1,4 +1,4 @@
-console.log("PREFIX HANDLER VERSION 3002");
+console.log("PREFIX HANDLER VERSION 3003");
 
 const vouches = new Map();
 const cooldowns = new Map();
@@ -6,11 +6,12 @@ let cooldownDuration = 10;
 
 export default function prefixHandler(message, client) {
   if (!message || !message.content) return;
+
+  // Prevent double firing
   if (message._mfbPrefixHandled) return;
   message._mfbPrefixHandled = true;
 
   if (message.author?.bot) return;
-  if (message.webhookId) return;
 
   const prefix = "!";
   if (!message.content.startsWith(prefix)) return;
@@ -20,15 +21,17 @@ export default function prefixHandler(message, client) {
 
   console.log("COMMAND PARSED:", cmd);
 
-  // ⭐ TESTCMD RESTORED
+  // ⭐ TESTCMD
   if (cmd === "testcmd") {
     return message.channel.send("Test command fired.");
   }
 
+  // ⭐ PING
   if (cmd === "ping") {
     return message.channel.send("Pong!");
   }
 
+  // ⭐ VOUCH
   if (cmd === "vouch") {
     const target = message.mentions.users.first();
 
@@ -55,6 +58,7 @@ export default function prefixHandler(message, client) {
     return message.channel.send(`You vouched for **${target.username}**!`);
   }
 
+  // ⭐ VOUCHES
   if (cmd === "vouches") {
     const target = message.mentions.users.first() || message.author;
     const count = vouches.get(target.id) || 0;
@@ -62,6 +66,7 @@ export default function prefixHandler(message, client) {
     return message.channel.send(`**${target.username}** has **${count}** vouches.`);
   }
 
+  // ⭐ LEADERBOARD
   if (cmd === "leaderboard") {
     if (vouches.size === 0)
       return message.channel.send("No vouches yet.");
@@ -77,6 +82,7 @@ export default function prefixHandler(message, client) {
     return message.channel.send(`🏆 **Vouch Leaderboard**\n${text}`);
   }
 
+  // ⭐ SET COOLDOWN
   if (cmd === "setcooldown") {
     const sec = parseInt(args[0]);
     if (isNaN(sec) || sec < 0)
@@ -86,10 +92,12 @@ export default function prefixHandler(message, client) {
     return message.channel.send(`Cooldown set to **${sec} seconds**.`);
   }
 
+  // ⭐ SHOW COOLDOWN
   if (cmd === "cooldown") {
     return message.channel.send(`Current cooldown: **${cooldownDuration} seconds**.`);
   }
 
+  // ⭐ RESET COOLDOWN
   if (cmd === "resetcooldown") {
     const target = message.mentions.users.first();
     if (!target)
@@ -99,6 +107,7 @@ export default function prefixHandler(message, client) {
     return message.channel.send(`Cooldown reset for **${target.username}**.`);
   }
 
+  // ⭐ SHOW ALL COOLDOWNS
   if (cmd === "cooldowns") {
     if (cooldowns.size === 0)
       return message.channel.send("No active cooldowns.");
