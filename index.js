@@ -19,7 +19,7 @@ import alertHandler from "./handlers/alerts.js";
 
 
 // ⭐ Your log channel ID for alerts
-const LOG_CHANNEL = "1496324911084470473"; // make sure this is correct
+const LOG_CHANNEL = "1496324911084470473";
 
 
 // ⭐ Create the client with FULL gateway subscription
@@ -40,22 +40,17 @@ const client = new Client({
 });
 
 
-// ⭐ Auto‑reconnect logic (Render kills bots randomly)
-client.on("error", (err) => {
-  console.error("Client error:", err);
-});
-
-client.on("shardError", (err) => {
-  console.error("Shard error:", err);
-});
+// ⭐ Auto‑reconnect logic
+client.on("error", console.error);
+client.on("shardError", console.error);
 
 client.on("disconnect", () => {
-  console.log("Bot disconnected — attempting reconnect");
+  console.log("Bot disconnected — reconnecting");
   client.login(process.env.TOKEN);
 });
 
 client.on("shardDisconnect", () => {
-  console.log("Shard disconnected — attempting reconnect");
+  console.log("Shard disconnected — reconnecting");
   client.login(process.env.TOKEN);
 });
 
@@ -63,11 +58,10 @@ client.on("shardDisconnect", () => {
 // ⭐ When bot is ready
 client.once("ready", () => {
   console.log(`Bot is online as ${client.user.tag}`);
-  console.log("Guilds:", client.guilds.cache.map(g => g.id));
 });
 
 
-// ⭐ Message listeners (BOTH handlers, clean + separate)
+// ⭐ Message listeners (BOTH handlers)
 client.on("messageCreate", (msg) => prefixHandler(msg, client));
 client.on("messageCreate", (msg) => alertHandler(msg, client, LOG_CHANNEL));
 
