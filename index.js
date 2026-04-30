@@ -1,99 +1,49 @@
-// index.js
-// ⭐ Fake web server for Render (required for free Web Service)
-import express from "express";
-const app = express();
-const PORT = process.env.PORT || 3000;
+// ⭐ Cooldown reset button + /cooldown command
+import { cooldowns } from "./handlers/alerts.js"; // if needed, export it
 
-app.get("/", (req, res) => res.send("Bot is running"));
-app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
+client.on("interactionCreate", async (interaction) => {
+  // Reset button
+  if (interaction.isButton()) {
+    if (interaction.customId.startsWith("resetCooldown_")) {
+      const userId = interaction.customId.split("_")[1];
 
+      cooldowns.delete(userId);
 
-// ⭐ Discord bot code
-import {
-  Client,
-  GatewayIntentBits,
-  Partials
-} from "discord.js";
+      return interaction.update({
+        content: `Cooldown reset by <@${interaction.user.id}>`,
+        components: []
+      });
+    }
+  }
 
-import prefixHandler from "./handlers/prefix.js";
-import alertHandler from "./handlers/alerts.js";
+  // Slash command: /cooldown
+  if (interaction.isChatInputCommand()) {
+    if (interaction.commandName === "cooldown") {
+      const target = interaction.options.getUser("user");
+      const expiresAt = cooldowns.get(target.id);
 
-// ⭐ THIS WAS MISSING — the channel where CELESTIAL SNITCHER POSTS
-const LOG_CHANNEL = "1496011804634120372";
+      if (!expiresAt) {
+        return interaction.reply({
+          content: "No cooldown active for this user.",
+          ephemeral: true
+        });
+      }
 
-const client = new Client({
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
-  ],
-  partials: [
-    Partials.Message,
-    Partials.Channel,
-    Partials.User
-  ]
-});
+      const now = Date.now();
+      const remaining = expiresAt - now;
 
+      if (remaining <= 0) {
+        cooldowns.delete(target.id);
+        return interaction.reply({
+          content: "Cooldown expired.",
+          ephemeral: true
+        });
+      }
 
-// ⭐ RAW DEBUG — shows what events are firing
-client.on("raw", (packet) => {
-  console.log("RAW EVENT:", packet.t);
-});
-
-
-// ⭐ Auto‑reconnect logic
-client.on("error", console.error);
-client.on("shardError", console.error);
-
-client.on("disconnect", () => {
-  console.log("Bot disconnected — reconnecting");
-  client.login(process.env.TOKEN);
-});
-
-client.on("shardDisconnect", () => {
-  console.log("Shard disconnected — reconnecting");
-  client.login(process.env.TOKEN);
-});
-
-
-// ⭐ When bot is ready
-client.once("ready", () => {
-  console.log(`Bot is online as ${client.user.tag}`);
-});
-
-
-// ⭐ Normal messages → prefix + alerts
-client.on("messageCreate", (msg) => {
-  prefixHandler(msg, client);
-  alertHandler({ type: "message", message: msg, client, logChannelId: LOG_CHANNEL });
-});
-
-// ⭐ Edited messages → alerts
-client.on("messageUpdate", (oldMsg, newMsg) => {
-  alertHandler({ type: "message", message: newMsg, client, logChannelId: LOG_CHANNEL });
-});
-
-// ⭐ Webhook updates → alerts (for game‑linked webhooks)
-client.on("raw", async (packet) => {
-  if (packet.t !== "WEBHOOKS_UPDATE") return;
-
-  const channelId = packet.d.channel_id;
-  if (channelId !== LOG_CHANNEL) return;
-
-  try {
-    const channel = await client.channels.fetch(channelId);
-    if (!channel || !channel.isTextBased()) return;
-
-    const messages = await channel.messages.fetch({ limit: 1 });
-    const msg = messages.first();
-    if (!msg) return;
-
-    alertHandler({ type: "webhook_update", message: msg, client, logChannelId: LOG_CHANNEL });
-  } catch (err) {
-    console.error("WEBHOOKS_UPDATE handler error:", err);
+      return interaction.reply({
+        content: `Cooldown ends in <t:${Math.floor(expiresAt / 1000)}:R>`,
+        ephemeral: true
+      });
+    }
   }
 });
-
-
-// ⭐ Login
-client.login(process.env.TOKEN);
