@@ -35,7 +35,7 @@ function determineSeverity(amountOwned, playtimeField, cashField, upgradeField, 
   else if (amountOwned >= 20) severity = "YELLOW";
 
   const playtimeLow = /0h/i.test(playtimeField);
-  const cashHigh = /(qd|sx|inf)$/i.test(cashField);
+  const cashHigh = /(qn|sx|sp|oc|inf)$/i.test(cashField);
   const upgradeHigh = parseInt(upgradeField) > 200;
   const brainrotSuspicious = /moneypuggy/i.test(brainrotField);
 
