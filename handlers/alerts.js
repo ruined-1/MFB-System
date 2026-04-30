@@ -6,14 +6,12 @@ const PING_USER = "967946056572747776";
 
 const cooldowns = new Map();
 
-// Extract first number after label
 function extractNumber(label, content) {
   const regex = new RegExp(`${label}[^\\d]*(\\d+)`, "i");
   const match = content.match(regex);
   return match ? parseInt(match[1], 10) : null;
 }
 
-// Extract full line after label
 function extractText(label, content) {
   const regex = new RegExp(`${label}[^\\n]*`, "i");
   const match = content.match(regex);
@@ -21,28 +19,35 @@ function extractText(label, content) {
 }
 
 export default async function alertHandler(ctx) {
-  const { type, message, client, logChannelId } = ctx;
+  const { message, client, logChannelId } = ctx;
   if (!message || !message.id) return;
 
-  // Prevent double firing
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
 
-  // Only process logs in the log channel
   if (!message.channel || message.channel.id !== logChannelId) return;
 
-  // ⭐ ALWAYS REST-FETCH THE MESSAGE
-  let fullMsg;
-  try {
-    fullMsg = await message.channel.messages.fetch(message.id);
-  } catch (err) {
-    console.error("REST fetch failed:", err);
-    return;
+  // ⭐ STEP 1 — Try direct content first (old working behavior)
+  let content = message.content?.trim();
+
+  // ⭐ STEP 2 — If empty, REST fetch (new fallback behavior)
+  if (!content || content.length === 0) {
+    try {
+      const fullMsg = await message.channel.messages.fetch(message.id);
+      if (fullMsg && fullMsg.content) {
+        content = fullMsg.content.trim();
+      }
+    } catch (err) {
+      console.error("REST fetch failed:", err);
+      return;
+    }
   }
 
-  if (!fullMsg || !fullMsg.content) return;
+  // If still empty, give up
+  if (!content || content.length === 0) return;
 
-  const content = fullMsg.content.replace(/\*\*/g, "");
+  // Remove markdown
+  content = content.replace(/\*\*/g, "");
 
   // Only process Celestial logs
   if (!content.includes("CELESTIAL MOVE")) return;
@@ -60,12 +65,10 @@ export default async function alertHandler(ctx) {
   const threshold = global.dupeThreshold ?? 20;
   if (amountOwned < threshold) return;
 
-  // Extract user ID
   const idMatch = content.match(/ID:\s*(\d+)/i);
   const userId = idMatch ? idMatch[1] : null;
   if (!userId) return;
 
-  // Cooldown logic
   const now = Date.now();
   const cooldownTime = 5 * 60 * 1000;
   const expiresAt = cooldowns.get(userId);
@@ -74,10 +77,9 @@ export default async function alertHandler(ctx) {
 
   cooldowns.set(userId, now + cooldownTime);
 
-  const alertChannel = fullMsg.guild.channels.cache.get(ALERT_CHANNEL);
+  const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
   if (!alertChannel) return;
 
-  // Build alert embed
   const embedAlert = new EmbedBuilder()
     .setColor("#FFCC00")
     .setTitle("⚠️ Possible dupe detected (Celestial)")
@@ -89,7 +91,7 @@ export default async function alertHandler(ctx) {
       `• **Playtime:** ${playtimeField}\n` +
       `• **Cash:** ${cashField}\n\n` +
       `⏳ **Cooldown:** 5m 0s\n` +
-      `• **Source:** <#${logChannelId}> — [Jump](${fullMsg.url})`
+      `• **Source:** <#${logChannelId}>`
     )
     .setTimestamp();
 
