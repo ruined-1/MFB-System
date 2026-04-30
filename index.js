@@ -15,10 +15,11 @@ import {
 } from "discord.js";
 
 import prefixHandler from "./handlers/prefix.js";
-import alertHandler from "./handlers/alerts.js";   // ⭐ ADD THIS
+import alertHandler from "./handlers/alerts.js";
+
 
 // ⭐ Your log channel ID for alerts
-const LOG_CHANNEL = "1496324911084470473";         // ⭐ MAKE SURE THIS IS CORRECT
+const LOG_CHANNEL = "1496324911084470473"; // make sure this is correct
 
 
 // ⭐ Create the client with FULL gateway subscription
@@ -36,6 +37,26 @@ const client = new Client({
     Partials.GuildMember,
     Partials.User
   ]
+});
+
+
+// ⭐ Auto‑reconnect logic (Render kills bots randomly)
+client.on("error", (err) => {
+  console.error("Client error:", err);
+});
+
+client.on("shardError", (err) => {
+  console.error("Shard error:", err);
+});
+
+client.on("disconnect", () => {
+  console.log("Bot disconnected — attempting reconnect");
+  client.login(process.env.TOKEN);
+});
+
+client.on("shardDisconnect", () => {
+  console.log("Shard disconnected — attempting reconnect");
+  client.login(process.env.TOKEN);
 });
 
 
