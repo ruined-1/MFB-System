@@ -22,6 +22,8 @@ function extractText(label, content) {
 
 export default async function alertHandler(message, client, LOG_CHANNEL) {
 
+  if (!message || !message.id) return;
+
   // Prevent double firing
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
