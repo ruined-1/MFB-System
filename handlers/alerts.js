@@ -6,14 +6,12 @@ const PING_USER = "967946056572747776";
 
 const cooldowns = new Map();
 
-// ⭐ Extract first number after label
 function extractNumber(label, content) {
   const regex = new RegExp(`${label}[^\\d]*(\\d+)`, "i");
   const match = content.match(regex);
   return match ? parseInt(match[1], 10) : null;
 }
 
-// ⭐ Extract full line after label
 function extractText(label, content) {
   const regex = new RegExp(`${label}[^\\n]*`, "i");
   const match = content.match(regex);
@@ -22,20 +20,20 @@ function extractText(label, content) {
 
 export default function alertHandler(message, client, LOG_CHANNEL) {
 
+  if (!message || !message.content) return;
+
   // Prevent double firing
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
 
-  // ⭐ Only process Celestial logs
-  if (!message.content || !message.content.includes("CELESTIAL MOVE")) return;
+  // Only process Celestial logs
+  if (!message.content.includes("CELESTIAL MOVE")) return;
 
-  // ⭐ Only process logs in the log channel
+  // Only process logs in the log channel
   if (message.channel.id !== LOG_CHANNEL) return;
 
-  // ⭐ Remove markdown so extractors always match
   const content = message.content.replace(/\*\*/g, "");
 
-  // ⭐ Extract fields
   const userField = extractText("User:", content);
   const brainrotField = extractText("Brainrot:", content);
   const amountOwned = extractNumber("Amount owned:", content);
@@ -48,12 +46,10 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const threshold = global.dupeThreshold ?? 20;
   if (amountOwned < threshold) return;
 
-  // Extract user ID from "(ID: 123456789)"
   const idMatch = content.match(/ID:\s*(\d+)/i);
   const userId = idMatch ? idMatch[1] : null;
   if (!userId) return;
 
-  // ⭐ Cooldown logic
   const now = Date.now();
   const cooldownTime = 5 * 60 * 1000;
   const expiresAt = cooldowns.get(userId);
@@ -65,7 +61,6 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
   if (!alertChannel) return;
 
-  // ⭐ Initial embed
   const embedAlert = new EmbedBuilder()
     .setColor("#FFCC00")
     .setTitle("⚠️ Possible dupe detected (Celestial)")
@@ -84,38 +79,5 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   alertChannel.send({
     content: `<@${PING_USER}>`,
     embeds: [embedAlert]
-  }).then((msg) => {
-
-    let remaining = cooldownTime;
-
-    const interval = setInterval(() => {
-      remaining -= 1000;
-
-      if (remaining <= 0) {
-        clearInterval(interval);
-        return;
-      }
-
-      const mins = Math.floor(remaining / 60000);
-      const secs = Math.floor((remaining % 60000) / 1000);
-
-      const updated = EmbedBuilder.from(embedAlert)
-        .setDescription(
-          `• **User:** ${userField}\n` +
-          `• **Brainrot:** ${brainrotField}\n` +
-          `• **Amount owned:** ${amountOwned}\n` +
-          `• **Upgrade:** ${upgradeField}\n` +
-          `• **Playtime:** ${playtimeField}\n` +
-          `• **Cash:** ${cashField}\n\n` +
-          `⏳ **Cooldown:** ${mins}m ${secs}s\n` +
-          `• **Source:** <#${LOG_CHANNEL}> — [Jump](${message.url})`
-        );
-
-      msg.edit({
-        content: `<@${PING_USER}>`,
-        embeds: [updated]
-      });
-
-    }, 1000);
   });
 }
