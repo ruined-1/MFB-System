@@ -6,40 +6,50 @@ const PING_USER = "967946056572747776";
 
 const cooldowns = new Map();
 
+// ⭐ Bulletproof extractor — matches ANY format
+function extractNumber(label, content) {
+  const regex = new RegExp(`${label}[^\\d]*(\\d+)`, "i");
+  const match = content.match(regex);
+  return match ? parseInt(match[1], 10) : null;
+}
+
+function extractText(label, content) {
+  const regex = new RegExp(`${label}[^\\n]*`, "i");
+  const match = content.match(regex);
+  return match ? match[0].replace(label, "").trim() : null;
+}
+
 export default function alertHandler(message, client, LOG_CHANNEL) {
 
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
 
+  // Only process webhook logs
   if (message.channel.id !== LOG_CHANNEL) return;
   if (!message.webhookId) return;
 
-  if (!message.content.includes("**User:**")) return;
+  const content = message.content;
 
-  const extract = (label) => {
-    const regex = new RegExp(`\\*\\*${label}:\\*\\*\\s*([^\\n]+)`, "i");
-    const match = message.content.match(regex);
-    return match ? match[1].trim() : null;
-  };
+  // ⭐ Extract fields safely
+  const userField = extractText("User", content);
+  const brainrotField = extractText("Brainrot", content);
+  const amountOwned = extractNumber("Amount", content);
+  const upgradeField = extractText("Upgrade", content);
+  const playtimeField = extractText("Playtime", content);
+  const cashField = extractText("Cash", content);
 
-  const userField = extract("User");
-  const brainrotField = extract("Brainrot");
-  const amountField = extract("Amount owned");
-  const upgradeField = extract("Upgrade");
-  const playtimeField = extract("Playtime");
-  const cashField = extract("Cash");
+  // If no amount found, ignore
+  if (!amountOwned) return;
 
-  if (!amountField) return;
-
-  const amountOwned = parseInt(amountField.match(/\d+/)?.[0] || "0", 10);
   const threshold = global.dupeThreshold ?? 20;
-
   if (amountOwned < threshold) return;
 
-  const idMatch = userField.match(/ID:\s*(\d+)/i);
-  const userId = idMatch ? userId : null;
+  // Extract user ID from "(ID: 123456789)"
+  const idMatch = content.match(/ID:\s*(\d+)/i);
+  const userId = idMatch ? idMatch[1] : null;
   if (!userId) return;
 
+  // Cooldown logic
   const now = Date.now();
   const cooldownTime = 5 * 60 * 1000;
   const expiresAt = cooldowns.get(userId);
@@ -51,6 +61,7 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
   const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
   if (!alertChannel) return;
 
+  // Initial embed
   const embedAlert = new EmbedBuilder()
     .setColor("#FFCC00")
     .setTitle("⚠️ Possible dupe detected")
