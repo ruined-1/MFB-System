@@ -1,4 +1,4 @@
-console.log("PREFIX HANDLER VERSION 1002");
+console.log("PREFIX HANDLER VERSION 1004");
 
 export default function prefixHandler(message, client) {
   if (message.author?.bot) return;
@@ -16,20 +16,24 @@ export default function prefixHandler(message, client) {
   // TEST COMMAND
   // -----------------------------
   if (cmd === "testcmd") {
-    return message.reply("Test command fired.")
-      .catch(err => console.error("REPLY ERROR:", err));
+    return message.channel.send({
+      content: "Test command fired.",
+      allowedMentions: { repliedUser: false }
+    }).catch(err => console.error("SEND ERROR:", err));
   }
 
   // -----------------------------
   // PING
   // -----------------------------
   if (cmd === "ping") {
-    return message.reply("Pong!")
-      .catch(err => console.error("REPLY ERROR:", err));
+    return message.channel.send({
+      content: "Pong!",
+      allowedMentions: { repliedUser: false }
+    }).catch(err => console.error("SEND ERROR:", err));
   }
 
   // -----------------------------
-  // ⭐ CLEAN EMBED: VOUCH FIRED
+  // ⭐ CLEAN EMBED: VOUCH FIRED (NO HIGHLIGHT ANYWHERE)
   // -----------------------------
   if (cmd === "vouch") {
     const embed = {
@@ -42,7 +46,9 @@ export default function prefixHandler(message, client) {
       timestamp: new Date().toISOString()
     };
 
-    return message.reply({ embeds: [embed] })
-      .catch(err => console.error("REPLY ERROR:", err));
+    return message.channel.send({
+      embeds: [embed],
+      allowedMentions: { repliedUser: false }
+    }).catch(err => console.error("SEND ERROR:", err));
   }
 }
