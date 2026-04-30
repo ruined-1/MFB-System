@@ -6,13 +6,14 @@ const PING_USER = "967946056572747776";
 
 const cooldowns = new Map();
 
-// ⭐ Bulletproof extractor — matches ANY format
+// ⭐ Extracts the FIRST number after the label, ignoring all extra text
 function extractNumber(label, content) {
   const regex = new RegExp(`${label}[^\\d]*(\\d+)`, "i");
   const match = content.match(regex);
   return match ? parseInt(match[1], 10) : null;
 }
 
+// ⭐ Extracts the full line after the label (text only)
 function extractText(label, content) {
   const regex = new RegExp(`${label}[^\\n]*`, "i");
   const match = content.match(regex);
@@ -21,6 +22,7 @@ function extractText(label, content) {
 
 export default function alertHandler(message, client, LOG_CHANNEL) {
 
+  // Prevent double firing
   if (message._mfbAlertHandled) return;
   message._mfbAlertHandled = true;
 
@@ -30,10 +32,10 @@ export default function alertHandler(message, client, LOG_CHANNEL) {
 
   const content = message.content;
 
-  // ⭐ Extract fields safely
+  // ⭐ Extract fields safely (bulletproof)
   const userField = extractText("User", content);
   const brainrotField = extractText("Brainrot", content);
-  const amountOwned = extractNumber("Amount", content);
+  const amountOwned = extractNumber("Amount owned", content);
   const upgradeField = extractText("Upgrade", content);
   const playtimeField = extractText("Playtime", content);
   const cashField = extractText("Cash", content);
