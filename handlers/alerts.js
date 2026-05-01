@@ -86,21 +86,21 @@ export default async function alertHandler(message, client) {
     const content = message.content;
 
     // =========================
-    // FLEXIBLE REGEX PARSING
+    // EXTREMELY FLEXIBLE REGEX
     // =========================
 
-    const userMatch = content.match(/\*\*User:\*\*\s*(.+?)\s*\(ID:\s*(\d+)\)/i);
-    const brainrotMatch = content.match(/\*\*Brainrot:\*\*\s*([A-Za-z0-9_]+)/i);
-    const amountMatch = content.match(/\*\*Amount owned:\*\*\s*(\d+)/i);
-    const playtimeMatch = content.match(/\*\*Playtime:\*\*\s*([^\n]+)/i);
-    const cashMatch = content.match(/\*\*Cash:\*\*\s*([^\n]+)/i);
+    const userMatch = content.match(/user\**\s*:\s*([^(\n]+)\s*\(id\**\s*:\s*(\d+)\)/i);
+    const brainrotMatch = content.match(/brainrot\**\s*:\s*([A-Za-z0-9_]+)/i);
+    const amountMatch = content.match(/amount\s*owned\**\s*:\s*(\d+)/i);
+    const playtimeMatch = content.match(/playtime\**\s*:\s*([^\n]+)/i);
+    const cashMatch = content.match(/cash\**\s*:\s*([^\n]+)/i);
 
     if (!userMatch || !brainrotMatch || !amountMatch || !playtimeMatch || !cashMatch)
         return;
 
-    const userName = userMatch[1];
-    const gameId = userMatch[2];
-    const brainrot = brainrotMatch[1];
+    const userName = userMatch[1].trim();
+    const gameId = userMatch[2].trim();
+    const brainrot = brainrotMatch[1].trim();
     const amount = parseInt(amountMatch[1]);
     const playtime = parsePlaytime(playtimeMatch[1]);
     const cash = parseCash(cashMatch[1]);
