@@ -1,12 +1,23 @@
-const { REST, Routes } = require('discord.js');
 const fs = require('fs');
+const path = require('path');
+const { REST, Routes } = require('discord.js');
 require('dotenv').config();
 
 const commands = [];
-const commandFiles = fs.readdirSync('./commands').filter(file => file.endsWith('.js'));
+const commandsPath = path.join(__dirname, 'commands');
+const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
 
 for (const file of commandFiles) {
-    const command = require(`./commands/${file}`);
+    const filePath = path.join(commandsPath, file);
+
+    // Load ESM command files correctly
+    const command = require(filePath).default;
+
+    if (!command || !command.data) {
+        console.error(`❌ Command file "${file}" is missing "data". Skipping.`);
+        continue;
+    }
+
     commands.push(command.data.toJSON());
 }
 
