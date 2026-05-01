@@ -1,42 +1,12 @@
-import './server.js';
-import { Client, GatewayIntentBits, Collection } from 'discord.js';
-import 'dotenv/config';
-import fs from 'fs';
-import path from 'path';
+import express from 'express';
+const app = express();
 
-const client = new Client({
-    intents: [GatewayIntentBits.Guilds]
+const PORT = process.env.PORT || 10000;
+
+app.get('/', (req, res) => {
+    res.send('Bot is alive');
 });
 
-client.commands = new Collection();
-
-// Load commands
-const commandsPath = path.join(process.cwd(), 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = (await import(`file://${filePath}`)).default;
-    client.commands.set(command.data.name, command);
-}
-
-// Interaction handler
-client.on('interactionCreate', async interaction => {
-    if (!interaction.isChatInputCommand()) return;
-
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
-
-    try {
-        await command.execute(interaction);
-    } catch (error) {
-        console.error(error);
-        if (interaction.replied || interaction.deferred) {
-            await interaction.followUp({ content: 'There was an error executing this command.', ephemeral: true });
-        } else {
-            await interaction.reply({ content: 'There was an error executing this command.', ephemeral: true });
-        }
-    }
+app.listen(PORT, () => {
+    console.log(`Fake web server running on port ${PORT}`);
 });
-
-client.login(process.env.TOKEN);
