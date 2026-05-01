@@ -1,36 +1,22 @@
-// utils/cooldowns.js
-
 const cooldowns = new Map();
+const COOLDOWN_SECONDS = 30;
 
-/**
- * Start a cooldown timer for a given key.
- */
-export function startCooldown(key, durationMs) {
-    const expires = Date.now() + durationMs;
-    cooldowns.set(key, expires);
+export function startCooldown(userId) {
+    cooldowns.set(userId, Date.now());
 }
 
-/**
- * Check if a cooldown is active.
- */
-export function isOnCooldown(key) {
-    const expires = cooldowns.get(key);
-    if (!expires) return false;
-    return Date.now() < expires;
+export function isOnCooldown(userId) {
+    if (!cooldowns.has(userId)) return false;
+    const elapsed = (Date.now() - cooldowns.get(userId)) / 1000;
+    return elapsed < COOLDOWN_SECONDS;
 }
 
-/**
- * Get remaining cooldown time in ms.
- */
-export function getRemaining(key) {
-    const expires = cooldowns.get(key);
-    if (!expires) return 0;
-    return Math.max(0, expires - Date.now());
+export function getRemaining(userId) {
+    if (!cooldowns.has(userId)) return 0;
+    const elapsed = (Date.now() - cooldowns.get(userId)) / 1000;
+    return Math.max(0, COOLDOWN_SECONDS - elapsed);
 }
 
-/**
- * Reset a cooldown manually.
- */
-export function resetCooldown(key) {
-    cooldowns.delete(key);
+export function resetCooldown(userId) {
+    cooldowns.delete(userId);
 }
