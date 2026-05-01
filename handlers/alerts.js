@@ -1,170 +1,95 @@
-// handlers/alerts.js
-import {
-  EmbedBuilder,
-  ActionRowBuilder,
-  ButtonBuilder,
-  ButtonStyle
-} from "discord.js";
+import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
+import { startCooldown, isOnCooldown, getRemaining } from './utils/cooldowns.js';
+import { getSeverityColor, getSeverityLabel } from './utils/severity.js';
 
-// ⭐ CHANNELS
-// LOGS CHANNEL (where Celestial Snitcher posts)
-const LOG_CHANNEL = "1496011804634120372";
+export default async function alertHandler(message, client) {
+    if (!message || !message.content) return;
+    if (message.author.bot) return;
 
-// ALERT CHANNEL (where the bot should send dupe alerts)
-const ALERT_CHANNEL = "1496324911084470473";
+    const userId = message.author.id;
 
-// Track processed messages by ID (prevents duplicates)
-const handledMessages = new Set();
+    // === Extract number from message ===
+    const match = message.content.match(/(\d[\d,]*)/);
+    if (!match) return;
 
-// Cooldown map (exported)
-const cooldowns = new Map();
+    const amount = parseInt(match[1].replace(/,/g, ''), 10);
+    if (isNaN(amount)) return;
 
-// Extract helpers
-function extractNumber(label, content) {
-  const regex = new RegExp(`${label}[^\\d]*(\\d+)`, "i");
-  const match = content.match(regex);
-  return match ? parseInt(match[1], 10) : null;
-}
+    // === Check threshold ===
+    if (amount < client.threshold) return;
 
-function extractText(label, content) {
-  const regex = new RegExp(`${label}[^\\n]*`, "i");
-  const match = content.match(regex);
-  return match ? match[0].replace(label, "").trim() : null;
-}
-
-// Severity logic
-function determineSeverity(amountOwned, playtimeField, cashField, upgradeField, brainrotField) {
-  let severity = "YELLOW";
-
-  if (amountOwned >= 100) severity = "RED";
-  else if (amountOwned >= 50) severity = "ORANGE";
-  else if (amountOwned >= 20) severity = "YELLOW";
-
-  const playtimeLow = /0h/i.test(playtimeField);
-
-  // qd allowed; qn and above suspicious
-  const cashHigh = /(qn|sx|sp|oc|inf)$/i.test(cashField);
-
-  const upgradeHigh = parseInt(upgradeField) > 200;
-  const brainrotSuspicious = /moneypuggy/i.test(brainrotField);
-
-  if (severity === "YELLOW" && playtimeLow) severity = "ORANGE";
-  if (severity === "YELLOW" && cashHigh) severity = "RED";
-  if (severity === "YELLOW" && brainrotSuspicious) severity = "ORANGE";
-
-  if (severity === "ORANGE" && cashHigh) severity = "RED";
-  if (severity === "ORANGE" && upgradeHigh) severity = "RED";
-
-  return severity;
-}
-
-export default async function alertHandler(ctx) {
-  const { message } = ctx;
-  if (!message || !message.id) return;
-
-  // Prevent duplicates across messageCreate, messageUpdate, webhook_update
-  if (handledMessages.has(message.id)) return;
-  handledMessages.add(message.id);
-
-  // Debounce to ensure final webhook content
-  await new Promise(res => setTimeout(res, 50));
-
-  // Only process messages from the logs channel
-  if (!message.channel || message.channel.id !== LOG_CHANNEL) return;
-
-  let content = message.content?.trim();
-
-  if (!content || content.length === 0) {
-    try {
-      const fullMsg = await message.channel.messages.fetch(message.id);
-      if (fullMsg && fullMsg.content) content = fullMsg.content.trim();
-    } catch {
-      return;
+    // === If user is on cooldown, send live countdown embed ===
+    if (isOnCooldown(userId)) {
+        return sendCooldownEmbed(message, userId, client);
     }
-  }
 
-  if (!content || content.length === 0) return;
+    // === Start cooldown ===
+    const expires = startCooldown(userId, client.cooldownDuration);
 
-  content = content.replace(/\*\*/g, "");
+    // === Send alert embed ===
+    const embed = new EmbedBuilder()
+        .setTitle("🚨 Dupe Alert Triggered")
+        .setDescription(`<@${userId}> posted a suspicious amount.`)
+        .addFields(
+            { name: "Amount", value: `**${amount.toLocaleString()}**`, inline: true },
+            { name: "Threshold", value: `**${client.threshold}**`, inline: true }
+        )
+        .setColor(0xFF0000);
 
-  if (!content.includes("CELESTIAL MOVE")) return;
-
-  const userField = extractText("User:", content);
-  const brainrotField = extractText("Brainrot:", content);
-  const amountOwned = extractNumber("Amount owned:", content);
-  const upgradeField = extractText("Upgrade:", content);
-  const playtimeField = extractText("Playtime:", content);
-  const cashField = extractText("Cash:", content);
-
-  if (!amountOwned) return;
-
-  const threshold = global.dupeThreshold ?? 20;
-  if (amountOwned < threshold) return;
-
-  const idMatch = content.match(/ID:\s*(\d+)/i);
-  const userId = idMatch ? idMatch[1] : null;
-  if (!userId) return;
-
-  // Severity-based cooldown durations
-  const severity = determineSeverity(amountOwned, playtimeField, cashField, upgradeField, brainrotField);
-
-  let cooldownTime = 5 * 60 * 1000; // YELLOW default
-  if (severity === "ORANGE") cooldownTime = 2 * 60 * 1000;
-  if (severity === "RED") cooldownTime = 10 * 1000;
-
-  const now = Date.now();
-  const expiresAt = cooldowns.get(userId);
-
-  if (expiresAt && now < expiresAt) return;
-
-  const cooldownEnd = now + cooldownTime;
-  cooldowns.set(userId, cooldownEnd);
-
-  const severityColors = {
-    YELLOW: "#FFD93D",
-    ORANGE: "#FF8C42",
-    RED: "#FF3B30"
-  };
-
-  const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
-  if (!alertChannel) return;
-
-  const cooldownTimestamp = `<t:${Math.floor(cooldownEnd / 1000)}:R>`;
-
-  const embedAlert = new EmbedBuilder()
-    .setColor(severityColors[severity])
-    .setTitle(`⚠️ Possible dupe detected — ${severity} severity`)
-    .setDescription(
-      `• **User:** ${userField}\n` +
-      `• **Brainrot:** ${brainrotField}\n` +
-      `• **Amount owned:** ${amountOwned}\n` +
-      `• **Upgrade:** ${upgradeField}\n` +
-      `• **Playtime:** ${playtimeField}\n` +
-      `• **Cash:** ${cashField}\n\n` +
-      `⏳ **Cooldown ends:** ${cooldownTimestamp}\n` +
-      `• **Source:** <#${LOG_CHANNEL}> — [Jump to message](${message.url})`
-    )
-    .setTimestamp();
-
-  // Reset cooldown button
-  const row = new ActionRowBuilder().addComponents(
-    new ButtonBuilder()
-      .setCustomId(`resetCooldown_${userId}`)
-      .setLabel("Reset Cooldown")
-      .setStyle(ButtonStyle.Danger)
-  );
-
-  const pingString =
-    severity === "RED"
-      ? `<@967946056572747776> <@750441339195490335>`
-      : `<@967946056572747776>`;
-
-  await alertChannel.send({
-    content: pingString,
-    embeds: [embedAlert],
-    components: [row]
-  });
+    await message.reply({ embeds: [embed] });
 }
 
-// Export cooldowns for index.js
-export { cooldowns };
+// === LIVE COUNTDOWN EMBED ===
+async function sendCooldownEmbed(message, userId, client) {
+    const reply = await message.reply({
+        embeds: [buildEmbed(userId, client)],
+        components: [resetRow(userId)],
+        fetchReply: true
+    });
+
+    const interval = setInterval(async () => {
+        const remaining = getRemaining(userId);
+
+        if (remaining <= 0) {
+            clearInterval(interval);
+            return reply.edit({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle("Cooldown Ended")
+                        .setDescription(`<@${userId}> is no longer on cooldown.`)
+                        .setColor(0x00FF00)
+                ],
+                components: []
+            });
+        }
+
+        await reply.edit({
+            embeds: [buildEmbed(userId, client)],
+            components: [resetRow(userId)]
+        });
+
+    }, 1000);
+}
+
+function buildEmbed(userId, client) {
+    const remaining = getRemaining(userId);
+    const seconds = Math.ceil(remaining / 1000);
+
+    return new EmbedBuilder()
+        .setTitle("⏳ Cooldown Active")
+        .setDescription(`<@${userId}> is still on cooldown.`)
+        .addFields(
+            { name: "Time Remaining", value: `**${seconds}s**`, inline: true },
+            { name: "Severity", value: getSeverityLabel(seconds), inline: true }
+        )
+        .setColor(getSeverityColor(seconds));
+}
+
+function resetRow(userId) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`reset_${userId}`)
+            .setLabel("Reset Cooldown")
+            .setStyle(ButtonStyle.Danger)
+    );
+}
