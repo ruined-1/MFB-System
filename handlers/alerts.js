@@ -23,6 +23,12 @@ const LOG_CHANNEL = "1496011804634120372";
 const ALERT_CHANNEL = "1496324911084470473";
 
 // =========================
+// PING TARGETS
+// =========================
+const REGULAR_PING = "<@967946056572747776>";
+const ESCALATION_PING = "<@750441339195490335>";
+
+// =========================
 // RARE BRAINROT ITEMS
 // =========================
 const RARE_ITEMS = ["SmurfCat", "MoneyPuggy", "OrcaleroOcala"];
@@ -134,13 +140,24 @@ export default async function alertHandler(message, client) {
     startCooldown(cooldownKey, client.cooldownDuration);
 
     // =========================
+    // SEVERITY LABEL + COLOR
+    // =========================
+    const severityLabel = getSeverityLabel(severityScore);
+    const severityColor = getSeverityColor(severityScore);
+
+    // =========================
+    // PING LOGIC
+    // =========================
+    const finalPing =
+        severityLabel === "RED"
+            ? `${REGULAR_PING} ${ESCALATION_PING}`
+            : REGULAR_PING;
+
+    // =========================
     // SEND ALERT
     // =========================
     const alertChannel = message.guild.channels.cache.get(ALERT_CHANNEL);
     if (!alertChannel) return;
-
-    const severityLabel = getSeverityLabel(severityScore);
-    const severityColor = getSeverityColor(severityScore);
 
     const embed = new EmbedBuilder()
         .setTitle("🚨 Dupe Alert Detected")
@@ -154,7 +171,18 @@ export default async function alertHandler(message, client) {
             { name: "Severity", value: severityLabel, inline: true }
         );
 
-    await alertChannel.send({ embeds: [embed] });
+    if (severityLabel === "RED") {
+        embed.addFields({
+            name: "Escalation",
+            value: ESCALATION_PING,
+            inline: false
+        });
+    }
+
+    await alertChannel.send({
+        content: finalPing,
+        embeds: [embed]
+    });
 }
 
 // =========================
