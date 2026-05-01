@@ -25,7 +25,7 @@ export default async function alertHandler(msg, client) {
 
 
         const content = msg.content.toLowerCase();
-        if (!content.includes("amount owned")) return;
+        if (!/amount\s*owned/i.test(content)) return;
 
         const numbers = content.match(/\d[\d,]*/g);
         if (!numbers) return;
