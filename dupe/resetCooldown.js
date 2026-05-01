@@ -1,15 +1,11 @@
-import { clearCooldown } from '../utils/cooldowns.js';
+import { resetCooldown } from "./cooldowns.js";
 
-export default {
-    id: /^reset_(\d+)$/,
-    async execute(interaction) {
-        const userId = interaction.customId.split("_")[1];
-        clearCooldown(userId);
+export default function handleReset(interaction) {
+    const userId = interaction.customId.replace("reset_", "");
+    resetCooldown(userId);
 
-        await interaction.update({
-            content: `Cooldown reset for <@${userId}>.`,
-            embeds: [],
-            components: []
-        });
-    }
-};
+    interaction.reply({
+        content: `Cooldown reset for <@${userId}>.`,
+        ephemeral: true
+    });
+}
