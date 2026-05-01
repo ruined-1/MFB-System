@@ -55,6 +55,35 @@ client.on("messageUpdate", async (_, msg) => {
     alertHandler(msg, client);
 });
 
+// ===============================
+// RESET COOLDOWN BUTTON HANDLER
+// ===============================
+client.on("interactionCreate", async (interaction) => {
+    try {
+        if (!interaction.isButton()) return;
+
+        // Only handle reset cooldown buttons
+        if (!interaction.customId.startsWith("reset_")) return;
+
+        const userId = interaction.customId.replace("reset_", "");
+
+        // Import resetCooldown dynamically
+        const { resetCooldown } = await import("./dupe/cooldowns.js");
+
+        // Clear cooldown
+        resetCooldown(userId);
+
+        // Acknowledge the reset
+        await interaction.reply({
+            content: `Cooldown reset for <@${userId}>.`,
+            ephemeral: true
+        });
+
+    } catch (err) {
+        console.error("Error handling reset cooldown button:", err);
+    }
+});
+
 // Ready
 client.once("ready", () => {
     console.log(`Logged in as ${client.user.tag}`);
