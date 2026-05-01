@@ -71,10 +71,57 @@ if (fs.existsSync(buttonsPath)) {
 import alertHandler from './handlers/alerts.js';
 
 // =========================
+//  CHANNEL IDS
+// =========================
+const CELESTIAL_LOGS = "1496011804634120372";
+const GIFT_LOGS = "1488648694868742334";
+
+// =========================
 //  DEBUG RAW MESSAGE LISTENER
 // =========================
 client.on("messageCreate", msg => {
-    console.log("RAW MESSAGE:", msg.content);
+    if (msg.channel.id === CELESTIAL_LOGS) {
+        console.log("CREATE EVENT (CELESTIAL):", {
+            content: msg.content,
+            webhookId: msg.webhookId,
+            partial: msg.partial,
+            system: msg.system
+        });
+    }
+
+    if (msg.channel.id === GIFT_LOGS) {
+        console.log("CREATE EVENT (GIFT):", {
+            content: msg.content,
+            webhookId: msg.webhookId,
+            partial: msg.partial,
+            system: msg.system
+        });
+    }
+});
+
+// =========================
+//  DEBUG UPDATE LISTENER (WEBHOOK EDITS)
+// =========================
+client.on("messageUpdate", async (oldMsg, newMsg) => {
+    if (newMsg.partial) await newMsg.fetch();
+
+    if (newMsg.channel.id === CELESTIAL_LOGS) {
+        console.log("UPDATE EVENT (CELESTIAL):", {
+            content: newMsg.content,
+            webhookId: newMsg.webhookId,
+            partial: newMsg.partial,
+            system: newMsg.system
+        });
+    }
+
+    if (newMsg.channel.id === GIFT_LOGS) {
+        console.log("UPDATE EVENT (GIFT):", {
+            content: newMsg.content,
+            webhookId: newMsg.webhookId,
+            partial: newMsg.partial,
+            system: newMsg.system
+        });
+    }
 });
 
 // =========================
@@ -114,8 +161,18 @@ client.on(Events.InteractionCreate, async interaction => {
 // =========================
 //  MESSAGE ALERTS
 // =========================
-client.on(Events.MessageCreate, msg => alertHandler(msg, client));
-client.on(Events.MessageUpdate, (_, msg) => alertHandler(msg, client));
+client.on(Events.MessageCreate, msg => {
+    if (msg.channel.id === CELESTIAL_LOGS) {
+        alertHandler(msg, client);
+    }
+});
+
+client.on(Events.MessageUpdate, async (_, msg) => {
+    if (msg.partial) await msg.fetch();
+    if (msg.channel.id === CELESTIAL_LOGS) {
+        alertHandler(msg, client);
+    }
+});
 
 // =========================
 //  LOGIN
