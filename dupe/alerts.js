@@ -16,7 +16,13 @@ const ESCALATION_PING = "750441339195490335";
 export default async function alertHandler(msg, client) {
     try {
         if (!msg || !msg.content) return;
-        if (msg.author?.bot) return;
+        // Allow webhooks, block ONLY real bots
+        if (msg.webhookId) {
+    // webhook messages ARE allowed
+        } else if (msg.author?.bot) {
+    return;
+}
+
 
         const content = msg.content.toLowerCase();
         if (!content.includes("amount owned")) return;
