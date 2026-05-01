@@ -1,11 +1,19 @@
-export function getSeverityColor(seconds) {
-    if (seconds > 10) return 0xFF0000;   // red
-    if (seconds > 5) return 0xFFA500;    // orange
-    return 0x00FF00;                     // green
+// utils/severity.js
+
+/**
+ * Convert severity score → label
+ */
+export function getSeverityLabel(score) {
+    if (score >= 6) return "RED";
+    if (score >= 3) return "ORANGE";
+    return "YELLOW";
 }
 
-export function getSeverityLabel(seconds) {
-    if (seconds > 10) return "🔴 High Severity";
-    if (seconds > 5) return "🟠 Medium Severity";
-    return "🟢 Low Severity";
+/**
+ * Convert severity score → embed color
+ */
+export function getSeverityColor(score) {
+    if (score >= 6) return 0xff0000; // red
+    if (score >= 3) return 0xffa500; // orange
+    return 0xffff00; // yellow
 }
