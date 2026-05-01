@@ -1,4 +1,3 @@
-import express from "express";
 import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
 import "dotenv/config";
 
@@ -11,20 +10,8 @@ import "./vouches.js";
 // Dupe system
 import alertHandler from "./dupe/alerts.js";
 
-// Optional uptime server
+// Keep the uptime server ONLY in server.js
 import "./server.js";
-
-// Fake web server for Render
-const app = express();
-const PORT = process.env.PORT || 10000;
-
-app.get("/", (req, res) => {
-    res.send("Bot is alive");
-});
-
-app.listen(PORT, () => {
-    console.log(`Web server running on port ${PORT}`);
-});
 
 // Create client
 const client = new Client({
@@ -42,10 +29,7 @@ client.commands = new Collection();
 client.on("messageCreate", async (msg) => {
     if (msg.author.bot) return;
 
-    // Prefix commands
     prefixHandler(msg, client);
-
-    // Dupe system
     alertHandler(msg, client);
 });
 
@@ -62,18 +46,14 @@ client.on("interactionCreate", async (interaction) => {
     try {
         if (!interaction.isButton()) return;
 
-        // Only handle reset cooldown buttons
         if (!interaction.customId.startsWith("reset_")) return;
 
         const userId = interaction.customId.replace("reset_", "");
 
-        // Import resetCooldown dynamically
         const { resetCooldown } = await import("./dupe/cooldowns.js");
 
-        // Clear cooldown
         resetCooldown(userId);
 
-        // Acknowledge the reset
         await interaction.reply({
             content: `Cooldown reset for <@${userId}>.`,
             ephemeral: true
