@@ -1,3 +1,4 @@
+import './server.js';
 import { Client, GatewayIntentBits, Collection } from 'discord.js';
 import 'dotenv/config';
 import fs from 'fs';
