@@ -1,6 +1,3 @@
-client.on("messageCreate", msg => {
-    console.log("RAW MESSAGE:", msg.content);
-});
 import express from 'express';
 import { Client, GatewayIntentBits, Collection, Partials, Events } from 'discord.js';
 import 'dotenv/config';
@@ -8,7 +5,7 @@ import fs from 'fs';
 import path from 'path';
 
 // =========================
-//  FAKE WEB SERVER (REQUIRED FOR RENDER WEB SERVICE)
+//  FAKE WEB SERVER (REQUIRED FOR RENDER)
 // =========================
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -69,9 +66,16 @@ if (fs.existsSync(buttonsPath)) {
 }
 
 // =========================
-//  ALERT HANDLER (CORRECTED PATH)
+//  ALERT HANDLER
 // =========================
 import alertHandler from './handlers/alerts.js';
+
+// =========================
+//  DEBUG RAW MESSAGE LISTENER
+// =========================
+client.on("messageCreate", msg => {
+    console.log("RAW MESSAGE:", msg.content);
+});
 
 // =========================
 //  INTERACTION HANDLER
@@ -96,12 +100,10 @@ client.on(Events.InteractionCreate, async interaction => {
     // Buttons
     if (interaction.isButton()) {
         for (const [id, handler] of client.buttons.entries()) {
-            // Exact match
             if (typeof handler.id === 'string' && handler.id === interaction.customId) {
                 return handler.execute(interaction);
             }
 
-            // Regex match
             if (handler.id instanceof RegExp && handler.id.test(interaction.customId)) {
                 return handler.execute(interaction);
             }
