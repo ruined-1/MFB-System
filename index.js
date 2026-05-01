@@ -1,3 +1,6 @@
+client.on("messageCreate", msg => {
+    console.log("RAW MESSAGE:", msg.content);
+});
 import express from 'express';
 import { Client, GatewayIntentBits, Collection, Partials, Events } from 'discord.js';
 import 'dotenv/config';
