@@ -2,7 +2,8 @@ import { startCooldown, isOnCooldown, getRemaining } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 import buildCooldownEmbed from "./cooldownEmbed.js";
 
-const ALERT_CHANNEL_ID = "1496324911084470473"; // Your alert channel
+const ALERT_CHANNEL_ID = "1496324911084470473"; // Alert channel
+const PING_USER_ID = "967946056572747776"; // User to ping
 
 export default async function alertHandler(msg, client) {
     try {
@@ -33,7 +34,7 @@ export default async function alertHandler(msg, client) {
             const remaining = getRemaining(msg.author.id);
             const embed = buildCooldownEmbed(msg.author, remaining);
             const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
-            if (channel) channel.send({ embeds: [embed] });
+            if (channel) channel.send({ content: `<@${PING_USER_ID}>`, embeds: [embed] });
             return;
         }
 
@@ -54,9 +55,14 @@ export default async function alertHandler(msg, client) {
             timestamp: new Date()
         };
 
-        // Send alert
+        // Send alert with ping
         const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
-        if (channel) channel.send({ embeds: [embed] });
+        if (channel) {
+            channel.send({
+                content: `<@${PING_USER_ID}>`,
+                embeds: [embed]
+            });
+        }
 
     } catch (err) {
         console.error("Error in alertHandler:", err);
