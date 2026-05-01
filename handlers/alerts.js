@@ -1,6 +1,6 @@
 import { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle } from 'discord.js';
-import { startCooldown, isOnCooldown, getRemaining } from './utils/cooldowns.js';
-import { getSeverityColor, getSeverityLabel } from './utils/severity.js';
+import { startCooldown, isOnCooldown, getRemaining } from '../utils/cooldowns.js';
+import { getSeverityColor, getSeverityLabel } from '../utils/severity.js';
 
 export default async function alertHandler(message, client) {
     if (!message || !message.content) return;
@@ -8,25 +8,25 @@ export default async function alertHandler(message, client) {
 
     const userId = message.author.id;
 
-    // === Extract number from message ===
+    // Extract number from message
     const match = message.content.match(/(\d[\d,]*)/);
     if (!match) return;
 
     const amount = parseInt(match[1].replace(/,/g, ''), 10);
     if (isNaN(amount)) return;
 
-    // === Check threshold ===
+    // Check threshold
     if (amount < client.threshold) return;
 
-    // === If user is on cooldown, send live countdown embed ===
+    // If user is on cooldown, send live countdown embed
     if (isOnCooldown(userId)) {
         return sendCooldownEmbed(message, userId, client);
     }
 
-    // === Start cooldown ===
-    const expires = startCooldown(userId, client.cooldownDuration);
+    // Start cooldown
+    startCooldown(userId, client.cooldownDuration);
 
-    // === Send alert embed ===
+    // Send alert embed
     const embed = new EmbedBuilder()
         .setTitle("🚨 Dupe Alert Triggered")
         .setDescription(`<@${userId}> posted a suspicious amount.`)
