@@ -1,19 +1,13 @@
-// utils/severity.js
-
-/**
- * Convert severity score → label
- */
-export function getSeverityLabel(score) {
-    if (score >= 6) return "RED";
-    if (score >= 3) return "ORANGE";
+export function getSeverityLabel(amountOwned, playtime, cash) {
+    if (amountOwned > 5000000) return "RED";
+    if (amountOwned > 1000000) return "ORANGE";
     return "YELLOW";
 }
 
-/**
- * Convert severity score → embed color
- */
-export function getSeverityColor(score) {
-    if (score >= 6) return 0xff0000; // red
-    if (score >= 3) return 0xffa500; // orange
-    return 0xffff00; // yellow
+export function getSeverityColor(label) {
+    switch (label) {
+        case "RED": return 0xff0000;
+        case "ORANGE": return 0xff6600;
+        default: return 0xffff00;
+    }
 }
