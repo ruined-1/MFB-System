@@ -66,9 +66,9 @@ if (fs.existsSync(buttonsPath)) {
 }
 
 // =========================
-//  ALERT HANDLER
+//  ALERT HANDLER (CORRECTED PATH)
 // =========================
-import alertHandler from './alerts.js';
+import alertHandler from './handlers/alerts.js';
 
 // =========================
 //  INTERACTION HANDLER
