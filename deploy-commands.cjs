@@ -1,39 +1,31 @@
-const fs = require('fs');
-const path = require('path');
-const { REST, Routes } = require('discord.js');
-require('dotenv').config();
-
-const commands = [];
-const commandsPath = path.join(__dirname, 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(file => file.endsWith('.js'));
-
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-
-    // Load ESM command files correctly
-    const command = require(filePath).default;
-
-    if (!command || !command.data) {
-        console.error(`❌ Command file "${file}" is missing "data". Skipping.`);
-        continue;
-    }
-
-    commands.push(command.data.toJSON());
-}
+import { REST, Routes } from 'discord.js';
+import 'dotenv/config';
 
 const rest = new REST({ version: '10' }).setToken(process.env.TOKEN);
 
-(async () => {
+// CHANGE THIS to your server ID
+const GUILD_ID = '1139943473437495457';
+
+async function wipeCommands() {
     try {
-        console.log('Started refreshing application (/) commands.');
-
+        console.log('Wiping GLOBAL commands...');
         await rest.put(
-            Routes.applicationGuildCommands(process.env.CLIENT_ID, '1139943473437495457'),
-            { body: commands },
+            Routes.applicationCommands(process.env.CLIENT_ID),
+            { body: [] }
         );
+        console.log('✔ Global commands wiped.');
 
-        console.log('Successfully reloaded application (/) commands.');
+        console.log('Wiping GUILD commands...');
+        await rest.put(
+            Routes.applicationGuildCommands(process.env.CLIENT_ID, GUILD_ID),
+            { body: [] }
+        );
+        console.log('✔ Guild commands wiped.');
+
+        console.log('All commands removed successfully.');
     } catch (error) {
         console.error(error);
     }
-})();
+}
+
+wipeCommands();
