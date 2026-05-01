@@ -1,180 +1,247 @@
-import express from 'express';
-import { Client, GatewayIntentBits, Collection, Partials, Events } from 'discord.js';
-import 'dotenv/config';
-import fs from 'fs';
-import path from 'path';
+import {
+    EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle
+} from "discord.js";
+
+import {
+    startCooldown,
+    isOnCooldown,
+    getRemaining
+} from "../utils/cooldowns.js";
+
+import {
+    getSeverityColor,
+    getSeverityLabel
+} from "../utils/severity.js";
 
 // =========================
-//  FAKE WEB SERVER (REQUIRED FOR RENDER)
+// CHANNEL CONFIG
 // =========================
-const app = express();
-const PORT = process.env.PORT || 10000;
-
-app.get('/', (req, res) => {
-    res.send('Bot is alive');
-});
-
-app.listen(PORT, () => {
-    console.log(`Fake web server running on port ${PORT}`);
-});
+const CELESTIAL_LOG_CHANNEL = "1496011804634120372";
+const GIFT_LOG_CHANNEL = "1488648694868742334";
 
 // =========================
-//  DISCORD CLIENT SETUP
+// PING TARGETS
 // =========================
-const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ],
-    partials: [Partials.Message, Partials.Channel]
-});
-
-client.commands = new Collection();
-client.buttons = new Collection();
-client.cooldowns = new Map();
-
-// Default settings
-client.cooldownDuration = 15000; // 15 seconds
-client.threshold = 100;          // dupe threshold
+const REGULAR_PING = "<@967946056572747776>";
+const ESCALATION_PING = "<@750441339195490335>";
 
 // =========================
-//  LOAD SLASH COMMANDS
+ // RARE BRAINROT ITEMS
 // =========================
-const commandsPath = path.join(process.cwd(), 'commands');
-const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith('.js'));
+const RARE_ITEMS = ["SmurfCat", "MoneyPuggy", "OrcaleroOcala"];
 
-for (const file of commandFiles) {
-    const filePath = path.join(commandsPath, file);
-    const command = (await import(`file://${filePath}`)).default;
-    client.commands.set(command.data.name, command);
+// =========================
+// CASH SUFFIX SEVERITY
+// qd = safe
+// anything above qd = suspicious
+// =========================
+const CASH_ORDER = ["b", "t", "qd", "qn", "sx", "sp", "oc", "inf"];
+
+// =========================
+// PLAYTIME PARSER
+// =========================
+function parsePlaytime(str) {
+    // supports: "1d 4h 32m 8s" or "5h 20m 47s"
+    const regex = /(?:(\d+)d)?\s*(?:(\d+)h)?\s*(?:(\d+)m)?\s*(?:(\d+)s)?/i;
+    const match = str.match(regex);
+    if (!match) return { hours: 9999 };
+
+    const days = parseInt(match[1] || "0");
+    const hours = parseInt(match[2] || "0");
+    const minutes = parseInt(match[3] || "0");
+
+    const totalHours = days * 24 + hours + minutes / 60;
+    return { hours: totalHours };
 }
 
 // =========================
-//  LOAD BUTTON HANDLERS
+// CASH PARSER
 // =========================
-const buttonsPath = path.join(process.cwd(), 'buttons');
+function parseCash(str) {
+    // e.g. "18.82B", "1.07qd"
+    const regex = /([\d.,]+)\s*([a-zA-Z]+)/;
+    const match = str.match(regex);
+    if (!match) return { value: 0, suffix: "b" };
 
-if (fs.existsSync(buttonsPath)) {
-    const buttonFiles = fs.readdirSync(buttonsPath).filter(f => f.endsWith('.js'));
-
-    for (const file of buttonFiles) {
-        const filePath = path.join(buttonsPath, file);
-        const handler = (await import(`file://${filePath}`)).default;
-        client.buttons.set(handler.id, handler);
-    }
+    const value = parseFloat(match[1].replace(/,/g, ""));
+    const suffix = match[2].toLowerCase();
+    return { value, suffix };
 }
 
 // =========================
-//  ALERT HANDLER
+// MAIN HANDLER
 // =========================
-import alertHandler from './handlers/alerts.js';
+export default async function alertHandler(message, client) {
+    if (!message || !message.content) return;
+    if (message.author?.bot && !message.webhookId) return;
 
-// =========================
-//  CHANNEL IDS
-// =========================
-const CELESTIAL_LOGS = "1496011804634120372";
-const GIFT_LOGS = "1488648694868742334";
+    // Hard-ignore gift logs
+    if (message.channel.id === GIFT_LOG_CHANNEL) return;
 
-// =========================
-//  DEBUG RAW MESSAGE LISTENER
-// =========================
-client.on("messageCreate", msg => {
-    if (msg.channel.id === CELESTIAL_LOGS) {
-        console.log("CREATE EVENT (CELESTIAL):", {
-            content: msg.content,
-            webhookId: msg.webhookId,
-            partial: msg.partial,
-            system: msg.system
+    // Only process Celestial log channel
+    if (message.channel.id !== CELESTIAL_LOG_CHANNEL) return;
+
+    const content = message.content;
+
+    // Must be a Celestial Move
+    if (!content.includes("CELESTIAL MOVE")) return;
+
+    // =========================
+    // FLEXIBLE REGEX PARSING
+    // =========================
+    const userMatch = content.match(/\*\*User:\*\*\s*(.+?)\s*\(ID:\s*(\d+)\)/i);
+    const brainrotMatch = content.match(/\*\*Brainrot:\*\*\s*([A-Za-z0-9_]+)/i);
+    const amountMatch = content.match(/\*\*Amount owned:\*\*\s*(\d+)/i);
+    const playtimeMatch = content.match(/\*\*Playtime:\*\*\s*([^\n]+)/i);
+    const cashMatch = content.match(/\*\*Cash:\*\*\s*([^\n]+)/i);
+
+    if (!userMatch || !brainrotMatch || !amountMatch || !playtimeMatch || !cashMatch)
+        return;
+
+    const userName = userMatch[1].trim();
+    const gameId = userMatch[2].trim();
+    const brainrot = brainrotMatch[1].trim();
+    const amount = parseInt(amountMatch[1]);
+    const playtime = parsePlaytime(playtimeMatch[1]);
+    const cash = parseCash(cashMatch[1]);
+
+    // =========================
+    // DUPE RULES
+    // =========================
+    let severityScore = 0;
+
+    // Amount rule
+    if (amount >= 20) severityScore += 1;
+
+    // Cash rule
+    const cashIndex = CASH_ORDER.indexOf(cash.suffix);
+    if (cashIndex > 1) severityScore += cashIndex; // above qd suspicious
+
+    // Playtime rules
+    if (playtime.hours < 6) severityScore += 2;
+    if (playtime.hours < 3) severityScore += 3;
+    if (playtime.hours < 24 && cashIndex > 1) severityScore += 1;
+    if (playtime.hours < 24 && RARE_ITEMS.some(i => brainrot.includes(i))) severityScore += 2;
+
+    // Rare item rule
+    if (RARE_ITEMS.some(i => brainrot.includes(i))) severityScore += 2;
+
+    // If nothing suspicious, ignore
+    if (severityScore < 1) return;
+
+    // =========================
+    // COOLDOWN
+    // =========================
+    const cooldownKey = `${userName}-${gameId}`;
+    if (isOnCooldown(cooldownKey)) {
+        const alertChannel = message.guild.channels.cache.get(CELESTIAL_LOG_CHANNEL);
+        return sendCooldownEmbed(alertChannel, cooldownKey, client, userName, gameId);
+    }
+
+    startCooldown(cooldownKey, client.cooldownDuration);
+
+    // =========================
+    // SEVERITY LABEL + COLOR
+    // =========================
+    const severityLabel = getSeverityLabel(severityScore);
+    const severityColor = getSeverityColor(severityScore);
+
+    // =========================
+    // PING LOGIC
+    // =========================
+    const finalPing =
+        severityLabel === "RED"
+            ? `${REGULAR_PING} ${ESCALATION_PING}`
+            : REGULAR_PING;
+
+    // =========================
+    // SEND ALERT
+    // =========================
+    const alertChannel = message.guild.channels.cache.get("1496324911084470473"); // your alerts channel
+    if (!alertChannel) return;
+
+    const embed = new EmbedBuilder()
+        .setTitle("🚨 Dupe Alert Detected")
+        .setColor(severityColor)
+        .addFields(
+            { name: "User", value: `${userName} (Game ID: ${gameId})`, inline: false },
+            { name: "Brainrot", value: brainrot, inline: true },
+            { name: "Amount Owned", value: `${amount}`, inline: true },
+            { name: "Cash", value: `${cash.value}${cash.suffix}`, inline: true },
+            { name: "Playtime", value: `${playtimeMatch[1]}`, inline: true },
+            { name: "Severity", value: severityLabel, inline: true }
+        );
+
+    if (severityLabel === "RED") {
+        embed.addFields({
+            name: "Escalation",
+            value: ESCALATION_PING,
+            inline: false
         });
     }
 
-    if (msg.channel.id === GIFT_LOGS) {
-        console.log("CREATE EVENT (GIFT):", {
-            content: msg.content,
-            webhookId: msg.webhookId,
-            partial: msg.partial,
-            system: msg.system
-        });
-    }
-});
+    await alertChannel.send({
+        content: finalPing,
+        embeds: [embed]
+    });
+}
 
 // =========================
-//  DEBUG UPDATE LISTENER (WEBHOOK EDITS)
+// COOLDOWN EMBED
 // =========================
-client.on("messageUpdate", async (oldMsg, newMsg) => {
-    if (newMsg.partial) await newMsg.fetch();
+async function sendCooldownEmbed(channel, key, client, userName, gameId) {
+    if (!channel) return;
 
-    if (newMsg.channel.id === CELESTIAL_LOGS) {
-        console.log("UPDATE EVENT (CELESTIAL):", {
-            content: newMsg.content,
-            webhookId: newMsg.webhookId,
-            partial: newMsg.partial,
-            system: newMsg.system
-        });
-    }
+    const reply = await channel.send({
+        embeds: [buildEmbed(key, client, userName, gameId)],
+        components: [resetRow(key)],
+        fetchReply: true
+    });
 
-    if (newMsg.channel.id === GIFT_LOGS) {
-        console.log("UPDATE EVENT (GIFT):", {
-            content: newMsg.content,
-            webhookId: newMsg.webhookId,
-            partial: newMsg.partial,
-            system: newMsg.system
-        });
-    }
-});
+    const interval = setInterval(async () => {
+        const remaining = getRemaining(key);
 
-// =========================
-//  INTERACTION HANDLER
-// =========================
-client.on(Events.InteractionCreate, async interaction => {
-    // Slash commands
-    if (interaction.isChatInputCommand()) {
-        const command = client.commands.get(interaction.commandName);
-        if (!command) return;
-
-        try {
-            await command.execute(interaction);
-        } catch (err) {
-            console.error(err);
-            interaction.reply({
-                content: 'There was an error executing this command.',
-                ephemeral: true
+        if (remaining <= 0) {
+            clearInterval(interval);
+            return reply.edit({
+                embeds: [
+                    new EmbedBuilder()
+                        .setTitle("Cooldown Ended")
+                        .setDescription(`${userName} (${gameId}) is no longer on cooldown.`)
+                        .setColor(0x00ff00)
+                ],
+                components: []
             });
         }
-    }
 
-    // Buttons
-    if (interaction.isButton()) {
-        for (const [id, handler] of client.buttons.entries()) {
-            if (typeof handler.id === 'string' && handler.id === interaction.customId) {
-                return handler.execute(interaction);
-            }
+        await reply.edit({
+            embeds: [buildEmbed(key, client, userName, gameId)],
+            components: [resetRow(key)]
+        });
+    }, 1000);
+}
 
-            if (handler.id instanceof RegExp && handler.id.test(interaction.customId)) {
-                return handler.execute(interaction);
-            }
-        }
-    }
-});
+function buildEmbed(key, client, userName, gameId) {
+    const remaining = getRemaining(key);
+    const seconds = Math.ceil(remaining / 1000);
 
-// =========================
-//  MESSAGE ALERTS
-// =========================
-client.on(Events.MessageCreate, msg => {
-    if (msg.channel.id === CELESTIAL_LOGS) {
-        alertHandler(msg, client);
-    }
-});
+    return new EmbedBuilder()
+        .setTitle("⏳ Cooldown Active")
+        .setDescription(`${userName} (${gameId}) is still on cooldown.`)
+        .addFields(
+            { name: "Time Remaining", value: `**${seconds}s**`, inline: true }
+        )
+        .setColor(0xffcc00);
+}
 
-client.on(Events.MessageUpdate, async (_, msg) => {
-    if (msg.partial) await msg.fetch();
-    if (msg.channel.id === CELESTIAL_LOGS) {
-        alertHandler(msg, client);
-    }
-});
-
-// =========================
-//  LOGIN
-// =========================
-client.login(process.env.TOKEN);
+function resetRow(key) {
+    return new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+            .setCustomId(`reset_${key}`)
+            .setLabel("Reset Cooldown")
+            .setStyle(ButtonStyle.Danger)
+    );
+}
