@@ -14,22 +14,20 @@ const ESCALATION_PING = "750441339195490335";
 
 export default async function alertHandler(msg, client) {
     try {
-        // ============================
-        // DEBUG LOG
-        // ============================
-        console.log("[alertHandler DEBUG]", {
-            webhookId: msg.webhookId,
-            authorId: msg.author?.id,
-            content: msg.content,
-            embeds: msg.embeds?.length || 0
-        });
+        if (!msg) return;
 
         // Allow webhook messages, block ONLY real bots
         if (!msg.webhookId && msg.author?.bot) return;
 
+        // ============================
+        // CELestial-only detection
+        // ============================
         const content = msg.content.toLowerCase();
-        if (!content.includes("amount owned")) return;
 
+        // Only trigger on Celestial logs
+        if (!/amount\s*owned/i.test(content)) return;
+
+        // Extract numbers
         const numbers = msg.content.match(/\d[\d,]*/g);
         if (!numbers) return;
 
@@ -47,6 +45,9 @@ export default async function alertHandler(msg, client) {
 
         const id = msg.author?.id || msg.webhookId;
 
+        // ============================
+        // COOLDOWN CHECK
+        // ============================
         if (isOnCooldown(id)) {
             const remaining = getRemaining(id);
 
@@ -73,8 +74,12 @@ export default async function alertHandler(msg, client) {
             return;
         }
 
+        // Start cooldown
         startCooldown(id);
 
+        // ============================
+        // NORMAL ALERT
+        // ============================
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
             .setColor(color)
