@@ -9,8 +9,8 @@ import { startCooldown, isOnCooldown, getRemaining } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "";
-const ESCALATION_PING = "";
+const NORMAL_PING = "967946056572747776";
+const ESCALATION_PING = "750441339195490335";
 
 export default async function alertHandler(msg, client) {
     try {
@@ -20,11 +20,14 @@ export default async function alertHandler(msg, client) {
         if (!msg.webhookId && msg.author?.bot) return;
 
         // ============================
-        // CELestial-only detection
+        // CORRECT ID RESOLVER (fixes spam)
+        // ============================
+        const id = msg.webhookId || msg.author?.id;
+
+        // ============================
+        // Celestial-only detection
         // ============================
         const content = msg.content.toLowerCase();
-
-        // Only trigger on Celestial logs
         if (!/amount\s*owned/i.test(content)) return;
 
         // Extract numbers
@@ -43,10 +46,8 @@ export default async function alertHandler(msg, client) {
         const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
         if (!channel) return;
 
-        const id = msg.author?.id || msg.webhookId;
-
         // ============================
-        // COOLDOWN CHECK
+        // COOLDOWN CHECK (NO SPAM)
         // ============================
         if (isOnCooldown(id)) {
             const remaining = getRemaining(id);
@@ -65,8 +66,8 @@ export default async function alertHandler(msg, client) {
                     .setStyle(ButtonStyle.Danger)
             );
 
+            // NO PING ON COOLDOWN
             await channel.send({
-                content: `<@${NORMAL_PING}>`,
                 embeds: [embed],
                 components: [row]
             });
@@ -78,7 +79,7 @@ export default async function alertHandler(msg, client) {
         startCooldown(id);
 
         // ============================
-        // NORMAL ALERT
+        // NORMAL ALERT (NO SPAM)
         // ============================
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
@@ -91,8 +92,20 @@ export default async function alertHandler(msg, client) {
             .setFooter({ text: `User/Webhook ID: ${id}` })
             .setTimestamp();
 
-        let pingString = `<@${NORMAL_PING}>`;
-        if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
+        // ============================
+        // PING LOGIC (your request)
+        // ============================
+        let pingString = "";
+
+        // Only ping if amountOwned >= 20
+        if (amountOwned >= 20) {
+            pingString = `<@${NORMAL_PING}>`;
+
+            // RED severity escalation
+            if (severity === "RED") {
+                pingString += ` <@${ESCALATION_PING}>`;
+            }
+        }
 
         await channel.send({
             content: pingString,
