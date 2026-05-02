@@ -5,7 +5,7 @@ import {
     EmbedBuilder
 } from "discord.js";
 
-import { isOnCooldown, getRemaining, setCooldownEnd, resetCooldown } from "./cooldowns.js";
+import { isOnCooldown, getRemaining, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
@@ -14,10 +14,6 @@ const ESCALATION_PING = "750441339195490335";
 
 export default async function alertHandler(msg, client) {
     try {
-        // Prevent double-processing
-        if (msg._dupeHandled) return;
-        msg._dupeHandled = true;
-
         if (!msg.webhookId && msg.author?.bot) return;
 
         const content = msg.content;
@@ -54,10 +50,8 @@ export default async function alertHandler(msg, client) {
         const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
         if (!channel) return;
 
-        // If already on cooldown, ignore new alerts
         if (isOnCooldown(playerId)) return;
 
-        // Start cooldown
         const cooldownEnd = Date.now() + cooldownSeconds * 1000;
         setCooldownEnd(playerId, cooldownEnd);
 
@@ -84,14 +78,12 @@ export default async function alertHandler(msg, client) {
                 .setStyle(ButtonStyle.Danger)
         );
 
-        // Ping logic
         let pingString = "";
         if (amountOwned >= 20) {
             pingString = `<@${NORMAL_PING}>`;
             if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
         }
 
-        // Send initial message
         const sentMessage = await channel.send({
             content: pingString,
             embeds: [embed],
@@ -100,6 +92,22 @@ export default async function alertHandler(msg, client) {
 
         // LIVE COUNTDOWN LOOP
         const interval = setInterval(async () => {
+            // If cooldown was reset externally, stop immediately
+            if (!isOnCooldown(playerId)) {
+                clearInterval(interval);
+
+                const finishedEmbed = EmbedBuilder.from(embed)
+                    .spliceFields(6, 1, { name: "=== Cooldown ===", value: "Ready", inline: false })
+                    .setFooter({ text: `Cooldown reset by moderator • Player ID: ${playerId}` });
+
+                await sentMessage.edit({
+                    embeds: [finishedEmbed],
+                    components: []
+                });
+
+                return;
+            }
+
             const remaining = Math.max(0, Math.floor((cooldownEnd - Date.now()) / 1000));
 
             if (remaining <= 0) {
