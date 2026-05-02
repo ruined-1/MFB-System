@@ -9,11 +9,8 @@ import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "967946056572747776";
-const ESCALATION_PING = "750441339195490335";
-
-// Track active countdown intervals per player
-const activeCountdowns = new Map();
+const NORMAL_PING = "775991906173452288";
+const ESCALATION_PING = "775991906173452288";
 
 // Track recent request IDs to prevent duplicate alerts
 const recentRequests = new Map();
@@ -30,7 +27,7 @@ export default async function alertHandler(msg, client) {
 
         const content = msg.content;
 
-        // ⭐ FLEXIBLE FULL LOG FILTER (bold or non-bold)
+        // FLEXIBLE FULL LOG FILTER (bold or non-bold)
         const hasUser = /\*\*?User:\*\*?/i.test(content);
         const hasBrainrot = /\*\*?Brainrot:\*\*?/i.test(content);
         const hasAmount = /\*\*?Amount owned:\*\*?/i.test(content);
@@ -42,7 +39,7 @@ export default async function alertHandler(msg, client) {
             return;
         }
 
-        // ⭐ SAFE FLEXIBLE FIELD EXTRACTION (bold or non-bold)
+        // SAFE FLEXIBLE FIELD EXTRACTION
         const userMatch = content.match(/\*\*?User:\*\*?\s*(.+?)\s*\(ID:/i);
         const idMatch = content.match(/ID:\s*(\d+)/i);
         const brainrotMatch = content.match(/\*\*?Brainrot:\*\*?\s*(.+)/i);
@@ -61,13 +58,12 @@ export default async function alertHandler(msg, client) {
         const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
         const cash = cashMatch ? cashMatch[1] : "Unknown";
 
-        // ⭐ SAFETY: Prevent NaN from breaking severity/pings
         if (isNaN(amountOwned)) return;
 
         // Request ID
         const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
 
-        // One-time send lock
+        // ONE-TIME SEND LOCK
         const now = Date.now();
         if (sentAlerts.has(requestId)) {
             const last = sentAlerts.get(requestId);
@@ -75,7 +71,7 @@ export default async function alertHandler(msg, client) {
         }
         sentAlerts.set(requestId, now);
 
-        // Dedupe logic
+        // DEDUPE LOGIC
         if (recentRequests.has(requestId)) {
             const last = recentRequests.get(requestId);
             if (now - last < 10000) {
@@ -107,8 +103,11 @@ export default async function alertHandler(msg, client) {
         if (isOnCooldown(playerId)) return;
 
         const cooldownEnd = Date.now() + cooldownSeconds * 1000;
+        const cooldownUnix = Math.floor(cooldownEnd / 1000);
+
         setCooldownEnd(playerId, cooldownEnd);
 
+        // BUILD EMBED WITH RELATIVE TIMESTAMP
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
             .setColor(color)
@@ -120,7 +119,11 @@ export default async function alertHandler(msg, client) {
                 { name: "Playtime", value: playtime, inline: false },
                 { name: "Cash", value: cash, inline: false },
                 { name: "Request ID", value: requestId, inline: false },
-                { name: "=== Cooldown ===", value: `${cooldownSeconds}s remaining`, inline: false }
+                {
+                    name: "=== Cooldown ===",
+                    value: `<t:${cooldownUnix}:R>`,
+                    inline: false
+                }
             )
             .setFooter({ text: `Player ID: ${playerId}` })
             .setTimestamp();
@@ -138,73 +141,11 @@ export default async function alertHandler(msg, client) {
             if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
         }
 
-        const sentMessage = await channel.send({
+        await channel.send({
             content: pingString,
             embeds: [embed],
             components: [row]
         });
-
-        if (activeCountdowns.has(playerId)) {
-            clearInterval(activeCountdowns.get(playerId));
-        }
-
-        const interval = setInterval(async () => {
-            if (!isOnCooldown(playerId)) {
-                clearInterval(interval);
-                activeCountdowns.delete(playerId);
-
-                const finishedEmbed = EmbedBuilder.from(embed)
-                    .spliceFields(7, 1, {
-                        name: "=== Cooldown ===",
-                        value: "Cooldown reset by moderator",
-                        inline: false
-                    })
-                    .setFooter({ text: `Cooldown reset by moderator • Player ID: ${playerId}` });
-
-                await sentMessage.edit({
-                    embeds: [finishedEmbed],
-                    components: []
-                });
-
-                return;
-            }
-
-            const remaining = Math.max(0, Math.floor((cooldownEnd - Date.now()) / 1000));
-
-            if (remaining <= 0) {
-                clearInterval(interval);
-                activeCountdowns.delete(playerId);
-
-                const finishedEmbed = EmbedBuilder.from(embed)
-                    .spliceFields(7, 1, {
-                        name: "=== Cooldown ===",
-                        value: "Ready",
-                        inline: false
-                    });
-
-                await sentMessage.edit({
-                    embeds: [finishedEmbed],
-                    components: []
-                });
-
-                return;
-            }
-
-            const updatedEmbed = EmbedBuilder.from(embed)
-                .spliceFields(7, 1, {
-                    name: "=== Cooldown ===",
-                    value: `${remaining}s remaining`,
-                    inline: false
-                });
-
-            await sentMessage.edit({
-                embeds: [updatedEmbed],
-                components: [row]
-            });
-
-        }, 1000);
-
-        activeCountdowns.set(playerId, interval);
 
     } catch (err) {
         console.error("Error in alertHandler:", err);
