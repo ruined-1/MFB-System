@@ -24,10 +24,23 @@ const recentRequests = new Map();
 
 export default async function alertHandler(msg, client) {
   try {
+    // DEBUG: See if webhook messages are even reaching the bot
+    console.log("ALERT HANDLER TRIGGERED:", {
+      webhookId: msg.webhookId,
+      channel: msg.channel.id,
+      content: msg.content
+    });
+
     // Only process webhook messages
-    if (!msg.webhookId) return;
+    if (!msg.webhookId) {
+      console.log("SKIPPED: Not a webhook message");
+      return;
+    }
 
     const content = msg.content;
+
+    // DEBUG: Check raw content
+    console.log("RAW LOG CONTENT:", content);
 
     // REQUIRED FIELDS
     const userMatch = content.match(/User:\s*(.+?)\s*\(ID:/i);
@@ -38,7 +51,19 @@ export default async function alertHandler(msg, client) {
     const playtimeMatch = content.match(/Playtime:\s*(.+)/i);
     const cashMatch = content.match(/Cash:\s*(.+)/i);
 
+    // DEBUG: Show which fields matched
+    console.log("FIELD MATCHES:", {
+      userMatch,
+      idMatch,
+      brainrotMatch,
+      amountMatch,
+      upgradeMatch,
+      playtimeMatch,
+      cashMatch
+    });
+
     if (!userMatch || !idMatch || !brainrotMatch || !amountMatch || !upgradeMatch || !playtimeMatch || !cashMatch) {
+      console.log("SKIPPED: Missing required fields");
       return;
     }
 
@@ -50,8 +75,22 @@ export default async function alertHandler(msg, client) {
     const playtime = playtimeMatch[1];
     const cash = cashMatch[1];
 
+    // DEBUG: Parsed values
+    console.log("PARSED VALUES:", {
+      playerId,
+      username,
+      brainrot,
+      amountOwned,
+      upgrade,
+      playtime,
+      cash
+    });
+
     // THRESHOLD CHECK
-    if (amountOwned < 20) return;
+    if (amountOwned < 20) {
+      console.log("SKIPPED: Below threshold", amountOwned);
+      return;
+    }
 
     // DEDUPE KEY
     const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
@@ -59,13 +98,18 @@ export default async function alertHandler(msg, client) {
 
     if (recentRequests.has(requestId)) {
       const last = recentRequests.get(requestId);
-      if (now - last < 10000) return;
+      if (now - last < 10000) {
+        console.log("SKIPPED: Duplicate request within 10s");
+        return;
+      }
     }
     recentRequests.set(requestId, now);
 
     // SEVERITY
     const severity = getSeverityLabel(amountOwned);
     const color = getSeverityColor(amountOwned);
+
+    console.log("SEVERITY:", severity);
 
     // COOLDOWN LENGTH
     let cooldownSeconds = 0;
@@ -74,15 +118,27 @@ export default async function alertHandler(msg, client) {
     else if (severity === "RED") cooldownSeconds = 30;
 
     // PLAYER COOLDOWN CHECK
-    if (isOnCooldown(playerId)) return;
+    if (isOnCooldown(playerId)) {
+      console.log("SKIPPED: Player on cooldown", playerId);
+      return;
+    }
 
     // START COOLDOWN
     const cooldownEnd = Date.now() + cooldownSeconds * 1000;
     const cooldownUnix = Math.floor(cooldownEnd / 1000);
     setCooldownEnd(playerId, cooldownEnd);
 
+    console.log("COOLDOWN STARTED:", {
+      playerId,
+      cooldownSeconds,
+      cooldownEnd
+    });
+
     const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
-    if (!channel) return;
+    if (!channel) {
+      console.log("ERROR: Alert channel not found");
+      return;
+    }
 
     // EMBED
     const embed = new EmbedBuilder()
@@ -101,7 +157,6 @@ export default async function alertHandler(msg, client) {
       .setFooter({ text: `Player ID: ${playerId}` })
       .setTimestamp();
 
-    // BUTTON
     const row = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
         .setCustomId(`reset_${playerId}`)
@@ -113,11 +168,15 @@ export default async function alertHandler(msg, client) {
     let pingString = `<@${NORMAL_PING}>`;
     if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
 
+    console.log("SENDING ALERT...");
+
     await channel.send({
       content: pingString,
       embeds: [embed],
       components: [row]
     });
+
+    console.log("ALERT SENT SUCCESSFULLY");
 
   } catch (err) {
     console.error("Error in alertHandler:", err);
