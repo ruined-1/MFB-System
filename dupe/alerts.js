@@ -19,164 +19,201 @@ const ALERT_CHANNEL_ID = "1496324911084470473";
 const NORMAL_PING = "967946056572747776";
 const ESCALATION_PING = "750441339195490335";
 
-// Prevent duplicate alerts for identical logs
 const recentRequests = new Map();
 
 export default async function alertHandler(msg, client) {
   try {
-    // DEBUG: See if webhook messages are even reaching the bot
     console.log("ALERT HANDLER TRIGGERED:", {
       webhookId: msg.webhookId,
       channel: msg.channel.id,
       content: msg.content
     });
 
-    // Only process webhook messages
-    if (!msg.webhookId) {
-      console.log("SKIPPED: Not a webhook message");
-      return;
-    }
+    if (!msg.webhookId) return;
 
     const content = msg.content;
 
-    // DEBUG: Check raw content
-    console.log("RAW LOG CONTENT:", content);
+    // ============================================================
+    //  TYPE A: FULL CELESTIAL LOGS (Amount Owned, Upgrade, Cash…)
+    // ============================================================
 
-    // REQUIRED FIELDS
-    const userMatch = content.match(/User:\s*(.+?)\s*\(ID:/i);
-    const idMatch = content.match(/ID:\s*(\d+)/i);
-    const brainrotMatch = content.match(/Brainrot:\s*(.+)/i);
-    const amountMatch = content.match(/Amount owned:\s*(\d+)/i);
-    const upgradeMatch = content.match(/Upgrade:\s*(\d+)/i);
-    const playtimeMatch = content.match(/Playtime:\s*(.+)/i);
-    const cashMatch = content.match(/Cash:\s*(.+)/i);
+    const fullUser = content.match(/User:\s*(.+?)\s*\(ID:/i);
+    const fullId = content.match(/ID:\s*(\d+)/i);
+    const fullBrainrot = content.match(/Brainrot:\s*(.+)/i);
+    const fullAmount = content.match(/Amount owned:\s*(\d+)/i);
+    const fullUpgrade = content.match(/Upgrade:\s*(\d+)/i);
+    const fullPlaytime = content.match(/Playtime:\s*(.+)/i);
+    const fullCash = content.match(/Cash:\s*(.+)/i);
 
-    // DEBUG: Show which fields matched
-    console.log("FIELD MATCHES:", {
-      userMatch,
-      idMatch,
-      brainrotMatch,
-      amountMatch,
-      upgradeMatch,
-      playtimeMatch,
-      cashMatch
-    });
+    const isFullLog =
+      fullUser &&
+      fullId &&
+      fullBrainrot &&
+      fullAmount &&
+      fullUpgrade &&
+      fullPlaytime &&
+      fullCash;
 
-    if (!userMatch || !idMatch || !brainrotMatch || !amountMatch || !upgradeMatch || !playtimeMatch || !cashMatch) {
-      console.log("SKIPPED: Missing required fields");
-      return;
-    }
+    if (isFullLog) {
+      console.log("Detected FULL dupe log");
 
-    const playerId = idMatch[1];
-    const username = userMatch[1];
-    const brainrot = brainrotMatch[1];
-    const amountOwned = parseInt(amountMatch[1]);
-    const upgrade = upgradeMatch[1];
-    const playtime = playtimeMatch[1];
-    const cash = cashMatch[1];
+      const playerId = fullId[1];
+      const username = fullUser[1];
+      const brainrot = fullBrainrot[1];
+      const amountOwned = parseInt(fullAmount[1]);
+      const upgrade = fullUpgrade[1];
+      const playtime = fullPlaytime[1];
+      const cash = fullCash[1];
 
-    // DEBUG: Parsed values
-    console.log("PARSED VALUES:", {
-      playerId,
-      username,
-      brainrot,
-      amountOwned,
-      upgrade,
-      playtime,
-      cash
-    });
-
-    // THRESHOLD CHECK
-    if (amountOwned < 20) {
-      console.log("SKIPPED: Below threshold", amountOwned);
-      return;
-    }
-
-    // DEDUPE KEY
-    const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
-    const now = Date.now();
-
-    if (recentRequests.has(requestId)) {
-      const last = recentRequests.get(requestId);
-      if (now - last < 10000) {
-        console.log("SKIPPED: Duplicate request within 10s");
+      if (amountOwned < 20) {
+        console.log("SKIPPED: Below threshold");
         return;
       }
-    }
-    recentRequests.set(requestId, now);
 
-    // SEVERITY
-    const severity = getSeverityLabel(amountOwned);
-    const color = getSeverityColor(amountOwned);
+      const requestId = `FULL-${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
+      const now = Date.now();
 
-    console.log("SEVERITY:", severity);
+      if (recentRequests.has(requestId) && now - recentRequests.get(requestId) < 10000) {
+        console.log("SKIPPED: Duplicate FULL log");
+        return;
+      }
+      recentRequests.set(requestId, now);
 
-    // COOLDOWN LENGTH
-    let cooldownSeconds = 0;
-    if (severity === "YELLOW") cooldownSeconds = 240;
-    else if (severity === "ORANGE") cooldownSeconds = 120;
-    else if (severity === "RED") cooldownSeconds = 30;
+      const severity = getSeverityLabel(amountOwned);
+      const color = getSeverityColor(amountOwned);
 
-    // PLAYER COOLDOWN CHECK
-    if (isOnCooldown(playerId)) {
-      console.log("SKIPPED: Player on cooldown", playerId);
+      let cooldownSeconds = 0;
+      if (severity === "YELLOW") cooldownSeconds = 240;
+      else if (severity === "ORANGE") cooldownSeconds = 120;
+      else if (severity === "RED") cooldownSeconds = 30;
+
+      if (isOnCooldown(playerId)) {
+        console.log("SKIPPED: Player on cooldown");
+        return;
+      }
+
+      const cooldownEnd = Date.now() + cooldownSeconds * 1000;
+      const cooldownUnix = Math.floor(cooldownEnd / 1000);
+      setCooldownEnd(playerId, cooldownEnd);
+
+      const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
+      if (!channel) return;
+
+      const embed = new EmbedBuilder()
+        .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
+        .setColor(color)
+        .addFields(
+          { name: "User", value: `${username} (ID: ${playerId})` },
+          { name: "Brainrot", value: brainrot, inline: true },
+          { name: "Amount Owned", value: amountOwned.toString(), inline: true },
+          { name: "Upgrade", value: upgrade.toString(), inline: true },
+          { name: "Playtime", value: playtime },
+          { name: "Cash", value: cash },
+          { name: "Cooldown", value: `<t:${cooldownUnix}:R>` }
+        )
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`reset_${playerId}`)
+          .setLabel("Reset Cooldown")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      let pingString = `<@${NORMAL_PING}>`;
+      if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
+
+      await channel.send({
+        content: pingString,
+        embeds: [embed],
+        components: [row]
+      });
+
+      console.log("FULL ALERT SENT");
       return;
     }
 
-    // START COOLDOWN
-    const cooldownEnd = Date.now() + cooldownSeconds * 1000;
-    const cooldownUnix = Math.floor(cooldownEnd / 1000);
-    setCooldownEnd(playerId, cooldownEnd);
+    // ============================================================
+    //  TYPE B: SUSPICIOUS LOGS (Failed inventory lock)
+    // ============================================================
 
-    console.log("COOLDOWN STARTED:", {
-      playerId,
-      cooldownSeconds,
-      cooldownEnd
-    });
+    const suspiciousMatch = content.match(/SUSPICIOUS:\s*(.+?)\s+failed inventory lock\s+(\d+)\s+times/i);
 
-    const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
-    if (!channel) {
-      console.log("ERROR: Alert channel not found");
+    if (suspiciousMatch) {
+      console.log("Detected SUSPICIOUS log");
+
+      const username = suspiciousMatch[1];
+      const fails = parseInt(suspiciousMatch[2]);
+
+      // No player ID in this log → use username as ID
+      const playerId = `SUS-${username.toLowerCase()}`;
+
+      const requestId = `SUS-${username}-${fails}`;
+      const now = Date.now();
+
+      if (recentRequests.has(requestId) && now - recentRequests.get(requestId) < 10000) {
+        console.log("SKIPPED: Duplicate SUSPICIOUS log");
+        return;
+      }
+      recentRequests.set(requestId, now);
+
+      // Severity for suspicious logs
+      let severity = "YELLOW";
+      if (fails >= 10) severity = "ORANGE";
+      if (fails >= 20) severity = "RED";
+
+      const color =
+        severity === "RED" ? 0xff0000 :
+        severity === "ORANGE" ? 0xffa500 :
+        0xffff00;
+
+      let cooldownSeconds = 60; // shorter cooldown for suspicious logs
+      if (severity === "ORANGE") cooldownSeconds = 120;
+      if (severity === "RED") cooldownSeconds = 180;
+
+      if (isOnCooldown(playerId)) {
+        console.log("SKIPPED: Suspicious player on cooldown");
+        return;
+      }
+
+      const cooldownEnd = Date.now() + cooldownSeconds * 1000;
+      const cooldownUnix = Math.floor(cooldownEnd / 1000);
+      setCooldownEnd(playerId, cooldownEnd);
+
+      const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
+      if (!channel) return;
+
+      const embed = new EmbedBuilder()
+        .setTitle(`⚠️ Suspicious Activity — ${severity} severity`)
+        .setColor(color)
+        .addFields(
+          { name: "User", value: username },
+          { name: "Failed Inventory Locks", value: fails.toString(), inline: true },
+          { name: "Cooldown", value: `<t:${cooldownUnix}:R>` }
+        )
+        .setTimestamp();
+
+      const row = new ActionRowBuilder().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`reset_${playerId}`)
+          .setLabel("Reset Cooldown")
+          .setStyle(ButtonStyle.Danger)
+      );
+
+      let pingString = `<@${NORMAL_PING}>`;
+      if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
+
+      await channel.send({
+        content: pingString,
+        embeds: [embed],
+        components: [row]
+      });
+
+      console.log("SUSPICIOUS ALERT SENT");
       return;
     }
 
-    // EMBED
-    const embed = new EmbedBuilder()
-      .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
-      .setColor(color)
-      .addFields(
-        { name: "User", value: `${username} (ID: ${playerId})`, inline: false },
-        { name: "Brainrot", value: brainrot, inline: true },
-        { name: "Amount Owned", value: amountOwned.toString(), inline: true },
-        { name: "Upgrade", value: upgrade.toString(), inline: true },
-        { name: "Playtime", value: playtime, inline: false },
-        { name: "Cash", value: cash, inline: false },
-        { name: "Request ID", value: requestId, inline: false },
-        { name: "Cooldown", value: `<t:${cooldownUnix}:R>`, inline: false }
-      )
-      .setFooter({ text: `Player ID: ${playerId}` })
-      .setTimestamp();
-
-    const row = new ActionRowBuilder().addComponents(
-      new ButtonBuilder()
-        .setCustomId(`reset_${playerId}`)
-        .setLabel("Reset Cooldown")
-        .setStyle(ButtonStyle.Danger)
-    );
-
-    // PINGS
-    let pingString = `<@${NORMAL_PING}>`;
-    if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
-
-    console.log("SENDING ALERT...");
-
-    await channel.send({
-      content: pingString,
-      embeds: [embed],
-      components: [row]
-    });
-
-    console.log("ALERT SENT SUCCESSFULLY");
+    console.log("SKIPPED: No known log format detected");
 
   } catch (err) {
     console.error("Error in alertHandler:", err);
