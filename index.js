@@ -17,16 +17,11 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// ⭐ SINGLE messageCreate listener — no duplicates
 client.on("messageCreate", async (msg) => {
     try {
-        // Ignore bot messages unless they are webhooks
         if (msg.author.bot && !msg.webhookId) return;
 
-        // Prefix commands
         prefixHandler(msg, client);
-
-        // Dupe alert handler
         alertHandler(msg, client);
 
     } catch (err) {
@@ -34,7 +29,6 @@ client.on("messageCreate", async (msg) => {
     }
 });
 
-// ⭐ Reset button handler
 client.on("interactionCreate", async (interaction) => {
     try {
         if (!interaction.isButton()) return;
@@ -48,6 +42,7 @@ client.on("interactionCreate", async (interaction) => {
 
         const msg = interaction.message;
 
+        // Updated field index (Request ID added)
         const embed = EmbedBuilder.from(msg.embeds[0])
             .spliceFields(7, 1, {
                 name: "=== Cooldown ===",
