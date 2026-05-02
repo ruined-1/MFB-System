@@ -10,6 +10,7 @@ import {
 
 import { getThreshold } from "./dupe/threshold.js";
 import { severityLevels } from "./dupe/severity.js";
+console.log("MAIN messageCreate fired");
 
 export default async function prefixHandler(msg, client) {
     // Prevent prefix handler from running on interactions or system messages
