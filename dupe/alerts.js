@@ -9,8 +9,8 @@ import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "775991906173452288";
-const ESCALATION_PING = "775991906173452288";
+const NORMAL_PING = "967946056572747776";
+const ESCALATION_PING = "750441339195490335";
 
 // Track recent request IDs to prevent duplicate alerts
 const recentRequests = new Map();
@@ -20,9 +20,11 @@ const sentAlerts = new Map();
 
 export default async function alertHandler(msg, client) {
     try {
+        // Prevent webhook double-fire
         if (msg._mfbAlertHandled) return;
         msg._mfbAlertHandled = true;
 
+        // Ignore bot messages unless they are webhooks
         if (!msg.webhookId && msg.author?.bot) return;
 
         const content = msg.content;
@@ -39,12 +41,12 @@ export default async function alertHandler(msg, client) {
             return;
         }
 
-        // SAFE FLEXIBLE FIELD EXTRACTION
+        // SAFE FLEXIBLE FIELD EXTRACTION (bold or non-bold)
         const userMatch = content.match(/\*\*?User:\*\*?\s*(.+?)\s*\(ID:/i);
         const idMatch = content.match(/ID:\s*(\d+)/i);
         const brainrotMatch = content.match(/\*\*?Brainrot:\*\*?\s*(.+)/i);
-        const amountMatch = content.match(/\*\*?Amount owned:\*\*?\s*(\d+)/i);
-        const upgradeMatch = content.match(/\*\*?Upgrade:\*\*?\s*(\d+)/i);
+        const amountMatch = content.match(/\*\*?Amount owned:\*\*?\s*(\d+)\b/i);
+        const upgradeMatch = content.match(/\*\*?Upgrade:\*\*?\s*(\d+)\b/i);
         const playtimeMatch = content.match(/\*\*?Playtime:\*\*?\s*(.+)/i);
         const cashMatch = content.match(/\*\*?Cash:\*\*?\s*(.+)/i);
 
@@ -58,9 +60,10 @@ export default async function alertHandler(msg, client) {
         const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
         const cash = cashMatch ? cashMatch[1] : "Unknown";
 
+        // Prevent NaN from breaking severity/pings
         if (isNaN(amountOwned)) return;
 
-        // Request ID
+        // Request ID (dedupe key)
         const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
 
         // ONE-TIME SEND LOCK
@@ -92,6 +95,7 @@ export default async function alertHandler(msg, client) {
         const severity = getSeverityLabel(amountOwned, 0, 0);
         const color = getSeverityColor(severity);
 
+        // Severity-based cooldown
         let cooldownSeconds = 0;
         if (severity === "YELLOW") cooldownSeconds = 240;
         else if (severity === "ORANGE") cooldownSeconds = 120;
@@ -102,6 +106,7 @@ export default async function alertHandler(msg, client) {
 
         if (isOnCooldown(playerId)) return;
 
+        // Start cooldown
         const cooldownEnd = Date.now() + cooldownSeconds * 1000;
         const cooldownUnix = Math.floor(cooldownEnd / 1000);
 
@@ -135,6 +140,7 @@ export default async function alertHandler(msg, client) {
                 .setStyle(ButtonStyle.Danger)
         );
 
+        // Ping logic
         let pingString = "";
         if (amountOwned >= 20) {
             pingString = `<@${NORMAL_PING}>`;
