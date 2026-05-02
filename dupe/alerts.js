@@ -20,15 +20,18 @@ export default async function alertHandler(msg, client) {
         if (!msg.webhookId && msg.author?.bot) return;
 
         // ============================
-        // CORRECT ID RESOLVER (fixes spam)
-        // ============================
-        const id = msg.webhookId || msg.author?.id;
-
-        // ============================
         // Celestial-only detection
         // ============================
         const content = msg.content.toLowerCase();
         if (!/amount\s*owned/i.test(content)) return;
+
+        // ============================
+        // Extract player ID from log
+        // ============================
+        const idMatch = msg.content.match(/ID:\s*(\d+)/i);
+        if (!idMatch) return;
+
+        const playerId = idMatch[1]; // <-- PER-USER COOLDOWN KEY
 
         // Extract numbers
         const numbers = msg.content.match(/\d[\d,]*/g);
@@ -36,9 +39,9 @@ export default async function alertHandler(msg, client) {
 
         const cleaned = numbers.map(n => parseInt(n.replace(/,/g, ""), 10));
 
-        const amountOwned = cleaned[0] || 0;
-        const playtime = cleaned[1] || 0;
-        const cash = cleaned[2] || 0;
+        const amountOwned = cleaned[1] || 0; // first number is player ID
+        const playtime = cleaned[2] || 0;
+        const cash = cleaned[3] || 0;
 
         const severity = getSeverityLabel(amountOwned, playtime, cash);
         const color = getSeverityColor(severity);
@@ -47,21 +50,21 @@ export default async function alertHandler(msg, client) {
         if (!channel) return;
 
         // ============================
-        // COOLDOWN CHECK (NO SPAM)
+        // PER-USER COOLDOWN CHECK
         // ============================
-        if (isOnCooldown(id)) {
-            const remaining = getRemaining(id);
+        if (isOnCooldown(playerId)) {
+            const remaining = getRemaining(playerId);
 
             const embed = new EmbedBuilder()
                 .setTitle(`⏳ Cooldown Active`)
                 .setDescription(`Cooldown ends in **${remaining}s**`)
                 .setColor(0xffcc00)
-                .setFooter({ text: `User/Webhook ID: ${id}` })
+                .setFooter({ text: `Player ID: ${playerId}` })
                 .setTimestamp();
 
             const row = new ActionRowBuilder().addComponents(
                 new ButtonBuilder()
-                    .setCustomId(`reset_${id}`)
+                    .setCustomId(`reset_${playerId}`)
                     .setLabel("Reset Cooldown")
                     .setStyle(ButtonStyle.Danger)
             );
@@ -75,11 +78,11 @@ export default async function alertHandler(msg, client) {
             return;
         }
 
-        // Start cooldown
-        startCooldown(id);
+        // Start cooldown for THIS PLAYER ONLY
+        startCooldown(playerId);
 
         // ============================
-        // NORMAL ALERT (NO SPAM)
+        // NORMAL ALERT
         // ============================
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
@@ -89,19 +92,17 @@ export default async function alertHandler(msg, client) {
                 { name: "Playtime", value: playtime.toLocaleString(), inline: true },
                 { name: "Cash", value: cash.toLocaleString(), inline: true }
             )
-            .setFooter({ text: `User/Webhook ID: ${id}` })
+            .setFooter({ text: `Player ID: ${playerId}` })
             .setTimestamp();
 
         // ============================
-        // PING LOGIC (your request)
+        // PING LOGIC
         // ============================
         let pingString = "";
 
-        // Only ping if amountOwned >= 20
         if (amountOwned >= 20) {
             pingString = `<@${NORMAL_PING}>`;
 
-            // RED severity escalation
             if (severity === "RED") {
                 pingString += ` <@${ESCALATION_PING}>`;
             }
