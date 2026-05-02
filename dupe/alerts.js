@@ -5,14 +5,14 @@ import {
     EmbedBuilder
 } from "discord.js";
 
-import { isOnCooldown, getRemaining, setCooldownEnd } from "./cooldowns.js";
+import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
 const NORMAL_PING = "967946056572747776";
 const ESCALATION_PING = "750441339195490335";
 
-// Track active countdown intervals so reset can stop them
+// Track active countdown intervals
 const activeCountdowns = new Map();
 
 export default async function alertHandler(msg, client) {
@@ -21,11 +21,14 @@ export default async function alertHandler(msg, client) {
 
         const content = msg.content;
 
-        // Require FULL dupe log (prevents double alerts)
+        // FULL LOG FILTER — prevents double alerts
         if (
-            !content.includes("Amount owned:") ||
             !content.includes("User:") ||
-            !content.includes("Brainrot:")
+            !content.includes("Brainrot:") ||
+            !content.includes("Amount owned:") ||
+            !content.includes("Upgrade:") ||
+            !content.includes("Playtime:") ||
+            !content.includes("Cash:")
         ) {
             return;
         }
@@ -103,14 +106,13 @@ export default async function alertHandler(msg, client) {
             components: [row]
         });
 
-        // Kill any previous countdown for this player
+        // Kill any previous countdown
         if (activeCountdowns.has(playerId)) {
             clearInterval(activeCountdowns.get(playerId));
         }
 
         // LIVE COUNTDOWN LOOP
         const interval = setInterval(async () => {
-            // If reset happened, stop immediately
             if (!isOnCooldown(playerId)) {
                 clearInterval(interval);
                 activeCountdowns.delete(playerId);
