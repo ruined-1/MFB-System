@@ -10,7 +10,7 @@ import {
 
 import "dotenv/config";
 
-import prefixHandler from "./prefix.js";
+import prefixHandler from "./prefixHandler.js";
 import alertHandler from "./dupe/alerts.js";
 import { resetCooldown } from "./dupe/cooldowns.js";
 import { getThreshold, setThreshold } from "./dupe/threshold.js";
