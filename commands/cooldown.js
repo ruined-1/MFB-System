@@ -63,3 +63,14 @@ export default {
     });
   }
 };
+// LIVE UPDATING LOOP
+setInterval(async () => {
+  const remaining = getRemaining(id);
+  if (remaining <= 0) return;
+
+  const { embed, components } = buildCooldownMessage(id);
+  try {
+    await interaction.editReply({ embeds: [embed], components });
+  } catch {}
+}, 1000);
+
