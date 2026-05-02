@@ -17,6 +17,7 @@ import alertHandler from "./dupe/alerts.js";
 import { resetCooldown } from "./dupe/cooldowns.js";
 import { getThreshold, setThreshold } from "./dupe/threshold.js";
 import { severityLevels, setSeverityLevel } from "./dupe/severity.js";
+console.log("MAIN messageCreate loaded");
 
 import "./server.js";
 
