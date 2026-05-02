@@ -7,11 +7,10 @@ import {
 
 import { startCooldown, isOnCooldown, getRemaining } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
-import buildCooldownMessage from "./cooldownEmbed.js";
 
-const ALERT_CHANNEL_ID = "1496324911084470473"; 
-const NORMAL_PING = "967946056572747776"; 
-const ESCALATION_PING = "750441339195490335"; 
+const ALERT_CHANNEL_ID = "1496324911084470473";
+const NORMAL_PING = "967946056572747776";
+const ESCALATION_PING = "750441339195490335";
 
 export default async function alertHandler(msg, client) {
     try {
@@ -21,32 +20,21 @@ export default async function alertHandler(msg, client) {
         if (!msg.webhookId && msg.author?.bot) return;
 
         // ============================
-        // READ WEBHOOK CONTENT SAFELY
+        // READ ONLY RAW CONTENT (YESTERDAY'S BEHAVIOR)
         // ============================
-        const raw =
-            msg.content ||
-            msg.embeds?.[0]?.description ||
-            (msg.embeds?.[0]?.fields
-                ?.map(f => `${f.name}: ${f.value}`)
-                .join("\n")) ||
-            "";
+        const content = msg.content.toLowerCase();
+        if (!content.includes("amount owned")) return;
 
-        const content = raw.toLowerCase();
+        // Extract numbers
+        const numbers = msg.content.match(/\d[\d,]*/g);
+        if (!numbers) return;
 
-        // Only process logs that contain "amount owned"
-        if (!/amount\s*owned/i.test(content)) return;
+        const cleaned = numbers.map(n => parseInt(n.replace(/,/g, ""), 10));
 
-        // Extract numbers safely
-        const numbers = raw.match(/\d[\d,]*/g);
-        if (!numbers || numbers.length === 0) return;
+        const amountOwned = cleaned[0] || 0;
+        const playtime = cleaned[1] || 0;
+        const cash = cleaned[2] || 0;
 
-        const cleanedNumbers = numbers.map(n => parseInt(n.replace(/,/g, ""), 10));
-
-        const amountOwned = cleanedNumbers[0] || 0;
-        const playtime = cleanedNumbers[1] || 0;
-        const cash = cleanedNumbers[2] || 0;
-
-        // Severity scoring
         const severity = getSeverityLabel(amountOwned, playtime, cash);
         const color = getSeverityColor(severity);
 
@@ -56,39 +44,30 @@ export default async function alertHandler(msg, client) {
         const id = msg.author?.id || msg.webhookId;
 
         // ============================
-        // COOLDOWN CHECK (LIVE UPDATE)
+        // COOLDOWN CHECK (YESTERDAY'S VERSION)
         // ============================
         if (isOnCooldown(id)) {
-            const cooldownMessage = buildCooldownMessage(id);
+            const remaining = getRemaining(id);
 
-            const sent = await channel.send({
+            const embed = new EmbedBuilder()
+                .setTitle(`⏳ Cooldown Active`)
+                .setDescription(`Cooldown ends in **${remaining}s**`)
+                .setColor(0xffcc00)
+                .setFooter({ text: `User/Webhook ID: ${id}` })
+                .setTimestamp();
+
+            const row = new ActionRowBuilder().addComponents(
+                new ButtonBuilder()
+                    .setCustomId(`reset_${id}`)
+                    .setLabel("Reset Cooldown")
+                    .setStyle(ButtonStyle.Danger)
+            );
+
+            await channel.send({
                 content: `<@${NORMAL_PING}>`,
-                embeds: [cooldownMessage.embed],
-                components: cooldownMessage.components
+                embeds: [embed],
+                components: [row]
             });
-
-            const interval = setInterval(async () => {
-                const left = getRemaining(id);
-
-                if (left <= 0) {
-                    clearInterval(interval);
-                    return sent.edit({
-                        embeds: [
-                            new EmbedBuilder()
-                                .setTitle("Cooldown Ended")
-                                .setDescription(`<@${id}> is no longer on cooldown.`)
-                                .setColor(0x00ff00)
-                        ],
-                        components: []
-                    });
-                }
-
-                const updated = buildCooldownMessage(id);
-                await sent.edit({
-                    embeds: [updated.embed],
-                    components: updated.components
-                });
-            }, 1000);
 
             return;
         }
@@ -97,32 +76,23 @@ export default async function alertHandler(msg, client) {
         startCooldown(id);
 
         // ============================
-        // NORMAL ALERT (NO COOLDOWN)
+        // NORMAL ALERT (YESTERDAY'S VERSION)
         // ============================
         const embed = new EmbedBuilder()
-            .setTitle("🚨 Possible Dupe Detected")
+            .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
             .setColor(color)
             .addFields(
                 { name: "Amount Owned", value: amountOwned.toLocaleString(), inline: true },
                 { name: "Playtime", value: playtime.toLocaleString(), inline: true },
-                { name: "Cash", value: cash.toLocaleString(), inline: true },
-                { name: "Severity", value: severity, inline: true }
+                { name: "Cash", value: cash.toLocaleString(), inline: true }
             )
-            .setFooter({ text: `Webhook/User ID: ${id}` })
+            .setFooter({ text: `User/Webhook ID: ${id}` })
             .setTimestamp();
 
-        // RED severity escalation
         let pingString = `<@${NORMAL_PING}>`;
-        if (severity === "RED") {
-            pingString += ` <@${ESCALATION_PING}>`;
-            embed.addFields({
-                name: "Escalation",
-                value: `🔴 RED severity triggered — escalation pinged.`,
-                inline: false
-            });
-        }
+        if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
 
-        channel.send({
+        await channel.send({
             content: pingString,
             embeds: [embed]
         });
