@@ -10,7 +10,7 @@ import {
 
 import "dotenv/config";
 
-import prefixHandler from "./prefixHandler.js";
+import prefixHandler from "./prefix.js";
 import alertHandler from "./dupe/alerts.js";
 import { resetCooldown } from "./dupe/cooldowns.js";
 import { getThreshold, setThreshold } from "./dupe/threshold.js";
@@ -32,7 +32,9 @@ const client = new Client({
 // ===============================
 client.on("messageCreate", async (msg) => {
     try {
-        if (msg.author?.bot) return;
+        // THIS IS THE CORRECT FILTER:
+        // Ignore normal bot messages, BUT ALLOW webhooks (Celestial logs)
+        if (msg.author?.bot && !msg.webhookId) return;
 
         prefixHandler(msg, client);
         alertHandler(msg, client);
