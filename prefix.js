@@ -12,6 +12,9 @@ import { getThreshold, setThreshold } from "./dupe/threshold.js";
 import { severityLevels, setSeverityLevel } from "./dupe/severity.js";
 
 export default async function prefixHandler(msg, client) {
+    // Prevent prefix handler from running on interactions or system messages
+    if (!msg || !msg.content || typeof msg.content !== "string") return;
+
     if (!msg.content.startsWith("!")) return;
 
     const args = msg.content.slice(1).trim().split(/ +/);
