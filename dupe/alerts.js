@@ -34,7 +34,7 @@ export default async function alertHandler(msg, client) {
     const content = msg.content;
 
     // ============================================================
-    //  TYPE A: FULL CELESTIAL MOVE LOGS (Corrected Regex)
+    //  FULL CELESTIAL MOVE LOGS ONLY
     // ============================================================
 
     const fullUser = content.match(/\*\*User:\*\*\s*(.+?)\s*\(ID:/i);
@@ -65,11 +65,13 @@ export default async function alertHandler(msg, client) {
       const playtime = fullPlaytime[1];
       const cash = fullCash[1];
 
+      // Threshold
       if (amountOwned < 20) {
         console.log("SKIPPED: Below threshold");
         return;
       }
 
+      // Dedupe
       const requestId = `FULL-${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
       const now = Date.now();
 
@@ -79,9 +81,11 @@ export default async function alertHandler(msg, client) {
       }
       recentRequests.set(requestId, now);
 
+      // Severity + color
       const severity = getSeverityLabel(amountOwned);
-      const color = getSeverityColor(amountOwned); // yellow now #f5e342
+      const color = getSeverityColor(severity);
 
+      // Cooldowns
       let cooldownSeconds = 0;
       if (severity === "YELLOW") cooldownSeconds = 240;
       else if (severity === "ORANGE") cooldownSeconds = 120;
@@ -96,6 +100,7 @@ export default async function alertHandler(msg, client) {
       const cooldownUnix = Math.floor(cooldownEnd / 1000);
       setCooldownEnd(playerId, cooldownEnd);
 
+      // Send alert
       const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
       if (!channel) return;
 
@@ -130,92 +135,6 @@ export default async function alertHandler(msg, client) {
       });
 
       console.log("FULL ALERT SENT");
-      return;
-    }
-
-    // ============================================================
-    //  TYPE B: SUSPICIOUS LOGS (Failed Inventory Lock)
-    // ============================================================
-
-    const suspiciousMatch = content.match(/SUSPICIOUS:\s*(.+?)\s+failed inventory lock\s+(\d+)\s+times/i);
-
-    if (suspiciousMatch) {
-      console.log("Detected SUSPICIOUS log");
-
-      const username = suspiciousMatch[1];
-      const fails = parseInt(suspiciousMatch[2]);
-
-      // ⭐ NEW: Threshold for suspicious logs
-      if (fails < 20) {
-        console.log("SKIPPED: Suspicious fails below threshold:", fails);
-        return;
-      }
-
-      const playerId = `SUS-${username.toLowerCase()}`;
-
-      const requestId = `SUS-${username}-${fails}`;
-      const now = Date.now();
-
-      if (recentRequests.has(requestId) && now - recentRequests.get(requestId) < 10000) {
-        console.log("SKIPPED: Duplicate SUSPICIOUS log");
-        return;
-      }
-      recentRequests.set(requestId, now);
-
-      // Severity based on fails
-      let severity = "YELLOW";
-      if (fails >= 30) severity = "ORANGE";
-      if (fails >= 50) severity = "RED";
-
-      const color =
-        severity === "RED" ? 0xff0000 :
-        severity === "ORANGE" ? 0xffa500 :
-        0xf5e342; // ⭐ updated yellow
-
-      // Cooldowns for suspicious logs
-      let cooldownSeconds = 60;
-      if (severity === "ORANGE") cooldownSeconds = 120;
-      if (severity === "RED") cooldownSeconds = 180;
-
-      if (isOnCooldown(playerId)) {
-        console.log("SKIPPED: Suspicious player on cooldown");
-        return;
-      }
-
-      const cooldownEnd = Date.now() + cooldownSeconds * 1000;
-      const cooldownUnix = Math.floor(cooldownEnd / 1000);
-      setCooldownEnd(playerId, cooldownEnd);
-
-      const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
-      if (!channel) return;
-
-      const embed = new EmbedBuilder()
-        .setTitle(`⚠️ Suspicious Activity — ${severity} severity`)
-        .setColor(color)
-        .addFields(
-          { name: "User", value: username },
-          { name: "Failed Inventory Locks", value: fails.toString(), inline: true },
-          { name: "Cooldown", value: `<t:${cooldownUnix}:R>` }
-        )
-        .setTimestamp();
-
-      const row = new ActionRowBuilder().addComponents(
-        new ButtonBuilder()
-          .setCustomId(`reset_${playerId}`)
-          .setLabel("Reset Cooldown")
-          .setStyle(ButtonStyle.Danger)
-      );
-
-      let pingString = `<@${NORMAL_PING}>`;
-      if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
-
-      await channel.send({
-        content: pingString,
-        embeds: [embed],
-        components: [row]
-      });
-
-      console.log("SUSPICIOUS ALERT SENT");
       return;
     }
 
