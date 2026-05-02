@@ -1,82 +1,97 @@
 import "dotenv/config";
-import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
+import {
+  Client,
+  GatewayIntentBits,
+  Partials,
+  Collection
+} from "discord.js";
 import express from "express";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Prefix handler
 import handlePrefix from "./prefix.js";
-
-// Dupe system (alerts)
+// Dupe alerts
 import handleAlert from "./dupe/alerts.js";
 
-// Slash command loader
-import fs from "fs";
-import path from "path";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-// Create client
 const client = new Client({
-    intents: [
-        GatewayIntentBits.Guilds,
-        GatewayIntentBits.GuildMessages,
-        GatewayIntentBits.MessageContent
-    ],
-    partials: [Partials.Channel]
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ],
+  partials: [Partials.Channel]
 });
 
-// Slash commands collection
 client.commands = new Collection();
 
-// Load slash commands from ./commands folder
-const commandsPath = path.join(process.cwd(), "commands");
-if (fs.existsSync(commandsPath)) {
-    const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
-    for (const file of commandFiles) {
-        const command = await import(`./commands/${file}`);
-        client.commands.set(command.default.data.name, command.default);
-    }
+async function loadCommands() {
+  const commandsPath = path.join(__dirname, "commands");
+  if (!fs.existsSync(commandsPath)) return;
+
+  const files = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
+  for (const file of files) {
+    const mod = await import(`./commands/${file}`);
+    const cmd = mod.default;
+    if (!cmd?.data?.name || typeof cmd.execute !== "function") continue;
+    client.commands.set(cmd.data.name, cmd);
+  }
+  console.log(`Loaded ${client.commands.size} slash commands`);
 }
 
-// Log ready
-client.once("ready", () => {
-    console.log("MAIN clientReady fired");
+client.once("ready", async () => {
+  console.log("MAIN clientReady fired");
+  await loadCommands();
+  console.log(`Logged in as ${client.user.tag}`);
 });
 
-// Prefix + webhook + dupe alerts
 client.on("messageCreate", async (msg) => {
-    console.log("MAIN messageCreate fired");
+  console.log("MAIN messageCreate fired");
 
-    // Ignore bot messages
-    if (msg.author.bot) return;
+  if (msg.author.bot) return;
 
-    // Prefix commands
-    if (msg.content.startsWith("!")) {
-        return handlePrefix(msg, client);
-    }
+  // Prefix commands
+  if (msg.content.startsWith("!")) {
+    return handlePrefix(msg, client);
+  }
 
-    // Webhook alerts (dupe system)
-    if (msg.webhookId) {
-        return handleAlert(msg, client);
-    }
+  // Webhook alerts (dupe system)
+  if (msg.webhookId) {
+    return handleAlert(msg, client);
+  }
 });
 
-// Slash command interactions
 client.on("interactionCreate", async (interaction) => {
-    if (!interaction.isChatInputCommand()) return;
+  if (!interaction.isChatInputCommand()) return;
 
-    const command = client.commands.get(interaction.commandName);
-    if (!command) return;
+  const command = client.commands.get(interaction.commandName);
+  if (!command) return;
 
-    try {
-        await command.default.execute(interaction, client);
-    } catch (err) {
-        console.error(err);
-        interaction.reply({ content: "Error executing command.", ephemeral: true });
+  try {
+    await command.execute(interaction, client);
+  } catch (err) {
+    console.error(err);
+    if (interaction.deferred || interaction.replied) {
+      await interaction.followUp({
+        content: "There was an error while executing this command.",
+        ephemeral: true
+      });
+    } else {
+      await interaction.reply({
+        content: "There was an error while executing this command.",
+        ephemeral: true
+      });
     }
+  }
 });
 
-// Login
 client.login(process.env.TOKEN);
 
-// Keep-alive server
+// keep-alive
 const app = express();
-app.get("/", (req, res) => res.send("Bot is running"));
+app.get("/", (_req, res) => res.send("Bot is running"));
 app.listen(10000, () => console.log("Fake web server running on port 10000"));
