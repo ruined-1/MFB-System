@@ -1,11 +1,5 @@
-// threshold.js
+export const THRESHOLD = 20;
 
-let threshold = 20;
-
-export function getThreshold() {
-    return threshold;
-}
-
-export function setThreshold(value) {
-    threshold = value;
+export function meetsThreshold(amount) {
+  return amount >= THRESHOLD;
 }
