@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Partials, Collection } from "discord.js";
+import { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } from "discord.js";
 import "dotenv/config";
 
 import prefixHandler from "./prefix.js";
@@ -19,7 +19,7 @@ client.commands = new Collection();
 
 client.on("messageCreate", async (msg) => {
     try {
-
+        // Allow webhook + humans, block bots
         if (msg.author.bot && !msg.webhookId) return;
 
         prefixHandler(msg, client);
@@ -30,8 +30,9 @@ client.on("messageCreate", async (msg) => {
     }
 });
 
-// messageUpdate REMOVED — prevents ghost alerts
-
+// ===============================
+// FIXED RESET BUTTON HANDLER
+// ===============================
 client.on("interactionCreate", async (interaction) => {
     try {
         if (!interaction.isButton()) return;
@@ -40,11 +41,21 @@ client.on("interactionCreate", async (interaction) => {
         const userId = interaction.customId.replace("reset_", "");
         const { resetCooldown } = await import("./dupe/cooldowns.js");
 
+        // Reset internal cooldown
         resetCooldown(userId);
 
-        await interaction.reply({
-            content: `Cooldown reset for <@${userId}>.`,
-            ephemeral: true
+        // Acknowledge button press WITHOUT replying
+        await interaction.deferUpdate();
+
+        // Edit the message to show cooldown ended
+        const msg = interaction.message;
+        const embed = EmbedBuilder.from(msg.embeds[0])
+            .setFooter({ text: `Cooldown reset by moderator • Player ID: ${userId}` })
+            .spliceFields(6, 1, { name: "=== Cooldown ===", value: "Ready", inline: false });
+
+        await msg.edit({
+            embeds: [embed],
+            components: [] // remove reset button
         });
 
     } catch (err) {
