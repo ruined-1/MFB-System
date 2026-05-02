@@ -8,9 +8,6 @@ import {
 import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
-// Global one-time send lock for alerts
-const sentAlerts = new Map();
-
 const ALERT_CHANNEL_ID = "1496324911084470473";
 const NORMAL_PING = "967946056572747776";
 const ESCALATION_PING = "750441339195490335";
@@ -21,9 +18,12 @@ const activeCountdowns = new Map();
 // Track recent request IDs to prevent duplicate alerts
 const recentRequests = new Map();
 
+// ⭐ One-time send lock (final fix)
+const sentAlerts = new Map();
+
 export default async function alertHandler(msg, client) {
     try {
-        // ⭐ Prevent double firing from webhook system events
+        // ⭐ Prevent webhook double-fire
         if (msg._mfbAlertHandled) return;
         msg._mfbAlertHandled = true;
 
@@ -66,12 +66,20 @@ export default async function alertHandler(msg, client) {
         // ⭐ BUILD REQUEST ID (dedupe key)
         const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
 
-        // ⭐ DEDUPE: If this request ID was seen recently, skip alert & force cooldown
+        // ⭐ ONE-TIME SEND LOCK — prevents identical alerts from being sent twice
         const now = Date.now();
+        if (sentAlerts.has(requestId)) {
+            const last = sentAlerts.get(requestId);
+            if (now - last < 10000) {
+                return; // skip sending duplicate alert entirely
+            }
+        }
+        sentAlerts.set(requestId, now);
+
+        // ⭐ DEDUPE: If this request ID was seen recently, skip alert & force cooldown
         if (recentRequests.has(requestId)) {
             const last = recentRequests.get(requestId);
             if (now - last < 10000) {
-                // Force cooldown without sending alert
                 const severity = getSeverityLabel(amountOwned, 0, 0);
                 let cooldownSeconds = 0;
                 if (severity === "YELLOW") cooldownSeconds = 240;
@@ -81,11 +89,10 @@ export default async function alertHandler(msg, client) {
                 const cooldownEnd = Date.now() + cooldownSeconds * 1000;
                 setCooldownEnd(playerId, cooldownEnd);
 
-                return; // Skip sending alert
+                return;
             }
         }
 
-        // Store request ID timestamp
         recentRequests.set(requestId, now);
 
         const severity = getSeverityLabel(amountOwned, 0, 0);
@@ -150,7 +157,6 @@ export default async function alertHandler(msg, client) {
 
         // LIVE COUNTDOWN LOOP
         const interval = setInterval(async () => {
-            // If reset happened, stop immediately
             if (!isOnCooldown(playerId)) {
                 clearInterval(interval);
                 activeCountdowns.delete(playerId);
