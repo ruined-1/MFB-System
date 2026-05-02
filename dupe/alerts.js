@@ -9,8 +9,8 @@ import { startCooldown, isOnCooldown, getRemaining } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "967946056572747776";
-const ESCALATION_PING = "750441339195490335";
+const NORMAL_PING = "";
+const ESCALATION_PING = "";
 
 export default async function alertHandler(msg, client) {
     try {
