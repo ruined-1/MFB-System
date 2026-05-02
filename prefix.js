@@ -8,8 +8,8 @@ import {
     PermissionFlagsBits
 } from "discord.js";
 
-import { getThreshold, setThreshold } from "./dupe/threshold.js";
-import { severityLevels, setSeverityLevel } from "./dupe/severity.js";
+import { getThreshold } from "./dupe/threshold.js";
+import { severityLevels } from "./dupe/severity.js";
 
 export default async function prefixHandler(msg, client) {
     // Prevent prefix handler from running on interactions or system messages
@@ -68,11 +68,11 @@ export default async function prefixHandler(msg, client) {
             new ButtonBuilder()
                 .setCustomId("orange_increase")
                 .setLabel("ORANGE +5")
-                .setStyle(ButtonStyle.Warning),
+                .setStyle(ButtonStyle.Secondary),
             new ButtonBuilder()
                 .setCustomId("orange_decrease")
                 .setLabel("ORANGE -5")
-                .setStyle(ButtonStyle.Warning)
+                .setStyle(ButtonStyle.Secondary)
         );
 
         const row4 = new ActionRowBuilder().addComponents(
