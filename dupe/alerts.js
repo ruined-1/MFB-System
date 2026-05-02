@@ -20,12 +20,16 @@ const recentRequests = new Map();
 
 export default async function alertHandler(msg, client) {
     try {
+        // ⭐ Prevent double firing from webhook system events
+        if (msg._mfbAlertHandled) return;
+        msg._mfbAlertHandled = true;
+
         // Ignore bot messages unless they are webhooks
         if (!msg.webhookId && msg.author?.bot) return;
 
         const content = msg.content;
 
-        // FULL LOG FILTER — prevents summary logs from triggering alerts
+        // ⭐ FULL LOG FILTER — prevents summary logs from triggering alerts
         if (
             !content.includes("User:") ||
             !content.includes("Brainrot:") ||
@@ -56,10 +60,10 @@ export default async function alertHandler(msg, client) {
         const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
         const cash = cashMatch ? cashMatch[1] : "Unknown";
 
-        // BUILD REQUEST ID (dedupe key)
+        // ⭐ BUILD REQUEST ID (dedupe key)
         const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
 
-        // DEDUPE: If this request ID was seen recently, skip alert & force cooldown
+        // ⭐ DEDUPE: If this request ID was seen recently, skip alert & force cooldown
         const now = Date.now();
         if (recentRequests.has(requestId)) {
             const last = recentRequests.get(requestId);
