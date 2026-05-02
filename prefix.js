@@ -2,6 +2,9 @@
 
 import {
     EmbedBuilder,
+    ActionRowBuilder,
+    ButtonBuilder,
+    ButtonStyle,
     PermissionFlagsBits
 } from "discord.js";
 
@@ -21,75 +24,68 @@ export default async function prefixHandler(msg, client) {
     }
 
     // ============================
-    // !threshold
+    // !settings — unified panel
     // ============================
-    if (command === "threshold") {
-        const current = getThreshold();
-
-        // Update threshold: !threshold 30
-        if (args[0] && !isNaN(parseInt(args[0]))) {
-            const newValue = parseInt(args[0]);
-            setThreshold(newValue);
-
-            const embed = new EmbedBuilder()
-                .setTitle("🔧 Threshold Updated")
-                .setColor(0x00ff99)
-                .addFields(
-                    { name: "Old Threshold", value: current.toString(), inline: true },
-                    { name: "New Threshold", value: newValue.toString(), inline: true }
-                )
-                .setTimestamp();
-
-            return msg.reply({ embeds: [embed] });
-        }
-
-        // Show current threshold
+    if (command === "settings") {
         const embed = new EmbedBuilder()
-            .setTitle("📊 Current Threshold")
-            .setColor(0x0099ff)
-            .setDescription(`**Threshold:** ${current}\n\nTo update:\n\`!threshold <number>\``)
-            .setTimestamp();
-
-        return msg.reply({ embeds: [embed] });
-    }
-
-    // ============================
-    // !severity
-    // ============================
-    if (command === "severity") {
-        const level = args[0]?.toUpperCase();
-        const newValue = parseInt(args[1]);
-
-        // Update severity: !severity yellow 30
-        if (level && ["YELLOW", "ORANGE", "RED"].includes(level) && !isNaN(newValue)) {
-            const oldValue = severityLevels[level];
-            setSeverityLevel(level, newValue);
-
-            const embed = new EmbedBuilder()
-                .setTitle("🔧 Severity Level Updated")
-                .setColor(0xffcc00)
-                .addFields(
-                    { name: "Severity", value: level, inline: true },
-                    { name: "Old Value", value: oldValue.toString(), inline: true },
-                    { name: "New Value", value: newValue.toString(), inline: true }
-                )
-                .setTimestamp();
-
-            return msg.reply({ embeds: [embed] });
-        }
-
-        // Show current severity settings
-        const embed = new EmbedBuilder()
-            .setTitle("📊 Current Severity Levels")
-            .setColor(0xff9900)
+            .setTitle("⚙️ MFB System Settings Panel")
+            .setColor(0x00aaff)
             .addFields(
-                { name: "🟡 YELLOW", value: severityLevels.YELLOW.toString(), inline: true },
-                { name: "🟠 ORANGE", value: severityLevels.ORANGE.toString(), inline: true },
-                { name: "🔴 RED", value: severityLevels.RED.toString(), inline: true }
+                { name: "📊 Threshold", value: `${getThreshold()}`, inline: false },
+                { name: "🟡 YELLOW Severity", value: `${severityLevels.YELLOW}`, inline: true },
+                { name: "🟠 ORANGE Severity", value: `${severityLevels.ORANGE}`, inline: true },
+                { name: "🔴 RED Severity", value: `${severityLevels.RED}`, inline: true }
             )
-            .setFooter({ text: "To update: !severity <yellow|orange|red> <number>" })
+            .setFooter({ text: "Use the buttons below to edit settings." })
             .setTimestamp();
 
-        return msg.reply({ embeds: [embed] });
+        const row1 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId("threshold_increase")
+                .setLabel("Threshold +5")
+                .setStyle(ButtonStyle.Primary),
+            new ButtonBuilder()
+                .setCustomId("threshold_decrease")
+                .setLabel("Threshold -5")
+                .setStyle(ButtonStyle.Primary)
+        );
+
+        const row2 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId("yellow_increase")
+                .setLabel("YELLOW +5")
+                .setStyle(ButtonStyle.Success),
+            new ButtonBuilder()
+                .setCustomId("yellow_decrease")
+                .setLabel("YELLOW -5")
+                .setStyle(ButtonStyle.Success)
+        );
+
+        const row3 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId("orange_increase")
+                .setLabel("ORANGE +5")
+                .setStyle(ButtonStyle.Warning),
+            new ButtonBuilder()
+                .setCustomId("orange_decrease")
+                .setLabel("ORANGE -5")
+                .setStyle(ButtonStyle.Warning)
+        );
+
+        const row4 = new ActionRowBuilder().addComponents(
+            new ButtonBuilder()
+                .setCustomId("red_increase")
+                .setLabel("RED +5")
+                .setStyle(ButtonStyle.Danger),
+            new ButtonBuilder()
+                .setCustomId("red_decrease")
+                .setLabel("RED -5")
+                .setStyle(ButtonStyle.Danger)
+        );
+
+        return msg.reply({
+            embeds: [embed],
+            components: [row1, row2, row3, row4]
+        });
     }
 }
