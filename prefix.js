@@ -1,125 +1,60 @@
-console.log("PREFIX HANDLER VERSION 3003");
+// prefix.js
 
-const vouches = new Map();
-const cooldowns = new Map();
-let cooldownDuration = 10;
+import { getThreshold, setThreshold } from "./dupe/threshold.js";
+import { severityLevels, setSeverityLevel } from "./dupe/severity.js";
 
-export default function prefixHandler(message, client) {
-  if (!message || !message.content) return;
+export default async function prefixHandler(msg, client) {
+    if (!msg.content.startsWith("!")) return;
 
-  // Prevent double firing
-  if (message._mfbPrefixHandled) return;
-  message._mfbPrefixHandled = true;
+    const args = msg.content.slice(1).trim().split(/ +/);
+    const command = args.shift().toLowerCase();
 
-  if (message.author?.bot) return;
+    // ============================
+    // !threshold
+    // ============================
+    if (command === "threshold") {
+        const current = getThreshold();
 
-  const prefix = "!";
-  if (!message.content.startsWith(prefix)) return;
+        // Update threshold: !threshold 30
+        if (args[0] && !isNaN(parseInt(args[0]))) {
+            const newValue = parseInt(args[0]);
+            setThreshold(newValue);
 
-  const args = message.content.slice(prefix.length).trim().split(/\s+/);
-  const cmd = args.shift()?.toLowerCase();
+            return msg.author.send(
+                `✅ Threshold updated.\n\n**Old:** ${current}\n**New:** ${newValue}`
+            );
+        }
 
-  console.log("COMMAND PARSED:", cmd);
-
-  // ⭐ TESTCMD
-  if (cmd === "testcmd") {
-    return message.channel.send("Test command fired.");
-  }
-
-  // ⭐ PING
-  if (cmd === "ping") {
-    return message.channel.send("Pong!");
-  }
-
-  // ⭐ VOUCH
-  if (cmd === "vouch") {
-    const target = message.mentions.users.first();
-
-    if (!target)
-      return message.channel.send("You must mention someone to vouch for.");
-
-    if (target.id === message.author.id)
-      return message.channel.send("You cannot vouch for yourself.");
-
-    const now = Date.now();
-    const last = cooldowns.get(message.author.id) || 0;
-    const diff = (now - last) / 1000;
-
-    if (diff < cooldownDuration) {
-      const remaining = Math.ceil(cooldownDuration - diff);
-      return message.channel.send(`You must wait **${remaining}s** before vouching again.`);
+        // Show current threshold
+        return msg.author.send(
+            `📊 **Current Threshold:** ${current}\n\nTo update it:\n\`!threshold <number>\``
+        );
     }
 
-    const current = vouches.get(target.id) || 0;
-    vouches.set(target.id, current + 1);
+    // ============================
+    // !severity
+    // ============================
+    if (command === "severity") {
+        const level = args[0]?.toUpperCase();
+        const newValue = parseInt(args[1]);
 
-    cooldowns.set(message.author.id, now);
+        // Update severity: !severity yellow 30
+        if (level && ["YELLOW", "ORANGE", "RED"].includes(level) && !isNaN(newValue)) {
+            const oldValue = severityLevels[level];
+            setSeverityLevel(level, newValue);
 
-    return message.channel.send(`You vouched for **${target.username}**!`);
-  }
+            return msg.author.send(
+                `🔧 Severity updated.\n\n**${level}** changed from **${oldValue}** → **${newValue}**`
+            );
+        }
 
-  // ⭐ VOUCHES
-  if (cmd === "vouches") {
-    const target = message.mentions.users.first() || message.author;
-    const count = vouches.get(target.id) || 0;
-
-    return message.channel.send(`**${target.username}** has **${count}** vouches.`);
-  }
-
-  // ⭐ LEADERBOARD
-  if (cmd === "leaderboard") {
-    if (vouches.size === 0)
-      return message.channel.send("No vouches yet.");
-
-    const sorted = [...vouches.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-
-    const text = sorted
-      .map(([id, count], i) => `**${i + 1}.** <@${id}> — **${count}** vouches`)
-      .join("\n");
-
-    return message.channel.send(`🏆 **Vouch Leaderboard**\n${text}`);
-  }
-
-  // ⭐ SET COOLDOWN
-  if (cmd === "setcooldown") {
-    const sec = parseInt(args[0]);
-    if (isNaN(sec) || sec < 0)
-      return message.channel.send("Invalid cooldown time.");
-
-    cooldownDuration = sec;
-    return message.channel.send(`Cooldown set to **${sec} seconds**.`);
-  }
-
-  // ⭐ SHOW COOLDOWN
-  if (cmd === "cooldown") {
-    return message.channel.send(`Current cooldown: **${cooldownDuration} seconds**.`);
-  }
-
-  // ⭐ RESET COOLDOWN
-  if (cmd === "resetcooldown") {
-    const target = message.mentions.users.first();
-    if (!target)
-      return message.channel.send("Mention a user to reset their cooldown.");
-
-    cooldowns.delete(target.id);
-    return message.channel.send(`Cooldown reset for **${target.username}**.`);
-  }
-
-  // ⭐ SHOW ALL COOLDOWNS
-  if (cmd === "cooldowns") {
-    if (cooldowns.size === 0)
-      return message.channel.send("No active cooldowns.");
-
-    const now = Date.now();
-    const text = [...cooldowns.entries()]
-      .map(([id, ts]) => {
-        const diff = Math.ceil(cooldownDuration - (now - ts) / 1000);
-        return `<@${id}> — ${diff > 0 ? diff : 0}s remaining`;
-      })
-      .join("\n");
-
-    return message.channel.send(`⏳ **Active Cooldowns:**\n${text}`);
-  }
+        // Show current severity settings
+        return msg.author.send(
+            `📊 **Current Severity Levels:**\n` +
+            `🟡 YELLOW: ${severityLevels.YELLOW}\n` +
+            `🟠 ORANGE: ${severityLevels.ORANGE}\n` +
+            `🔴 RED: ${severityLevels.RED}\n\n` +
+            `To update:\n\`!severity <yellow|orange|red> <number>\``
+        );
+    }
 }
