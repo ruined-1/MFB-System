@@ -16,8 +16,8 @@ import {
 } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "";
-const ESCALATION_PING = "";
+const NORMAL_PING = "967946056572747776";
+const ESCALATION_PING = "750441339195490335";
 
 const recentRequests = new Map();
 
@@ -80,7 +80,7 @@ export default async function alertHandler(msg, client) {
       recentRequests.set(requestId, now);
 
       const severity = getSeverityLabel(amountOwned);
-      const color = getSeverityColor(amountOwned);
+      const color = getSeverityColor(amountOwned); // yellow now #f5e342
 
       let cooldownSeconds = 0;
       if (severity === "YELLOW") cooldownSeconds = 240;
@@ -145,6 +145,12 @@ export default async function alertHandler(msg, client) {
       const username = suspiciousMatch[1];
       const fails = parseInt(suspiciousMatch[2]);
 
+      // ⭐ NEW: Threshold for suspicious logs
+      if (fails < 20) {
+        console.log("SKIPPED: Suspicious fails below threshold:", fails);
+        return;
+      }
+
       const playerId = `SUS-${username.toLowerCase()}`;
 
       const requestId = `SUS-${username}-${fails}`;
@@ -156,15 +162,17 @@ export default async function alertHandler(msg, client) {
       }
       recentRequests.set(requestId, now);
 
+      // Severity based on fails
       let severity = "YELLOW";
-      if (fails >= 10) severity = "ORANGE";
-      if (fails >= 20) severity = "RED";
+      if (fails >= 30) severity = "ORANGE";
+      if (fails >= 50) severity = "RED";
 
       const color =
         severity === "RED" ? 0xff0000 :
         severity === "ORANGE" ? 0xffa500 :
-        #f5e342;
+        0xf5e342; // ⭐ updated yellow
 
+      // Cooldowns for suspicious logs
       let cooldownSeconds = 60;
       if (severity === "ORANGE") cooldownSeconds = 120;
       if (severity === "RED") cooldownSeconds = 180;
