@@ -19,9 +19,6 @@ client.commands = new Collection();
 
 client.on("messageCreate", async (msg) => {
     try {
-        // Duplicate blocker
-        if (msg._dupeHandled) return;
-        msg._dupeHandled = true;
 
         if (msg.author.bot && !msg.webhookId) return;
 
