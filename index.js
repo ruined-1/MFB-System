@@ -17,22 +17,15 @@ const client = new Client({
 
 client.commands = new Collection();
 
-// ============================
-// ONLY LISTEN TO NEW MESSAGES
-// ============================
 client.on("messageCreate", async (msg) => {
     try {
-        // Debug (optional)
-        console.log("[messageCreate]", {
-            id: msg.id,
-            webhookId: msg.webhookId,
-            authorId: msg.author?.id,
-            authorBot: msg.author?.bot,
-            channelId: msg.channelId,
-            content: msg.content
-        });
+        // Duplicate blocker
+        if (msg._dupeHandled) {
+            console.log("[DUPLICATE BLOCKED in index.js] message ID:", msg.id);
+            return;
+        }
+        msg._dupeHandled = true;
 
-        // Ignore real bots, allow webhooks
         if (msg.author.bot && !msg.webhookId) return;
 
         prefixHandler(msg, client);
@@ -43,14 +36,7 @@ client.on("messageCreate", async (msg) => {
     }
 });
 
-// ============================
-// REMOVE messageUpdate COMPLETELY
-// (This was causing ghost alerts)
-// ============================
-// client.on("messageUpdate", async (_, msg) => {
-//     if (msg.partial) await msg.fetch();
-//     alertHandler(msg, client);
-// });
+// messageUpdate REMOVED — this was causing ghost alerts
 
 client.on("interactionCreate", async (interaction) => {
     try {
