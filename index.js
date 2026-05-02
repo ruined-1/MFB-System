@@ -20,10 +20,7 @@ client.commands = new Collection();
 client.on("messageCreate", async (msg) => {
     try {
         // Duplicate blocker
-        if (msg._dupeHandled) {
-            console.log("[DUPLICATE BLOCKED in index.js] message ID:", msg.id);
-            return;
-        }
+        if (msg._dupeHandled) return;
         msg._dupeHandled = true;
 
         if (msg.author.bot && !msg.webhookId) return;
@@ -36,7 +33,7 @@ client.on("messageCreate", async (msg) => {
     }
 });
 
-// messageUpdate REMOVED — this was causing ghost alerts
+// messageUpdate REMOVED — prevents ghost alerts
 
 client.on("interactionCreate", async (interaction) => {
     try {
