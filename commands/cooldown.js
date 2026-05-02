@@ -3,13 +3,7 @@ import {
   PermissionFlagsBits
 } from "discord.js";
 
-import {
-  isOnCooldown,
-  setCooldownEnd,
-  resetCooldown,
-  getRemaining
-} from "../dupe/cooldowns.js";
-
+import cooldownAPI from "../dupe/cooldownAPI.js";
 import buildCooldownMessage from "../dupe/cooldownEmbed.js";
 
 export default {
@@ -48,7 +42,7 @@ export default {
 
     // RESET
     if (reset) {
-      resetCooldown(id);
+      cooldownAPI.resetCooldown(id);
       return interaction.reply({
         content: `Cooldown reset for <@${id}>.`,
         ephemeral: true
@@ -58,11 +52,11 @@ export default {
     // SET
     if (typeof seconds === "number") {
       const end = Date.now() + seconds * 1000;
-      setCooldownEnd(id, end);
+      cooldownAPI.setCooldownEnd(id, end);
     }
 
     // NO COOLDOWN
-    if (!isOnCooldown(id)) {
+    if (!cooldownAPI.isOnCooldown(id)) {
       return interaction.reply({
         content: `<@${id}> is **not** on cooldown.`,
         ephemeral: true
@@ -78,9 +72,9 @@ export default {
       ephemeral: true
     });
 
-    // LIVE UPDATE LOOP (scoped to this command only)
+    // LIVE UPDATE LOOP
     const interval = setInterval(async () => {
-      const remaining = getRemaining(id);
+      const remaining = cooldownAPI.getRemaining(id);
 
       if (remaining <= 0) {
         clearInterval(interval);
