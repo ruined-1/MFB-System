@@ -4,6 +4,7 @@ import "dotenv/config";
 import prefixHandler from "./prefix.js";
 import alertHandler from "./dupe/alerts.js";
 import { resetCooldown } from "./dupe/cooldowns.js";
+import "./server.js"; // REQUIRED for Render
 
 const client = new Client({
     intents: [
