@@ -21,7 +21,7 @@ export function getSeverityColor(severity) {
     switch (severity) {
         case "RED": return 0xff0000;
         case "ORANGE": return 0xffa500;
-        case "YELLOW": return 0xffff00;
+        case "YELLOW": return 0xf5e342;
         default: return 0x00ff00;
     }
 }
