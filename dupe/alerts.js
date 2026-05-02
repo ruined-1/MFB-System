@@ -163,7 +163,7 @@ export default async function alertHandler(msg, client) {
       const color =
         severity === "RED" ? 0xff0000 :
         severity === "ORANGE" ? 0xffa500 :
-        0xffff00;
+        #f5e342;
 
       let cooldownSeconds = 60;
       if (severity === "ORANGE") cooldownSeconds = 120;
