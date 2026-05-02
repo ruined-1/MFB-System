@@ -17,29 +17,40 @@ const client = new Client({
 
 client.commands = new Collection();
 
+// ============================
+// ONLY LISTEN TO NEW MESSAGES
+// ============================
 client.on("messageCreate", async (msg) => {
-    // ============================
-    // DEBUG LOG
-    // ============================
-    console.log("[messageCreate DEBUG]", {
-        id: msg.id,
-        webhookId: msg.webhookId,
-        authorId: msg.author?.id,
-        authorBot: msg.author?.bot,
-        channelId: msg.channelId,
-        content: msg.content
-    });
+    try {
+        // Debug (optional)
+        console.log("[messageCreate]", {
+            id: msg.id,
+            webhookId: msg.webhookId,
+            authorId: msg.author?.id,
+            authorBot: msg.author?.bot,
+            channelId: msg.channelId,
+            content: msg.content
+        });
 
-    if (msg.author.bot && !msg.webhookId) return;
+        // Ignore real bots, allow webhooks
+        if (msg.author.bot && !msg.webhookId) return;
 
-    prefixHandler(msg, client);
-    alertHandler(msg, client);
+        prefixHandler(msg, client);
+        alertHandler(msg, client);
+
+    } catch (err) {
+        console.error("Error in messageCreate:", err);
+    }
 });
 
-client.on("messageUpdate", async (_, msg) => {
-    if (msg.partial) await msg.fetch();
-    alertHandler(msg, client);
-});
+// ============================
+// REMOVE messageUpdate COMPLETELY
+// (This was causing ghost alerts)
+// ============================
+// client.on("messageUpdate", async (_, msg) => {
+//     if (msg.partial) await msg.fetch();
+//     alertHandler(msg, client);
+// });
 
 client.on("interactionCreate", async (interaction) => {
     try {
