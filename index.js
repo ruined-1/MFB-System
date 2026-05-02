@@ -1,4 +1,5 @@
 import "./server.js";
+
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import alertHandler from "./dupe/alerts.js";
 import handlePrefix from "./prefix.js";
