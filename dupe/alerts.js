@@ -12,11 +12,12 @@ const ALERT_CHANNEL_ID = "1496324911084470473";
 const NORMAL_PING = "967946056572747776";
 const ESCALATION_PING = "750441339195490335";
 
-// Track active countdown intervals
+// Track active countdown intervals per player
 const activeCountdowns = new Map();
 
 export default async function alertHandler(msg, client) {
     try {
+        // Ignore bot messages unless they are webhooks
         if (!msg.webhookId && msg.author?.bot) return;
 
         const content = msg.content;
@@ -30,7 +31,7 @@ export default async function alertHandler(msg, client) {
             !content.includes("Playtime:") ||
             !content.includes("Cash:")
         ) {
-            return;
+            return; // Ignore summary logs
         }
 
         // Extract fields
@@ -106,13 +107,14 @@ export default async function alertHandler(msg, client) {
             components: [row]
         });
 
-        // Kill any previous countdown
+        // Kill any previous countdown for this player
         if (activeCountdowns.has(playerId)) {
             clearInterval(activeCountdowns.get(playerId));
         }
 
         // LIVE COUNTDOWN LOOP
         const interval = setInterval(async () => {
+            // If reset happened, stop immediately
             if (!isOnCooldown(playerId)) {
                 clearInterval(interval);
                 activeCountdowns.delete(playerId);
