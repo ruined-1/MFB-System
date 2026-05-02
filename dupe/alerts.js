@@ -8,96 +8,79 @@ import {
 import { isOnCooldown, getRemaining, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
-// Unique instance ID to detect double-running bots
-const INSTANCE_ID = Math.floor(Math.random() * 999999);
-
-console.log("ALERT HANDLER DEBUG MODE ENABLED — INSTANCE:", INSTANCE_ID);
-
 const ALERT_CHANNEL_ID = "1496324911084470473";
 const NORMAL_PING = "967946056572747776";
 const ESCALATION_PING = "750441339195490335";
 
+// Track active countdown intervals so reset can stop them
+const activeCountdowns = new Map();
+
 export default async function alertHandler(msg, client) {
     try {
-        // Debug: log every message that reaches alertHandler
-        console.log("\n==============================");
-        console.log("ALERT HANDLER TRIGGERED");
-        console.log("Instance:", INSTANCE_ID);
-        console.log("Message ID:", msg.id);
-        console.log("Webhook ID:", msg.webhookId || "None");
-        console.log("Author ID:", msg.author?.id);
-        console.log("Content snippet:", msg.content.slice(0, 50));
-        console.log("==============================");
+        if (!msg.webhookId && msg.author?.bot) return;
 
-        // Debug: check if message is from bot
-        if (msg.author?.bot && !msg.webhookId) {
-            console.log("IGNORED: Bot message (not webhook)");
+        const content = msg.content;
+
+        // Require FULL dupe log (prevents double alerts)
+        if (
+            !content.includes("Amount owned:") ||
+            !content.includes("User:") ||
+            !content.includes("Brainrot:")
+        ) {
             return;
         }
-
-        // Debug: check if message contains dupe pattern
-        if (!msg.content.toLowerCase().includes("amount owned")) {
-            console.log("IGNORED: Missing 'amount owned' pattern");
-            return;
-        }
-
-        console.log("MATCH: Dupe pattern detected");
 
         // Extract fields
-        const userMatch = msg.content.match(/User:\s*(.+?)\s*\(ID:/i);
-        const idMatch = msg.content.match(/ID:\s*(\d+)/i);
-        const amountMatch = msg.content.match(/Amount owned:\s*(\d+)/i);
+        const userMatch = content.match(/User:\s*(.+?)\s*\(ID:/i);
+        const idMatch = content.match(/ID:\s*(\d+)/i);
+        const brainrotMatch = content.match(/Brainrot:\s*(.+)/i);
+        const amountMatch = content.match(/Amount owned:\s*(\d+)/i);
+        const upgradeMatch = content.match(/Upgrade:\s*(\d+)/i);
+        const playtimeMatch = content.match(/Playtime:\s*(.+)/i);
+        const cashMatch = content.match(/Cash:\s*(.+)/i);
 
-        if (!idMatch || !amountMatch) {
-            console.log("IGNORED: Missing ID or amount");
-            return;
-        }
+        if (!idMatch || !amountMatch) return;
 
         const playerId = idMatch[1];
+        const username = userMatch ? userMatch[1] : "Unknown";
+        const brainrot = brainrotMatch ? brainrotMatch[1] : "Unknown";
         const amountOwned = parseInt(amountMatch[1]);
+        const upgrade = upgradeMatch ? upgradeMatch[1] : "Unknown";
+        const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
+        const cash = cashMatch ? cashMatch[1] : "Unknown";
 
-        console.log("Parsed Player ID:", playerId);
-        console.log("Parsed Amount:", amountOwned);
-
-        // Check cooldown
-        if (isOnCooldown(playerId)) {
-            console.log("IGNORED: Player is on cooldown");
-            return;
-        }
-
-        console.log("NO COOLDOWN: Alert will fire");
-
-        // Determine severity
         const severity = getSeverityLabel(amountOwned, 0, 0);
-        console.log("Severity:", severity);
+        const color = getSeverityColor(severity);
 
+        // Severity-based cooldown
         let cooldownSeconds = 0;
         if (severity === "YELLOW") cooldownSeconds = 240;
         else if (severity === "ORANGE") cooldownSeconds = 120;
         else if (severity === "RED") cooldownSeconds = 30;
 
-        console.log("Cooldown seconds:", cooldownSeconds);
-
         const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
-        if (!channel) {
-            console.log("ERROR: Alert channel not found");
-            return;
-        }
+        if (!channel) return;
+
+        if (isOnCooldown(playerId)) return;
 
         // Start cooldown
         const cooldownEnd = Date.now() + cooldownSeconds * 1000;
         setCooldownEnd(playerId, cooldownEnd);
 
-        console.log("Cooldown started. Ends at:", cooldownEnd);
-
         // Build embed
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
-            .setColor(getSeverityColor(severity))
+            .setColor(color)
             .addFields(
+                { name: "User", value: `${username} (ID: ${playerId})`, inline: false },
+                { name: "Brainrot", value: brainrot, inline: true },
+                { name: "Amount Owned", value: amountOwned.toString(), inline: true },
+                { name: "Upgrade", value: upgrade.toString(), inline: true },
+                { name: "Playtime", value: playtime, inline: false },
+                { name: "Cash", value: cash, inline: false },
                 { name: "=== Cooldown ===", value: `${cooldownSeconds}s remaining`, inline: false }
             )
-            .setFooter({ text: `Player ID: ${playerId} • Instance ${INSTANCE_ID}` })
+            .setFooter({ text: `Player ID: ${playerId}` })
             .setTimestamp();
 
         const row = new ActionRowBuilder().addComponents(
@@ -107,24 +90,38 @@ export default async function alertHandler(msg, client) {
                 .setStyle(ButtonStyle.Danger)
         );
 
-        console.log("Sending alert embed…");
+        // Ping logic
+        let pingString = "";
+        if (amountOwned >= 20) {
+            pingString = `<@${NORMAL_PING}>`;
+            if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
+        }
 
         const sentMessage = await channel.send({
+            content: pingString,
             embeds: [embed],
             components: [row]
         });
 
-        console.log("ALERT SENT SUCCESSFULLY");
+        // Kill any previous countdown for this player
+        if (activeCountdowns.has(playerId)) {
+            clearInterval(activeCountdowns.get(playerId));
+        }
 
         // LIVE COUNTDOWN LOOP
         const interval = setInterval(async () => {
+            // If reset happened, stop immediately
             if (!isOnCooldown(playerId)) {
-                console.log("Countdown stopped early — cooldown reset");
                 clearInterval(interval);
+                activeCountdowns.delete(playerId);
 
                 const finishedEmbed = EmbedBuilder.from(embed)
-                    .spliceFields(0, 1, { name: "=== Cooldown ===", value: "Ready", inline: false })
-                    .setFooter({ text: `Cooldown reset by moderator • Instance ${INSTANCE_ID}` });
+                    .spliceFields(6, 1, {
+                        name: "=== Cooldown ===",
+                        value: "Cooldown reset by moderator",
+                        inline: false
+                    })
+                    .setFooter({ text: `Cooldown reset by moderator • Player ID: ${playerId}` });
 
                 await sentMessage.edit({
                     embeds: [finishedEmbed],
@@ -137,11 +134,15 @@ export default async function alertHandler(msg, client) {
             const remaining = Math.max(0, Math.floor((cooldownEnd - Date.now()) / 1000));
 
             if (remaining <= 0) {
-                console.log("Countdown finished normally");
                 clearInterval(interval);
+                activeCountdowns.delete(playerId);
 
                 const finishedEmbed = EmbedBuilder.from(embed)
-                    .spliceFields(0, 1, { name: "=== Cooldown ===", value: "Ready", inline: false });
+                    .spliceFields(6, 1, {
+                        name: "=== Cooldown ===",
+                        value: "Ready",
+                        inline: false
+                    });
 
                 await sentMessage.edit({
                     embeds: [finishedEmbed],
@@ -151,10 +152,12 @@ export default async function alertHandler(msg, client) {
                 return;
             }
 
-            console.log("Countdown tick:", remaining);
-
             const updatedEmbed = EmbedBuilder.from(embed)
-                .spliceFields(0, 1, { name: "=== Cooldown ===", value: `${remaining}s remaining`, inline: false });
+                .spliceFields(6, 1, {
+                    name: "=== Cooldown ===",
+                    value: `${remaining}s remaining`,
+                    inline: false
+                });
 
             await sentMessage.edit({
                 embeds: [updatedEmbed],
@@ -163,8 +166,9 @@ export default async function alertHandler(msg, client) {
 
         }, 1000);
 
+        activeCountdowns.set(playerId, interval);
+
     } catch (err) {
-        console.error("ERROR IN ALERT HANDLER:", err);
-        console.error("STACK TRACE:", err.stack);
+        console.error("Error in alertHandler:", err);
     }
 }
