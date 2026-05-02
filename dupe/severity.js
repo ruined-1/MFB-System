@@ -1,6 +1,5 @@
 // severity.js
 
-// Editable severity levels
 export const severityLevels = {
     YELLOW: 20,
     ORANGE: 50,
