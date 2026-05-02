@@ -15,6 +15,9 @@ const ESCALATION_PING = "750441339195490335";
 // Track active countdown intervals per player
 const activeCountdowns = new Map();
 
+// Prevent double alerts from Celestial sending two full logs
+const recentAlerts = new Map();
+
 export default async function alertHandler(msg, client) {
     try {
         // Ignore bot messages unless they are webhooks
@@ -22,7 +25,7 @@ export default async function alertHandler(msg, client) {
 
         const content = msg.content;
 
-        // FULL LOG FILTER — prevents double alerts
+        // FULL LOG FILTER — prevents summary logs from triggering alerts
         if (
             !content.includes("User:") ||
             !content.includes("Brainrot:") ||
@@ -31,7 +34,7 @@ export default async function alertHandler(msg, client) {
             !content.includes("Playtime:") ||
             !content.includes("Cash:")
         ) {
-            return; // Ignore summary logs
+            return;
         }
 
         // Extract fields
@@ -52,6 +55,16 @@ export default async function alertHandler(msg, client) {
         const upgrade = upgradeMatch ? upgradeMatch[1] : "Unknown";
         const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
         const cash = cashMatch ? cashMatch[1] : "Unknown";
+
+        // DEDUPE LOCK — prevents Celestial double‑sending full logs
+        const now = Date.now();
+        if (recentAlerts.has(playerId)) {
+            const last = recentAlerts.get(playerId);
+            if (now - last < 3000) {
+                return; // ignore duplicate full log
+            }
+        }
+        recentAlerts.set(playerId, now);
 
         const severity = getSeverityLabel(amountOwned, 0, 0);
         const color = getSeverityColor(severity);
