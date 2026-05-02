@@ -14,18 +14,22 @@ const ESCALATION_PING = "750441339195490335";
 
 export default async function alertHandler(msg, client) {
     try {
-        if (!msg) return;
+        // ============================
+        // DEBUG LOG
+        // ============================
+        console.log("[alertHandler DEBUG]", {
+            webhookId: msg.webhookId,
+            authorId: msg.author?.id,
+            content: msg.content,
+            embeds: msg.embeds?.length || 0
+        });
 
         // Allow webhook messages, block ONLY real bots
         if (!msg.webhookId && msg.author?.bot) return;
 
-        // ============================
-        // READ ONLY RAW CONTENT (YESTERDAY'S BEHAVIOR)
-        // ============================
         const content = msg.content.toLowerCase();
         if (!content.includes("amount owned")) return;
 
-        // Extract numbers
         const numbers = msg.content.match(/\d[\d,]*/g);
         if (!numbers) return;
 
@@ -43,9 +47,6 @@ export default async function alertHandler(msg, client) {
 
         const id = msg.author?.id || msg.webhookId;
 
-        // ============================
-        // COOLDOWN CHECK (YESTERDAY'S VERSION)
-        // ============================
         if (isOnCooldown(id)) {
             const remaining = getRemaining(id);
 
@@ -72,12 +73,8 @@ export default async function alertHandler(msg, client) {
             return;
         }
 
-        // Start cooldown
         startCooldown(id);
 
-        // ============================
-        // NORMAL ALERT (YESTERDAY'S VERSION)
-        // ============================
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
             .setColor(color)
