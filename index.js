@@ -5,7 +5,9 @@ import {
     GatewayIntentBits,
     Partials,
     EmbedBuilder,
-    PermissionFlagsBits
+    PermissionFlagsBits,
+    ActionRowBuilder,
+    ButtonBuilder
 } from "discord.js";
 
 import "dotenv/config";
@@ -32,8 +34,7 @@ const client = new Client({
 // ===============================
 client.on("messageCreate", async (msg) => {
     try {
-        // THIS IS THE CORRECT FILTER:
-        // Ignore normal bot messages, BUT ALLOW webhooks (Celestial logs)
+        // Ignore normal bot messages, BUT ALLOW webhook messages (Celestial logs)
         if (msg.author?.bot && !msg.webhookId) return;
 
         prefixHandler(msg, client);
@@ -81,21 +82,26 @@ client.on("interactionCreate", async (interaction) => {
                 )
                 .setTimestamp();
 
-            const disabledComponents = interaction.message.components.map(row => {
-                return {
-                    ...row,
-                    components: row.components.map(comp => {
-                        if (comp.customId === id) {
-                            return { ...comp, disabled: true };
-                        }
-                        return comp;
-                    })
-                };
+            // Rebuild rows properly using builders
+            const newRows = interaction.message.components.map(row => {
+                const newRow = new ActionRowBuilder();
+
+                row.components.forEach(comp => {
+                    const btn = ButtonBuilder.from(comp);
+
+                    if (btn.data.custom_id === id) {
+                        btn.setDisabled(true);
+                    }
+
+                    newRow.addComponents(btn);
+                });
+
+                return newRow;
             });
 
             return interaction.update({
                 embeds: [embed],
-                components: disabledComponents
+                components: newRows
             });
         }
 
