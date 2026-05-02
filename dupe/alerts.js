@@ -5,7 +5,7 @@ import {
     EmbedBuilder
 } from "discord.js";
 
-import { startCooldown, isOnCooldown, getRemaining, setCooldownEnd } from "./cooldowns.js";
+import { isOnCooldown, getRemaining, setCooldownEnd, resetCooldown } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
