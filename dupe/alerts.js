@@ -9,8 +9,8 @@ import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "967946056572747776";
-const ESCALATION_PING = "750441339195490335";
+const NORMAL_PING = "775991906173452288";
+const ESCALATION_PING = "775991906173452288";
 
 // Track active countdown intervals per player
 const activeCountdowns = new Map();
@@ -18,40 +18,38 @@ const activeCountdowns = new Map();
 // Track recent request IDs to prevent duplicate alerts
 const recentRequests = new Map();
 
-// ⭐ One-time send lock (final fix)
+// One-time send lock
 const sentAlerts = new Map();
 
 export default async function alertHandler(msg, client) {
     try {
-        // ⭐ Prevent webhook double-fire
         if (msg._mfbAlertHandled) return;
         msg._mfbAlertHandled = true;
 
-        // Ignore bot messages unless they are webhooks
         if (!msg.webhookId && msg.author?.bot) return;
 
         const content = msg.content;
 
-        // ⭐ FULL LOG FILTER — prevents summary logs from triggering alerts
-        if (
-            !content.includes("User:") ||
-            !content.includes("Brainrot:") ||
-            !content.includes("Amount owned:") ||
-            !content.includes("Upgrade:") ||
-            !content.includes("Playtime:") ||
-            !content.includes("Cash:")
-        ) {
+        // ⭐ FLEXIBLE FULL LOG FILTER (bold or non-bold)
+        const hasUser = /(\*\*)?User:(\*\*)?/i.test(content);
+        const hasBrainrot = /(\*\*)?Brainrot:(\*\*)?/i.test(content);
+        const hasAmount = /(\*\*)?Amount owned:(\*\*)?/i.test(content);
+        const hasUpgrade = /(\*\*)?Upgrade:(\*\*)?/i.test(content);
+        const hasPlaytime = /(\*\*)?Playtime:(\*\*)?/i.test(content);
+        const hasCash = /(\*\*)?Cash:(\*\*)?/i.test(content);
+
+        if (!hasUser || !hasBrainrot || !hasAmount || !hasUpgrade || !hasPlaytime || !hasCash) {
             return;
         }
 
-        // Extract fields
-        const userMatch = content.match(/User:\s*(.+?)\s*\(ID:/i);
+        // ⭐ FLEXIBLE FIELD EXTRACTION (bold or non-bold)
+        const userMatch = content.match(/(?:\*\*)?User:(?:\*\*)?\s*(.+?)\s*\(ID:/i);
         const idMatch = content.match(/ID:\s*(\d+)/i);
-        const brainrotMatch = content.match(/Brainrot:\s*(.+)/i);
-        const amountMatch = content.match(/Amount owned:\s*(\d+)/i);
-        const upgradeMatch = content.match(/Upgrade:\s*(\d+)/i);
-        const playtimeMatch = content.match(/Playtime:\s*(.+)/i);
-        const cashMatch = content.match(/Cash:\s*(.+)/i);
+        const brainrotMatch = content.match(/(?:\*\*)?Brainrot:(?:\*\*)?\s*(.+)/i);
+        const amountMatch = content.match(/(?:\*\*)?Amount owned:(?:\*\*)?\s*(\d+)/i);
+        const upgradeMatch = content.match(/(?:\*\*)?Upgrade:(?:\*\*)?\s*(\d+)/i);
+        const playtimeMatch = content.match(/(?:\*\*)?Playtime:(?:\*\*)?\s*(.+)/i);
+        const cashMatch = content.match(/(?:\*\*)?Cash:(?:\*\*)?\s*(.+)/i);
 
         if (!idMatch || !amountMatch) return;
 
@@ -63,20 +61,18 @@ export default async function alertHandler(msg, client) {
         const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
         const cash = cashMatch ? cashMatch[1] : "Unknown";
 
-        // ⭐ BUILD REQUEST ID (dedupe key)
+        // Request ID
         const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
 
-        // ⭐ ONE-TIME SEND LOCK — prevents identical alerts from being sent twice
+        // One-time send lock
         const now = Date.now();
         if (sentAlerts.has(requestId)) {
             const last = sentAlerts.get(requestId);
-            if (now - last < 10000) {
-                return; // skip sending duplicate alert entirely
-            }
+            if (now - last < 10000) return;
         }
         sentAlerts.set(requestId, now);
 
-        // ⭐ DEDUPE: If this request ID was seen recently, skip alert & force cooldown
+        // Dedupe logic
         if (recentRequests.has(requestId)) {
             const last = recentRequests.get(requestId);
             if (now - last < 10000) {
@@ -88,7 +84,6 @@ export default async function alertHandler(msg, client) {
 
                 const cooldownEnd = Date.now() + cooldownSeconds * 1000;
                 setCooldownEnd(playerId, cooldownEnd);
-
                 return;
             }
         }
@@ -98,7 +93,6 @@ export default async function alertHandler(msg, client) {
         const severity = getSeverityLabel(amountOwned, 0, 0);
         const color = getSeverityColor(severity);
 
-        // Severity-based cooldown
         let cooldownSeconds = 0;
         if (severity === "YELLOW") cooldownSeconds = 240;
         else if (severity === "ORANGE") cooldownSeconds = 120;
@@ -109,11 +103,9 @@ export default async function alertHandler(msg, client) {
 
         if (isOnCooldown(playerId)) return;
 
-        // Start cooldown
         const cooldownEnd = Date.now() + cooldownSeconds * 1000;
         setCooldownEnd(playerId, cooldownEnd);
 
-        // Build embed
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
             .setColor(color)
@@ -137,7 +129,6 @@ export default async function alertHandler(msg, client) {
                 .setStyle(ButtonStyle.Danger)
         );
 
-        // Ping logic
         let pingString = "";
         if (amountOwned >= 20) {
             pingString = `<@${NORMAL_PING}>`;
@@ -150,12 +141,10 @@ export default async function alertHandler(msg, client) {
             components: [row]
         });
 
-        // Kill any previous countdown for this player
         if (activeCountdowns.has(playerId)) {
             clearInterval(activeCountdowns.get(playerId));
         }
 
-        // LIVE COUNTDOWN LOOP
         const interval = setInterval(async () => {
             if (!isOnCooldown(playerId)) {
                 clearInterval(interval);
