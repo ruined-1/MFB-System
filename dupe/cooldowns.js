@@ -1,22 +1,25 @@
-const cooldowns = new Map();
-const COOLDOWN_SECONDS = 30;
+// cooldowns.js
 
-export function startCooldown(id) {
-    cooldowns.set(id, Date.now());
+const cooldowns = new Map();
+
+// Set the cooldown end timestamp
+export function setCooldownEnd(id, timestamp) {
+    cooldowns.set(id, timestamp);
 }
 
+// Check if user is still on cooldown
 export function isOnCooldown(id) {
     if (!cooldowns.has(id)) return false;
-    const elapsed = (Date.now() - cooldowns.get(id)) / 1000;
-    return elapsed < COOLDOWN_SECONDS;
+    return Date.now() < cooldowns.get(id);
 }
 
+// Get remaining seconds
 export function getRemaining(id) {
     if (!cooldowns.has(id)) return 0;
-    const elapsed = (Date.now() - cooldowns.get(id)) / 1000;
-    return Math.max(0, COOLDOWN_SECONDS - elapsed);
+    return Math.max(0, Math.floor((cooldowns.get(id) - Date.now()) / 1000));
 }
 
+// Reset cooldown
 export function resetCooldown(id) {
     cooldowns.delete(id);
 }
