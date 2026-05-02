@@ -1,6 +1,16 @@
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 import alertHandler from "./dupe/alerts.js";
 import handlePrefix from "./prefix.js";
 import handleReset from "./dupe/resetCooldown.js";
+
+const client = new Client({
+  intents: [
+    GatewayIntentBits.Guilds,
+    GatewayIntentBits.GuildMessages,
+    GatewayIntentBits.MessageContent
+  ],
+  partials: [Partials.Channel]
+});
 
 client.on("messageCreate", async (msg) => {
   console.log("MAIN messageCreate fired");
@@ -28,3 +38,13 @@ client.on("messageCreate", async (msg) => {
     return;
   }
 });
+
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  if (interaction.customId.startsWith("reset_")) {
+    return handleReset(interaction);
+  }
+});
+
+client.login(process.env.TOKEN);
