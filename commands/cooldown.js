@@ -5,7 +5,6 @@ import {
 
 import {
   isOnCooldown,
-  getCooldownEnd,
   setCooldownEnd,
   resetCooldown,
   getRemaining
@@ -47,7 +46,7 @@ export default {
 
     const id = target.id;
 
-    // RESET COOLDOWN
+    // RESET
     if (reset) {
       resetCooldown(id);
       return interaction.reply({
@@ -56,7 +55,7 @@ export default {
       });
     }
 
-    // SET COOLDOWN
+    // SET
     if (typeof seconds === "number") {
       const end = Date.now() + seconds * 1000;
       setCooldownEnd(id, end);
@@ -79,7 +78,7 @@ export default {
       ephemeral: true
     });
 
-    // LIVE UPDATING LOOP (scoped to this command only)
+    // LIVE UPDATE LOOP (scoped to this command only)
     const interval = setInterval(async () => {
       const remaining = getRemaining(id);
 
