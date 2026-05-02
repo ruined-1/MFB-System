@@ -9,8 +9,8 @@ import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "775991906173452288";
-const ESCALATION_PING = "775991906173452288";
+const NORMAL_PING = "967946056572747776";
+const ESCALATION_PING = "750441339195490335";
 
 // Track recent request IDs to prevent duplicate alerts
 const recentRequests = new Map();
