@@ -42,7 +42,7 @@ client.on("interactionCreate", async (interaction) => {
 
         const msg = interaction.message;
 
-        // Updated field index (Request ID added)
+        // Cooldown field index = 7 (after Request ID)
         const embed = EmbedBuilder.from(msg.embeds[0])
             .spliceFields(7, 1, {
                 name: "=== Cooldown ===",
