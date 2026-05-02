@@ -2,9 +2,8 @@ import { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } from "d
 import "dotenv/config";
 
 import prefixHandler from "./prefix.js";
-import "./vouches.js";
 import alertHandler from "./dupe/alerts.js";
-import "./server.js";
+import { resetCooldown } from "./dupe/cooldowns.js";
 
 const client = new Client({
     intents: [
@@ -19,7 +18,6 @@ client.commands = new Collection();
 
 client.on("messageCreate", async (msg) => {
     try {
-        // Allow webhook + humans, block bots
         if (msg.author.bot && !msg.webhookId) return;
 
         prefixHandler(msg, client);
@@ -30,32 +28,30 @@ client.on("messageCreate", async (msg) => {
     }
 });
 
-// ===============================
-// FIXED RESET BUTTON HANDLER
-// ===============================
 client.on("interactionCreate", async (interaction) => {
     try {
         if (!interaction.isButton()) return;
         if (!interaction.customId.startsWith("reset_")) return;
 
         const userId = interaction.customId.replace("reset_", "");
-        const { resetCooldown } = await import("./dupe/cooldowns.js");
 
-        // Reset internal cooldown
         resetCooldown(userId);
 
-        // Acknowledge button press WITHOUT replying
         await interaction.deferUpdate();
 
-        // Edit the message to show cooldown ended
         const msg = interaction.message;
+
         const embed = EmbedBuilder.from(msg.embeds[0])
-            .setFooter({ text: `Cooldown reset by moderator • Player ID: ${userId}` })
-            .spliceFields(6, 1, { name: "=== Cooldown ===", value: "Ready", inline: false });
+            .spliceFields(6, 1, {
+                name: "=== Cooldown ===",
+                value: "Cooldown reset by moderator",
+                inline: false
+            })
+            .setFooter({ text: `Cooldown reset by moderator • Player ID: ${userId}` });
 
         await msg.edit({
             embeds: [embed],
-            components: [] // remove reset button
+            components: []
         });
 
     } catch (err) {
