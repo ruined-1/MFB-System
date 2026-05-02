@@ -53,11 +53,12 @@ export default async function alertHandler(msg, client) {
         const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
         if (!channel) return;
 
+        const id = msg.author?.id || msg.webhookId;
+
         // ============================
         // COOLDOWN CHECK (LIVE UPDATE)
         // ============================
-        if (isOnCooldown(msg.author?.id || msg.webhookId)) {
-            const id = msg.author?.id || msg.webhookId;
+        if (isOnCooldown(id)) {
             const cooldownMessage = buildCooldownMessage(id);
 
             const sent = await channel.send({
@@ -93,7 +94,7 @@ export default async function alertHandler(msg, client) {
         }
 
         // Start cooldown
-        startCooldown(msg.author?.id || msg.webhookId);
+        startCooldown(id);
 
         // ============================
         // NORMAL ALERT (NO COOLDOWN)
@@ -107,7 +108,7 @@ export default async function alertHandler(msg, client) {
                 { name: "Cash", value: cash.toLocaleString(), inline: true },
                 { name: "Severity", value: severity, inline: true }
             )
-            .setFooter({ text: `Webhook/User ID: ${msg.author?.id || msg.webhookId}` })
+            .setFooter({ text: `Webhook/User ID: ${id}` })
             .setTimestamp();
 
         // RED severity escalation
