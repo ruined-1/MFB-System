@@ -34,16 +34,16 @@ export default async function alertHandler(msg, client) {
     const content = msg.content;
 
     // ============================================================
-    //  TYPE A: FULL CELESTIAL LOGS (Amount Owned, Upgrade, Cash…)
+    //  TYPE A: FULL CELESTIAL MOVE LOGS (Corrected Regex)
     // ============================================================
 
-    const fullUser = content.match(/User:\s*(.+?)\s*\(ID:/i);
+    const fullUser = content.match(/\*\*User:\*\*\s*(.+?)\s*\(ID:/i);
     const fullId = content.match(/ID:\s*(\d+)/i);
-    const fullBrainrot = content.match(/Brainrot:\s*(.+)/i);
-    const fullAmount = content.match(/Amount owned:\s*(\d+)/i);
-    const fullUpgrade = content.match(/Upgrade:\s*(\d+)/i);
-    const fullPlaytime = content.match(/Playtime:\s*(.+)/i);
-    const fullCash = content.match(/Cash:\s*(.+)/i);
+    const fullBrainrot = content.match(/\*\*Brainrot:\*\*\s*(.+)/i);
+    const fullAmount = content.match(/\*\*Amount owned:\*\*\s*(\d+)/i);
+    const fullUpgrade = content.match(/\*\*Upgrade:\*\*\s*(\d+)/i);
+    const fullPlaytime = content.match(/\*\*Playtime:\*\*\s*([^\n]+)/i);
+    const fullCash = content.match(/\*\*Cash:\*\*\s*([^\n]+)/i);
 
     const isFullLog =
       fullUser &&
@@ -134,7 +134,7 @@ export default async function alertHandler(msg, client) {
     }
 
     // ============================================================
-    //  TYPE B: SUSPICIOUS LOGS (Failed inventory lock)
+    //  TYPE B: SUSPICIOUS LOGS (Failed Inventory Lock)
     // ============================================================
 
     const suspiciousMatch = content.match(/SUSPICIOUS:\s*(.+?)\s+failed inventory lock\s+(\d+)\s+times/i);
@@ -145,7 +145,6 @@ export default async function alertHandler(msg, client) {
       const username = suspiciousMatch[1];
       const fails = parseInt(suspiciousMatch[2]);
 
-      // No player ID in this log → use username as ID
       const playerId = `SUS-${username.toLowerCase()}`;
 
       const requestId = `SUS-${username}-${fails}`;
@@ -157,7 +156,6 @@ export default async function alertHandler(msg, client) {
       }
       recentRequests.set(requestId, now);
 
-      // Severity for suspicious logs
       let severity = "YELLOW";
       if (fails >= 10) severity = "ORANGE";
       if (fails >= 20) severity = "RED";
@@ -167,7 +165,7 @@ export default async function alertHandler(msg, client) {
         severity === "ORANGE" ? 0xffa500 :
         0xffff00;
 
-      let cooldownSeconds = 60; // shorter cooldown for suspicious logs
+      let cooldownSeconds = 60;
       if (severity === "ORANGE") cooldownSeconds = 120;
       if (severity === "RED") cooldownSeconds = 180;
 
