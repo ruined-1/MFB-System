@@ -1,5 +1,13 @@
 // cooldowns.js
 
+import {
+  isOnCooldown,
+  getCooldownEnd,
+  setCooldownEnd,
+  resetCooldown,
+  getRemaining
+} from "../dupe/cooldowns.js";
+
 const cooldowns = new Map();
 
 export function isOnCooldown(playerId) {
