@@ -66,6 +66,38 @@ client.on("messageCreate", async (msg) => {
 });
 
 client.on("interactionCreate", async (interaction) => {
+  // SETTINGS PANEL BUTTONS
+client.on("interactionCreate", async (interaction) => {
+  if (!interaction.isButton()) return;
+
+  const id = interaction.customId;
+
+  if (id === "settings_threshold") {
+    return interaction.reply({
+      content: "Use `/threshold` to view or set the dupe threshold.",
+      ephemeral: true
+    });
+  }
+
+  if (id === "settings_cooldowns") {
+    return interaction.reply({
+      content: "Use `/cooldown` to manage cooldowns.",
+      ephemeral: true
+    });
+  }
+
+  if (id === "settings_severity") {
+    return interaction.reply({
+      content: "Use `/severity` to test severity levels.",
+      ephemeral: true
+    });
+  }
+
+  if (id === "settings_vouchboard") {
+    const { default: leaderboard } = await import("./commands/vouchboard.js");
+    return leaderboard(interaction);
+  }
+});
   if (!interaction.isChatInputCommand()) return;
 
   const command = client.commands.get(interaction.commandName);
