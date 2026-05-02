@@ -27,11 +27,18 @@ const client = new Client({
     partials: [Partials.Message, Partials.Channel]
 });
 
+// ===============================
+// MESSAGE HANDLER
+// ===============================
 client.on("messageCreate", async (msg) => {
     try {
-        if (msg.author.bot && !msg.webhookId) return;
+        // SAFE: ignore only real bot accounts
+        if (msg.author?.bot) return;
 
+        // Prefix commands (settings panel)
         prefixHandler(msg, client);
+
+        // Alerts (DO NOT TOUCH)
         alertHandler(msg, client);
 
     } catch (err) {
@@ -39,6 +46,9 @@ client.on("messageCreate", async (msg) => {
     }
 });
 
+// ===============================
+// BUTTON INTERACTIONS (settings panel)
+// ===============================
 client.on("interactionCreate", async (interaction) => {
     try {
         if (!interaction.isButton()) return;
@@ -87,6 +97,9 @@ client.on("interactionCreate", async (interaction) => {
     }
 });
 
+// ===============================
+// READY
+// ===============================
 client.once("ready", () => {
     console.log(`Logged in as ${client.user.tag}`);
 });
