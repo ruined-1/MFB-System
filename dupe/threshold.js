@@ -1,6 +1,6 @@
 // threshold.js
 
-let threshold = 20; // default threshold
+let threshold = 20;
 
 export function getThreshold() {
     return threshold;
