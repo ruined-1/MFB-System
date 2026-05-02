@@ -10,32 +10,43 @@ import { getSeverityColor, getSeverityLabel } from "./severity.js";
 import buildCooldownMessage from "./cooldownEmbed.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473"; 
-const NORMAL_PING = "9679460565727477476"; 
+const NORMAL_PING = "967946056572747776"; 
 const ESCALATION_PING = "750441339195490335"; 
 
 export default async function alertHandler(msg, client) {
     try {
-        if (!msg || !msg.content) return;
-        // Allow webhooks, block ONLY real bots
-        if (msg.webhookId) {
-    // webhook messages ARE allowed
-        } else if (msg.author?.bot) {
-    return;
-}
+        if (!msg) return;
 
+        // Allow webhook messages, block ONLY real bots
+        if (!msg.webhookId && msg.author?.bot) return;
 
-        const content = msg.content.toLowerCase();
+        // ============================
+        // READ WEBHOOK CONTENT SAFELY
+        // ============================
+        const raw =
+            msg.content ||
+            msg.embeds?.[0]?.description ||
+            (msg.embeds?.[0]?.fields
+                ?.map(f => `${f.name}: ${f.value}`)
+                .join("\n")) ||
+            "";
+
+        const content = raw.toLowerCase();
+
+        // Only process logs that contain "amount owned"
         if (!/amount\s*owned/i.test(content)) return;
 
-        const numbers = content.match(/\d[\d,]*/g);
-        if (!numbers) return;
+        // Extract numbers safely
+        const numbers = raw.match(/\d[\d,]*/g);
+        if (!numbers || numbers.length === 0) return;
 
-        const cleaned = numbers.map(n => parseInt(n.replace(/,/g, ""), 10));
+        const cleanedNumbers = numbers.map(n => parseInt(n.replace(/,/g, ""), 10));
 
-        const amountOwned = cleaned[0] || 0;
-        const playtime = cleaned[1] || 0;
-        const cash = cleaned[2] || 0;
+        const amountOwned = cleanedNumbers[0] || 0;
+        const playtime = cleanedNumbers[1] || 0;
+        const cash = cleanedNumbers[2] || 0;
 
+        // Severity scoring
         const severity = getSeverityLabel(amountOwned, playtime, cash);
         const color = getSeverityColor(severity);
 
@@ -45,8 +56,9 @@ export default async function alertHandler(msg, client) {
         // ============================
         // COOLDOWN CHECK (LIVE UPDATE)
         // ============================
-        if (isOnCooldown(msg.author.id)) {
-            const cooldownMessage = buildCooldownMessage(msg.author.id);
+        if (isOnCooldown(msg.author?.id || msg.webhookId)) {
+            const id = msg.author?.id || msg.webhookId;
+            const cooldownMessage = buildCooldownMessage(id);
 
             const sent = await channel.send({
                 content: `<@${NORMAL_PING}>`,
@@ -55,7 +67,7 @@ export default async function alertHandler(msg, client) {
             });
 
             const interval = setInterval(async () => {
-                const left = getRemaining(msg.author.id);
+                const left = getRemaining(id);
 
                 if (left <= 0) {
                     clearInterval(interval);
@@ -63,14 +75,14 @@ export default async function alertHandler(msg, client) {
                         embeds: [
                             new EmbedBuilder()
                                 .setTitle("Cooldown Ended")
-                                .setDescription(`<@${msg.author.id}> is no longer on cooldown.`)
+                                .setDescription(`<@${id}> is no longer on cooldown.`)
                                 .setColor(0x00ff00)
                         ],
                         components: []
                     });
                 }
 
-                const updated = buildCooldownMessage(msg.author.id);
+                const updated = buildCooldownMessage(id);
                 await sent.edit({
                     embeds: [updated.embed],
                     components: updated.components
@@ -81,7 +93,7 @@ export default async function alertHandler(msg, client) {
         }
 
         // Start cooldown
-        startCooldown(msg.author.id);
+        startCooldown(msg.author?.id || msg.webhookId);
 
         // ============================
         // NORMAL ALERT (NO COOLDOWN)
@@ -95,7 +107,7 @@ export default async function alertHandler(msg, client) {
                 { name: "Cash", value: cash.toLocaleString(), inline: true },
                 { name: "Severity", value: severity, inline: true }
             )
-            .setFooter({ text: `User ID: ${msg.author.id}` })
+            .setFooter({ text: `Webhook/User ID: ${msg.author?.id || msg.webhookId}` })
             .setTimestamp();
 
         // RED severity escalation
