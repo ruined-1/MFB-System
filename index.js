@@ -50,6 +50,16 @@ client.once("ready", async () => {
 });
 
 client.on("messageCreate", async (msg) => {
+// WEBHOOK ALERTS
+  if (msg.webhookId) {
+  try {
+    await handleAlert(msg, client);
+  } catch (err) {
+    console.error("Alert error:", err);
+  }
+  return;
+}
+
   console.log("MAIN messageCreate fired");
 
   if (msg.author.bot) return;
