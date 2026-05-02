@@ -15,8 +15,8 @@ const ESCALATION_PING = "750441339195490335";
 // Track active countdown intervals per player
 const activeCountdowns = new Map();
 
-// Prevent double alerts from Celestial sending two full logs
-const recentAlerts = new Map();
+// Track recent request IDs to prevent duplicate alerts
+const recentRequests = new Map();
 
 export default async function alertHandler(msg, client) {
     try {
@@ -56,15 +56,30 @@ export default async function alertHandler(msg, client) {
         const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
         const cash = cashMatch ? cashMatch[1] : "Unknown";
 
-        // DEDUPE LOCK — prevents Celestial double‑sending full logs
+        // BUILD REQUEST ID (dedupe key)
+        const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
+
+        // DEDUPE: If this request ID was seen recently, skip alert & force cooldown
         const now = Date.now();
-        if (recentAlerts.has(playerId)) {
-            const last = recentAlerts.get(playerId);
-            if (now - last < 3000) {
-                return; // ignore duplicate full log
+        if (recentRequests.has(requestId)) {
+            const last = recentRequests.get(requestId);
+            if (now - last < 10000) {
+                // Force cooldown without sending alert
+                const severity = getSeverityLabel(amountOwned, 0, 0);
+                let cooldownSeconds = 0;
+                if (severity === "YELLOW") cooldownSeconds = 240;
+                else if (severity === "ORANGE") cooldownSeconds = 120;
+                else if (severity === "RED") cooldownSeconds = 30;
+
+                const cooldownEnd = Date.now() + cooldownSeconds * 1000;
+                setCooldownEnd(playerId, cooldownEnd);
+
+                return; // Skip sending alert
             }
         }
-        recentAlerts.set(playerId, now);
+
+        // Store request ID timestamp
+        recentRequests.set(requestId, now);
 
         const severity = getSeverityLabel(amountOwned, 0, 0);
         const color = getSeverityColor(severity);
@@ -95,6 +110,7 @@ export default async function alertHandler(msg, client) {
                 { name: "Upgrade", value: upgrade.toString(), inline: true },
                 { name: "Playtime", value: playtime, inline: false },
                 { name: "Cash", value: cash, inline: false },
+                { name: "Request ID", value: requestId, inline: false },
                 { name: "=== Cooldown ===", value: `${cooldownSeconds}s remaining`, inline: false }
             )
             .setFooter({ text: `Player ID: ${playerId}` })
@@ -133,7 +149,7 @@ export default async function alertHandler(msg, client) {
                 activeCountdowns.delete(playerId);
 
                 const finishedEmbed = EmbedBuilder.from(embed)
-                    .spliceFields(6, 1, {
+                    .spliceFields(7, 1, {
                         name: "=== Cooldown ===",
                         value: "Cooldown reset by moderator",
                         inline: false
@@ -155,7 +171,7 @@ export default async function alertHandler(msg, client) {
                 activeCountdowns.delete(playerId);
 
                 const finishedEmbed = EmbedBuilder.from(embed)
-                    .spliceFields(6, 1, {
+                    .spliceFields(7, 1, {
                         name: "=== Cooldown ===",
                         value: "Ready",
                         inline: false
@@ -170,7 +186,7 @@ export default async function alertHandler(msg, client) {
             }
 
             const updatedEmbed = EmbedBuilder.from(embed)
-                .spliceFields(6, 1, {
+                .spliceFields(7, 1, {
                     name: "=== Cooldown ===",
                     value: `${remaining}s remaining`,
                     inline: false
