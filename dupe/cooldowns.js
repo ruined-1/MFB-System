@@ -1,6 +1,5 @@
 // cooldowns.js
 
-// Stores cooldowns as: cooldowns[playerId] = timestamp (ms)
 const cooldowns = new Map();
 
 export function isOnCooldown(playerId) {
@@ -19,4 +18,10 @@ export function setCooldownEnd(playerId, timestamp) {
 
 export function resetCooldown(playerId) {
     cooldowns.delete(playerId);
+}
+
+export function getRemaining(playerId) {
+    const end = cooldowns.get(playerId);
+    if (!end) return 0;
+    return Math.max(0, (end - Date.now()) / 1000);
 }
