@@ -9,8 +9,8 @@ import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "967946056572747776";
-const ESCALATION_PING = "750441339195490335";
+const NORMAL_PING = "775991906173452288";
+const ESCALATION_PING = "775991906173452288";
 
 // Track recent request IDs to prevent duplicate alerts
 const recentRequests = new Map();
@@ -41,26 +41,29 @@ export default async function alertHandler(msg, client) {
             return;
         }
 
-        // SAFE FLEXIBLE FIELD EXTRACTION (bold or non-bold)
+        // SAFE, STRICT FIELD EXTRACTION
         const userMatch = content.match(/\*\*?User:\*\*?\s*(.+?)\s*\(ID:/i);
-        const idMatch = content.match(/ID:\s*(\d+)/i);
+        const idMatch = content.match(/ID:\s*(\d+)\b/i);
         const brainrotMatch = content.match(/\*\*?Brainrot:\*\*?\s*(.+)/i);
         const amountMatch = content.match(/\*\*?Amount owned:\*\*?\s*(\d+)\b/i);
         const upgradeMatch = content.match(/\*\*?Upgrade:\*\*?\s*(\d+)\b/i);
         const playtimeMatch = content.match(/\*\*?Playtime:\*\*?\s*(.+)/i);
         const cashMatch = content.match(/\*\*?Cash:\*\*?\s*(.+)/i);
 
-        if (!idMatch || !amountMatch) return;
+        // HARD VALIDATION — if anything is missing, ignore the log
+        if (!userMatch || !idMatch || !brainrotMatch || !amountMatch || !upgradeMatch || !playtimeMatch || !cashMatch) {
+            return;
+        }
 
         const playerId = idMatch[1];
-        const username = userMatch ? userMatch[1] : "Unknown";
-        const brainrot = brainrotMatch ? brainrotMatch[1] : "Unknown";
+        const username = userMatch[1];
+        const brainrot = brainrotMatch[1];
         const amountOwned = parseInt(amountMatch[1]);
-        const upgrade = upgradeMatch ? upgradeMatch[1] : "Unknown";
-        const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
-        const cash = cashMatch ? cashMatch[1] : "Unknown";
+        const upgrade = upgradeMatch[1];
+        const playtime = playtimeMatch[1];
+        const cash = cashMatch[1];
 
-        // Prevent NaN from breaking severity/pings
+        // Prevent NaN or broken values
         if (isNaN(amountOwned)) return;
 
         // Request ID (dedupe key)
@@ -104,6 +107,9 @@ export default async function alertHandler(msg, client) {
         const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
         if (!channel) return;
 
+        // THRESHOLD ENFORCEMENT — ONLY alert at 20+
+        if (amountOwned < 20) return;
+
         if (isOnCooldown(playerId)) return;
 
         // Start cooldown
@@ -140,12 +146,9 @@ export default async function alertHandler(msg, client) {
                 .setStyle(ButtonStyle.Danger)
         );
 
-        // Ping logic
-        let pingString = "";
-        if (amountOwned >= 20) {
-            pingString = `<@${NORMAL_PING}>`;
-            if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
-        }
+        // PING LOGIC — ONLY when amountOwned >= 20
+        let pingString = `<@${NORMAL_PING}>`;
+        if (severity === "RED") pingString += ` <@${ESCALATION_PING}>`;
 
         await channel.send({
             content: pingString,
