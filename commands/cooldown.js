@@ -1,5 +1,16 @@
-import { SlashCommandBuilder, PermissionFlagsBits } from "discord.js";
-import { isOnCooldown, getCooldownEnd, setCooldownEnd, resetCooldown } from "../dupe/cooldowns.js";
+import {
+  SlashCommandBuilder,
+  PermissionFlagsBits
+} from "discord.js";
+
+import {
+  isOnCooldown,
+  getCooldownEnd,
+  setCooldownEnd,
+  resetCooldown,
+  getRemaining
+} from "../dupe/cooldowns.js";
+
 import buildCooldownMessage from "../dupe/cooldownEmbed.js";
 
 export default {
@@ -21,6 +32,7 @@ export default {
         .setDescription("Reset this user's cooldown")
         .setRequired(false)
     ),
+
   async execute(interaction) {
     const target = interaction.options.getUser("user");
     const seconds = interaction.options.getInteger("seconds");
@@ -35,6 +47,7 @@ export default {
 
     const id = target.id;
 
+    // RESET COOLDOWN
     if (reset) {
       resetCooldown(id);
       return interaction.reply({
@@ -43,11 +56,13 @@ export default {
       });
     }
 
+    // SET COOLDOWN
     if (typeof seconds === "number") {
       const end = Date.now() + seconds * 1000;
       setCooldownEnd(id, end);
     }
 
+    // NO COOLDOWN
     if (!isOnCooldown(id)) {
       return interaction.reply({
         content: `<@${id}> is **not** on cooldown.`,
@@ -55,22 +70,31 @@ export default {
       });
     }
 
+    // INITIAL EMBED
     const { embed, components } = buildCooldownMessage(id);
+
     await interaction.reply({
       embeds: [embed],
       components,
       ephemeral: true
     });
+
+    // LIVE UPDATING LOOP (scoped to this command only)
+    const interval = setInterval(async () => {
+      const remaining = getRemaining(id);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        return;
+      }
+
+      const { embed, components } = buildCooldownMessage(id);
+
+      try {
+        await interaction.editReply({ embeds: [embed], components });
+      } catch {
+        clearInterval(interval);
+      }
+    }, 1000);
   }
 };
-// LIVE UPDATING LOOP
-setInterval(async () => {
-  const remaining = getRemaining(id);
-  if (remaining <= 0) return;
-
-  const { embed, components } = buildCooldownMessage(id);
-  try {
-    await interaction.editReply({ embeds: [embed], components });
-  } catch {}
-}, 1000);
-
