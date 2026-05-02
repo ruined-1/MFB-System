@@ -9,8 +9,8 @@ import { isOnCooldown, setCooldownEnd } from "./cooldowns.js";
 import { getSeverityColor, getSeverityLabel } from "./severity.js";
 
 const ALERT_CHANNEL_ID = "1496324911084470473";
-const NORMAL_PING = "775991906173452288";
-const ESCALATION_PING = "775991906173452288";
+const NORMAL_PING = "967946056572747776";
+const ESCALATION_PING = "750441339195490335";
 
 // Track active countdown intervals per player
 const activeCountdowns = new Map();
@@ -31,25 +31,25 @@ export default async function alertHandler(msg, client) {
         const content = msg.content;
 
         // ⭐ FLEXIBLE FULL LOG FILTER (bold or non-bold)
-        const hasUser = /(\*\*)?User:(\*\*)?/i.test(content);
-        const hasBrainrot = /(\*\*)?Brainrot:(\*\*)?/i.test(content);
-        const hasAmount = /(\*\*)?Amount owned:(\*\*)?/i.test(content);
-        const hasUpgrade = /(\*\*)?Upgrade:(\*\*)?/i.test(content);
-        const hasPlaytime = /(\*\*)?Playtime:(\*\*)?/i.test(content);
-        const hasCash = /(\*\*)?Cash:(\*\*)?/i.test(content);
+        const hasUser = /\*\*?User:\*\*?/i.test(content);
+        const hasBrainrot = /\*\*?Brainrot:\*\*?/i.test(content);
+        const hasAmount = /\*\*?Amount owned:\*\*?/i.test(content);
+        const hasUpgrade = /\*\*?Upgrade:\*\*?/i.test(content);
+        const hasPlaytime = /\*\*?Playtime:\*\*?/i.test(content);
+        const hasCash = /\*\*?Cash:\*\*?/i.test(content);
 
         if (!hasUser || !hasBrainrot || !hasAmount || !hasUpgrade || !hasPlaytime || !hasCash) {
             return;
         }
 
-        // ⭐ FLEXIBLE FIELD EXTRACTION (bold or non-bold)
-        const userMatch = content.match(/(?:\*\*)?User:(?:\*\*)?\s*(.+?)\s*\(ID:/i);
+        // ⭐ SAFE FLEXIBLE FIELD EXTRACTION (bold or non-bold)
+        const userMatch = content.match(/\*\*?User:\*\*?\s*(.+?)\s*\(ID:/i);
         const idMatch = content.match(/ID:\s*(\d+)/i);
-        const brainrotMatch = content.match(/(?:\*\*)?Brainrot:(?:\*\*)?\s*(.+)/i);
-        const amountMatch = content.match(/(?:\*\*)?Amount owned:(?:\*\*)?\s*(\d+)/i);
-        const upgradeMatch = content.match(/(?:\*\*)?Upgrade:(?:\*\*)?\s*(\d+)/i);
-        const playtimeMatch = content.match(/(?:\*\*)?Playtime:(?:\*\*)?\s*(.+)/i);
-        const cashMatch = content.match(/(?:\*\*)?Cash:(?:\*\*)?\s*(.+)/i);
+        const brainrotMatch = content.match(/\*\*?Brainrot:\*\*?\s*(.+)/i);
+        const amountMatch = content.match(/\*\*?Amount owned:\*\*?\s*(\d+)/i);
+        const upgradeMatch = content.match(/\*\*?Upgrade:\*\*?\s*(\d+)/i);
+        const playtimeMatch = content.match(/\*\*?Playtime:\*\*?\s*(.+)/i);
+        const cashMatch = content.match(/\*\*?Cash:\*\*?\s*(.+)/i);
 
         if (!idMatch || !amountMatch) return;
 
@@ -60,6 +60,9 @@ export default async function alertHandler(msg, client) {
         const upgrade = upgradeMatch ? upgradeMatch[1] : "Unknown";
         const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
         const cash = cashMatch ? cashMatch[1] : "Unknown";
+
+        // ⭐ SAFETY: Prevent NaN from breaking severity/pings
+        if (isNaN(amountOwned)) return;
 
         // Request ID
         const requestId = `${playerId}-${brainrot}-${amountOwned}-${upgrade}-${playtime}-${cash}`;
