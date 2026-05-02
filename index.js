@@ -32,13 +32,9 @@ const client = new Client({
 // ===============================
 client.on("messageCreate", async (msg) => {
     try {
-        // Ignore only real bot accounts
         if (msg.author?.bot) return;
 
-        // Prefix commands (settings panel)
         prefixHandler(msg, client);
-
-        // Alerts (unchanged)
         alertHandler(msg, client);
 
     } catch (err) {
@@ -69,10 +65,8 @@ client.on("interactionCreate", async (interaction) => {
         if (id.startsWith("reset_")) {
             const playerId = id.replace("reset_", "");
 
-            // Clear cooldown for this player
             resetCooldown(playerId);
 
-            // Clone the existing embed
             const oldEmbed = interaction.message.embeds[0];
             const embed = EmbedBuilder.from(oldEmbed)
                 .setFields(
@@ -85,7 +79,6 @@ client.on("interactionCreate", async (interaction) => {
                 )
                 .setTimestamp();
 
-            // Disable the button after use
             const disabledComponents = interaction.message.components.map(row => {
                 return {
                     ...row,
@@ -107,11 +100,9 @@ client.on("interactionCreate", async (interaction) => {
         // ============================
         // SETTINGS PANEL BUTTONS
         // ============================
-        // Threshold buttons
         if (id === "threshold_increase") setThreshold(getThreshold() + 5);
         if (id === "threshold_decrease") setThreshold(getThreshold() - 5);
 
-        // Severity buttons
         if (id === "yellow_increase") setSeverityLevel("YELLOW", severityLevels.YELLOW + 5);
         if (id === "yellow_decrease") setSeverityLevel("YELLOW", severityLevels.YELLOW - 5);
 
@@ -121,7 +112,6 @@ client.on("interactionCreate", async (interaction) => {
         if (id === "red_increase") setSeverityLevel("RED", severityLevels.RED + 5);
         if (id === "red_decrease") setSeverityLevel("RED", severityLevels.RED - 5);
 
-        // Update settings panel embed
         if (
             id === "threshold_increase" ||
             id === "threshold_decrease" ||
