@@ -19,38 +19,42 @@ export default async function alertHandler(msg, client) {
         // Allow webhook messages, block ONLY real bots
         if (!msg.webhookId && msg.author?.bot) return;
 
-        // ============================
-        // Celestial-only detection
-        // ============================
-        const content = msg.content.toLowerCase();
-        if (!/amount\s*owned/i.test(content)) return;
+        const content = msg.content;
+
+        // Only process Celestial logs
+        if (!content.toLowerCase().includes("amount owned")) return;
 
         // ============================
-        // Extract player ID from log
+        // EXTRACT FIELDS EXACTLY AS WEBHOOK SHOWS THEM
         // ============================
-        const idMatch = msg.content.match(/ID:\s*(\d+)/i);
-        if (!idMatch) return;
 
-        const playerId = idMatch[1]; // <-- PER-USER COOLDOWN KEY
+        const userMatch = content.match(/User:\s*(.+?)\s*\(ID:/i);
+        const idMatch = content.match(/ID:\s*(\d+)/i);
+        const brainrotMatch = content.match(/Brainrot:\s*(.+)/i);
+        const amountMatch = content.match(/Amount owned:\s*(\d+)/i);
+        const upgradeMatch = content.match(/Upgrade:\s*(\d+)/i);
+        const playtimeMatch = content.match(/Playtime:\s*(.+)/i);
+        const cashMatch = content.match(/Cash:\s*(.+)/i);
 
-        // Extract numbers
-        const numbers = msg.content.match(/\d[\d,]*/g);
-        if (!numbers) return;
+        if (!idMatch || !amountMatch) return;
 
-        const cleaned = numbers.map(n => parseInt(n.replace(/,/g, ""), 10));
+        const playerId = idMatch[1];
+        const username = userMatch ? userMatch[1] : "Unknown";
+        const brainrot = brainrotMatch ? brainrotMatch[1] : "Unknown";
+        const amountOwned = parseInt(amountMatch[1]);
+        const upgrade = upgradeMatch ? upgradeMatch[1] : "Unknown";
+        const playtime = playtimeMatch ? playtimeMatch[1] : "Unknown";
+        const cash = cashMatch ? cashMatch[1] : "Unknown";
 
-        const amountOwned = cleaned[1] || 0; // first number is player ID
-        const playtime = cleaned[2] || 0;
-        const cash = cleaned[3] || 0;
-
-        const severity = getSeverityLabel(amountOwned, playtime, cash);
+        // Severity based on amountOwned (your rules)
+        const severity = getSeverityLabel(amountOwned, 0, 0);
         const color = getSeverityColor(severity);
 
         const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
         if (!channel) return;
 
         // ============================
-        // PER-USER COOLDOWN CHECK
+        // PER-USER COOLDOWN
         // ============================
         if (isOnCooldown(playerId)) {
             const remaining = getRemaining(playerId);
@@ -82,15 +86,18 @@ export default async function alertHandler(msg, client) {
         startCooldown(playerId);
 
         // ============================
-        // NORMAL ALERT
+        // BUILD ALERT EMBED EXACTLY LIKE WEBHOOK
         // ============================
         const embed = new EmbedBuilder()
             .setTitle(`🚨 Possible Dupe Detected — ${severity} severity`)
             .setColor(color)
             .addFields(
-                { name: "Amount Owned", value: amountOwned.toLocaleString(), inline: true },
-                { name: "Playtime", value: playtime.toLocaleString(), inline: true },
-                { name: "Cash", value: cash.toLocaleString(), inline: true }
+                { name: "User", value: `${username} (ID: ${playerId})`, inline: false },
+                { name: "Brainrot", value: brainrot, inline: true },
+                { name: "Amount Owned", value: amountOwned.toString(), inline: true },
+                { name: "Upgrade", value: upgrade.toString(), inline: true },
+                { name: "Playtime", value: playtime, inline: false },
+                { name: "Cash", value: cash, inline: false }
             )
             .setFooter({ text: `Player ID: ${playerId}` })
             .setTimestamp();
