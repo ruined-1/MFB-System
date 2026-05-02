@@ -1,10 +1,22 @@
-import { Client, GatewayIntentBits, Partials, Collection, EmbedBuilder } from "discord.js";
+// index.js
+
+import {
+    Client,
+    GatewayIntentBits,
+    Partials,
+    EmbedBuilder,
+    PermissionFlagsBits
+} from "discord.js";
+
 import "dotenv/config";
 
 import prefixHandler from "./prefix.js";
 import alertHandler from "./dupe/alerts.js";
 import { resetCooldown } from "./dupe/cooldowns.js";
-import "./server.js"; // REQUIRED for Render
+import { getThreshold, setThreshold } from "./dupe/threshold.js";
+import { severityLevels, setSeverityLevel } from "./dupe/severity.js";
+
+import "./server.js";
 
 const client = new Client({
     intents: [
@@ -14,8 +26,6 @@ const client = new Client({
     ],
     partials: [Partials.Message, Partials.Channel]
 });
-
-client.commands = new Collection();
 
 client.on("messageCreate", async (msg) => {
     try {
@@ -32,32 +42,48 @@ client.on("messageCreate", async (msg) => {
 client.on("interactionCreate", async (interaction) => {
     try {
         if (!interaction.isButton()) return;
-        if (!interaction.customId.startsWith("reset_")) return;
 
-        const userId = interaction.customId.replace("reset_", "");
+        const member = interaction.guild.members.cache.get(interaction.user.id);
+        if (!member.permissions.has(PermissionFlagsBits.ManageGuild)) {
+            return interaction.reply({
+                content: "❌ You need **Manage Server** permissions to edit settings.",
+                ephemeral: true
+            });
+        }
 
-        resetCooldown(userId);
+        const id = interaction.customId;
 
-        await interaction.deferUpdate();
+        // Threshold buttons
+        if (id === "threshold_increase") setThreshold(getThreshold() + 5);
+        if (id === "threshold_decrease") setThreshold(getThreshold() - 5);
 
-        const msg = interaction.message;
+        // Severity buttons
+        if (id === "yellow_increase") setSeverityLevel("YELLOW", severityLevels.YELLOW + 5);
+        if (id === "yellow_decrease") setSeverityLevel("YELLOW", severityLevels.YELLOW - 5);
 
-        // Cooldown field index = 7 (after Request ID)
-        const embed = EmbedBuilder.from(msg.embeds[0])
-            .spliceFields(7, 1, {
-                name: "=== Cooldown ===",
-                value: "Cooldown reset by moderator",
-                inline: false
-            })
-            .setFooter({ text: `Cooldown reset by moderator • Player ID: ${userId}` });
+        if (id === "orange_increase") setSeverityLevel("ORANGE", severityLevels.ORANGE + 5);
+        if (id === "orange_decrease") setSeverityLevel("ORANGE", severityLevels.ORANGE - 5);
 
-        await msg.edit({
+        if (id === "red_increase") setSeverityLevel("RED", severityLevels.RED + 5);
+        if (id === "red_decrease") setSeverityLevel("RED", severityLevels.RED - 5);
+
+        // Update embed
+        const embed = EmbedBuilder.from(interaction.message.embeds[0])
+            .setFields(
+                { name: "📊 Threshold", value: `${getThreshold()}`, inline: false },
+                { name: "🟡 YELLOW Severity", value: `${severityLevels.YELLOW}`, inline: true },
+                { name: "🟠 ORANGE Severity", value: `${severityLevels.ORANGE}`, inline: true },
+                { name: "🔴 RED Severity", value: `${severityLevels.RED}`, inline: true }
+            )
+            .setTimestamp();
+
+        await interaction.update({
             embeds: [embed],
-            components: []
+            components: interaction.message.components
         });
 
     } catch (err) {
-        console.error("Error handling reset cooldown button:", err);
+        console.error("Error in interactionCreate:", err);
     }
 });
 
