@@ -1,3 +1,5 @@
+import { boostCommand } from "./boostTracker.js";
+
 export default async function prefix(msg, client) {
   // Ignore bots and empty messages
   if (!msg || !msg.content) return;
@@ -74,8 +76,13 @@ export default async function prefix(msg, client) {
     return client.thresholdSystem.setThreshold(msg, args);
   }
 
+  // !boosts
+  if (command === "boosts") {
+    return boostCommand(msg);
+  }
+
   // Unknown command
   return msg.reply(
-    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!cooldowns`, `!severity`, `!threshold`."
+    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!cooldowns`, `!severity`, `!threshold`, `!boosts`."
   );
 }
