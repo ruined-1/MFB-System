@@ -3,7 +3,7 @@ import { EmbedBuilder } from "discord.js";
 import fs from "fs";
 
 const DATA_FILE = "./data/vouches.json";
-
+console.log("LOADED VOUCH SYSTEM FROM:", import.meta.url);
 // ============================================================
 // SAFE LOAD + ATOMIC SAVE
 // ============================================================
