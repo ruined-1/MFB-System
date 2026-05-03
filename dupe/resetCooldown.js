@@ -1,5 +1,4 @@
 // resetCooldown.js
-
 export default async function resetCooldown(interaction, client) {
   if (!interaction.isButton()) return;
 
