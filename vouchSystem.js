@@ -80,7 +80,30 @@ export default class VouchSystem {
       )
       .setTimestamp();
 
-    return msg.reply({ embeds: [embed] });
+    // Send success embed
+    await msg.reply({ embeds: [embed] });
+
+    // ============================
+    // LOG TO CHANNEL 1500564029444325416
+    // ============================
+    const logChannel = msg.client.channels.cache.get("1500564029444325416");
+    if (logChannel) {
+      const logEmbed = new EmbedBuilder()
+        .setColor("#00ff88")
+        .setTitle("Vouch Logged")
+        .setThumbnail(target.displayAvatarURL({ size: 256 }))
+        .addFields(
+          { name: "Vouched User", value: `<@${target.id}>`, inline: true },
+          { name: "From", value: `<@${msg.author.id}>`, inline: true },
+          { name: "Reason", value: reason },
+          { name: "Total Vouches", value: `${this.vouches[target.id].length}` }
+        )
+        .setTimestamp();
+
+      await logChannel.send({ embeds: [logEmbed] });
+    }
+
+    return;
   }
 
   // ============================
@@ -120,7 +143,7 @@ export default class VouchSystem {
 
   // ============================
   // HANDLE !VOUCHES (PROFILE + LIST + AVATAR)
-// ============================
+  // ============================
   async handleVouches(msg) {
     const target = msg.mentions.users.first() || msg.author;
 
