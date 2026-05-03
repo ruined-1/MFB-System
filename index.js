@@ -11,7 +11,7 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // ===============================
 // DISCORD BOT
 // ===============================
-import { Client, GatewayIntentBits, Partials } from "discord.js";
+import { Client, GatewayIntentBits } from "discord.js";
 
 // Handlers
 import prefix from "./prefix.js";
@@ -30,7 +30,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent
   ],
-  partials: [Partials.Channel]
+  partials: [] // <--- PARTIALS REMOVED
 });
 
 // Attach systems
@@ -40,19 +40,10 @@ client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
 client.on("messageCreate", async (msg) => {
-  console.log("MAIN messageCreate fired");
+  // Prevent duplicate events caused by partials or cache updates
+  if (msg.partial) return;
 
-  // Webhook handler disabled
-  /*
-  if (msg.webhookId) {
-    try {
-      await alertHandler(msg, client);
-    } catch (err) {
-      console.error("Alert error:", err);
-    }
-    return;
-  }
-  */
+  console.log("MAIN messageCreate fired");
 
   if (msg.author.bot) return;
 
