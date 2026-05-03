@@ -6,11 +6,6 @@ import {
 } from "discord.js";
 
 import {
-  isOnCooldown,
-  setCooldownEnd
-} from "./cooldowns.js";
-
-import {
   getSeverityColor,
   getSeverityLabel
 } from "./severity.js";
@@ -85,20 +80,21 @@ export default async function alertHandler(msg, client) {
       const severity = getSeverityLabel(amountOwned);
       const color = getSeverityColor(severity);
 
-      // Cooldowns
+      // Cooldowns (NEW SYSTEM)
       let cooldownSeconds = 0;
       if (severity === "YELLOW") cooldownSeconds = 240;
       else if (severity === "ORANGE") cooldownSeconds = 120;
       else if (severity === "RED") cooldownSeconds = 30;
 
-      if (isOnCooldown(playerId)) {
+      if (client.cooldownSystem.isOnCooldown(playerId)) {
         console.log("SKIPPED: Player on cooldown");
         return;
       }
 
       const cooldownEnd = Date.now() + cooldownSeconds * 1000;
       const cooldownUnix = Math.floor(cooldownEnd / 1000);
-      setCooldownEnd(playerId, cooldownEnd);
+
+      client.cooldownSystem.setCooldownEnd(playerId, cooldownEnd);
 
       // Send alert
       const channel = client.channels.cache.get(ALERT_CHANNEL_ID);
