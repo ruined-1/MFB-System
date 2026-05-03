@@ -40,7 +40,6 @@ export default class VouchSystem {
   async handleVouch(msg, args) {
     const target = msg.mentions.users.first();
 
-    // No mention
     if (!target) {
       const embed = new EmbedBuilder()
         .setTitle("❌ Invalid Vouch")
@@ -49,7 +48,6 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
-    // Can't vouch for yourself
     if (target.id === msg.author.id) {
       const embed = new EmbedBuilder()
         .setTitle("❌ You Can't Vouch For Yourself")
@@ -58,7 +56,6 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
-    // Can't vouch for bots
     if (target.bot) {
       const embed = new EmbedBuilder()
         .setTitle("❌ You Can't Vouch For Bots")
@@ -67,7 +64,6 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
-    // Remove the mention from args
     args.shift();
     const reason = args.join(" ");
     if (!reason) {
@@ -78,7 +74,6 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
-    // Save vouch
     if (!this.data[target.id]) this.data[target.id] = [];
     this.data[target.id].push({
       from: msg.author.id,
@@ -88,16 +83,14 @@ export default class VouchSystem {
 
     this.save();
 
-    // Badge + count
     const totalVouches = this.data[target.id].length;
     const badge = getBadge(totalVouches);
 
-    // Success embed
     const embed = new EmbedBuilder()
-      .setTitle("🎉 Vouch Successful")
+      .setTitle("✅ Vouch Successful")
       .setColor(0x2ecc71)
       .setThumbnail(target.displayAvatarURL({ size: 256 }))
-      .setDescription(`Your vouch for **${target.username}** has been recorded.`)
+      .setDescription(`Your vouch for **${target.username}** has been successfully recorded.`)
       .addFields(
         { name: "From", value: `<@${msg.author.id}>`, inline: true },
         { name: "To", value: `<@${target.id}>`, inline: true },
@@ -106,6 +99,64 @@ export default class VouchSystem {
         { name: "Badge", value: badge, inline: true }
       )
       .setFooter({ text: "Vouch added successfully" })
+      .setTimestamp();
+
+    return msg.reply({ embeds: [embed] });
+  }
+
+  // ============================================================
+  // !unvouch @user <index>
+  // ============================================================
+  async handleUnvouch(msg, args) {
+    const target = msg.mentions.users.first();
+
+    if (!target) {
+      const embed = new EmbedBuilder()
+        .setTitle("❌ Invalid Unvouch")
+        .setColor(0xff0000)
+        .setDescription("You must **mention a user** to remove a vouch from.");
+      return msg.reply({ embeds: [embed] });
+    }
+
+    if (target.bot) {
+      const embed = new EmbedBuilder()
+        .setTitle("❌ Invalid Unvouch")
+        .setColor(0xff0000)
+        .setDescription("Bots do not have vouches.");
+      return msg.reply({ embeds: [embed] });
+    }
+
+    if (!this.data[target.id] || this.data[target.id].length === 0) {
+      const embed = new EmbedBuilder()
+        .setTitle("❌ No Vouches Found")
+        .setColor(0xff0000)
+        .setDescription(`${target.username} has **no vouches** to remove.`);
+      return msg.reply({ embeds: [embed] });
+    }
+
+    args.shift();
+    const index = parseInt(args[0]);
+
+    if (!index || index < 1 || index > this.data[target.id].length) {
+      const embed = new EmbedBuilder()
+        .setTitle("❌ Invalid Vouch Number")
+        .setColor(0xff0000)
+        .setDescription(`Please provide a valid vouch number between **1** and **${this.data[target.id].length}**.`);
+      return msg.reply({ embeds: [embed] });
+    }
+
+    const removed = this.data[target.id].splice(index - 1, 1)[0];
+    this.save();
+
+    const embed = new EmbedBuilder()
+      .setTitle("🗑️ Vouch Removed")
+      .setColor(0xe67e22)
+      .setThumbnail(target.displayAvatarURL({ size: 256 }))
+      .setDescription(`A vouch has been removed from **${target.username}**.`)
+      .addFields(
+        { name: "Removed Vouch", value: `*${removed.reason}*` },
+        { name: "Originally From", value: `<@${removed.from}>`, inline: true }
+      )
       .setTimestamp();
 
     return msg.reply({ embeds: [embed] });
