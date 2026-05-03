@@ -1,13 +1,24 @@
-import "./server.js";
+// ===============================
+// WEB SERVER (Render Free Tier)
+// ===============================
+import express from "express";
+const app = express();
+const PORT = process.env.PORT || 3000;
 
+app.get("/", (req, res) => res.send("Bot is running"));
+app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
+
+// ===============================
+// DISCORD BOT
+// ===============================
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 
-// Clean handlers
+// Handlers
 import prefix from "./prefix.js";
-// import alertHandler from "./dupe_DISABLED/alerts.js"; // DISABLED
+// import alertHandler from "./dupe_DISABLED/alerts.js"; // disabled
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 
-// Clean merged systems (root folder)
+// Systems
 import CooldownSystem from "./cooldownSystem.js";
 import SeveritySystem from "./severitySystem.js";
 import ThresholdSystem from "./thresholdSystem.js";
@@ -31,9 +42,7 @@ client.vouchSystem = new VouchSystem();
 client.on("messageCreate", async (msg) => {
   console.log("MAIN messageCreate fired");
 
-  // ---------------------------------------------------------
-  // WEBHOOK HANDLER DISABLED (this was blocking success embed)
-  // ---------------------------------------------------------
+  // Webhook handler disabled
   /*
   if (msg.webhookId) {
     try {
