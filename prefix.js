@@ -30,6 +30,13 @@ export default async function prefix(msg, client) {
     return client.vouchSystem.handleVouch(msg, args);
   }
 
+  // !unvouch <user> <index>
+  if (command === "unvouch") {
+    if (!client.vouchSystem)
+      return msg.reply("Vouch system not loaded.");
+    return client.vouchSystem.handleUnvouch(msg, args);
+  }
+
   // !vouches
   if (command === "vouches") {
     if (!client.vouchSystem)
@@ -67,6 +74,6 @@ export default async function prefix(msg, client) {
 
   // Unknown command
   return msg.reply(
-    "Unknown command. Available: `!vouch`, `!vouches`, `!leaderboard`, `!cooldowns`, `!severity`, `!threshold`."
+    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!cooldowns`, `!severity`, `!threshold`."
   );
 }
