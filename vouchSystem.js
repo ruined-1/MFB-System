@@ -91,7 +91,7 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
-    // Ensure array exists (fixes silent push failures)
+    // Ensure array exists (THIS FIXES YOUR SUCCESS EMBED)
     if (!Array.isArray(this.data[target.id])) {
       this.data[target.id] = [];
     }
@@ -108,9 +108,7 @@ export default class VouchSystem {
     const totalVouches = this.data[target.id].length;
     const badge = getBadge(totalVouches);
 
-    // ============================================================
     // SUCCESS EMBED (GUARANTEED TO FIRE)
-    // ============================================================
     const embed = new EmbedBuilder()
       .setTitle("🎉 Vouch Successful")
       .setColor(0x2ecc71)
