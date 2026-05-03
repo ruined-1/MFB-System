@@ -2,16 +2,16 @@ import "./server.js";
 
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 
-// Clean systems
-import VouchSystem from "./vouchSystem.js";
+// Clean handlers
+import prefix from "./prefix.js";
+import alertHandler from "./dupe/alerts.js"; // still using dupe for now
+import resetCooldown from "./resetCooldown.js";
+
+// Clean merged systems (root folder)
 import CooldownSystem from "./cooldownSystem.js";
 import SeveritySystem from "./severitySystem.js";
 import ThresholdSystem from "./thresholdSystem.js";
-
-// Clean handlers
-import prefix from "./prefix.js";
-import alertHandler from "./dupe/alerts.js";
-import buttonHandler from "./buttonHandler.js";
+import VouchSystem from "./vouchSystem.js";
 
 const client = new Client({
   intents: [
@@ -22,17 +22,15 @@ const client = new Client({
   partials: [Partials.Channel]
 });
 
-// Attach systems to client
-client.vouchSystem = new VouchSystem();
+// Attach systems
 client.cooldownSystem = new CooldownSystem();
 client.severitySystem = new SeveritySystem();
 client.thresholdSystem = new ThresholdSystem();
+client.vouchSystem = new VouchSystem();
 
-// MAIN MESSAGE HANDLER
 client.on("messageCreate", async (msg) => {
   console.log("MAIN messageCreate fired");
 
-  // 1. ALERTS FIRST (webhook logs)
   if (msg.webhookId) {
     try {
       await alertHandler(msg, client);
@@ -42,10 +40,8 @@ client.on("messageCreate", async (msg) => {
     return;
   }
 
-  // 2. Ignore bot messages
   if (msg.author.bot) return;
 
-  // 3. PREFIX COMMANDS
   if (msg.content.startsWith("!")) {
     try {
       await prefix(msg, client);
@@ -56,10 +52,9 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
-// BUTTON HANDLER (reset cooldown)
 client.on("interactionCreate", async (interaction) => {
   try {
-    await buttonHandler(interaction, client);
+    await resetCooldown(interaction, client);
   } catch (err) {
     console.error("Button error:", err);
   }
