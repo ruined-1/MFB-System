@@ -29,7 +29,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 // Handlers
 import prefix from "./prefix.js";
-import alertHandler from "./alerts.js";          // ⭐ ALERTS WIRED IN
+import alertHandler from "./dupe_DISABLED/alerts.js";          // ⭐ ALERTS WIRED IN
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 
 // Systems
