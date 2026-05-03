@@ -22,6 +22,6 @@ export function getSeverityColor(severity) {
         case "RED": return 0xff0000;
         case "ORANGE": return 0xffa500;
         case "YELLOW": return 0xf5e342;   // ⭐ your exact yellow
-        default: return 0x00ff00;         // LOW (green)
+        default: return 0xf5e342;         // LOW (green)
     }
 }
