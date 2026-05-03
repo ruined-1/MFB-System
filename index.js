@@ -29,8 +29,9 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 // Handlers
 import prefix from "./prefix.js";
-import alertHandler from "./dupe_DISABLED/alerts.js";          // ⭐ ALERTS WIRED IN
+import alertHandler from "./dupe_DISABLED/alerts.js";
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
+import boostTracker from "./boostTracker.js";   // ⭐ BOOST TRACKER
 
 // Systems
 import CooldownSystem from "./cooldownSystem.js";
@@ -76,9 +77,20 @@ client.on("messageCreate", async (msg) => {
 // ===============================
 client.on("messageCreate", async (msg) => {
   try {
-    await alertHandler(msg, client);   // ⭐ ALERTS NOW ACTIVE
+    await alertHandler(msg, client);
   } catch (err) {
     console.error("Alert handler error:", err);
+  }
+});
+
+// ===============================
+// MESSAGE HANDLER (BOOST TRACKER)
+// ===============================
+client.on("messageCreate", async (msg) => {
+  try {
+    await boostTracker(msg, client);
+  } catch (err) {
+    console.error("Boost tracker error:", err);
   }
 });
 
