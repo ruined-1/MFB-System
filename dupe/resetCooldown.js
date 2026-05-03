@@ -1,9 +1,11 @@
-import { resetCooldown } from "./cooldowns.js";
+// resetCooldown.js
 
-export default async function handleReset(interaction) {
+export default async function resetCooldown(interaction, client) {
+  if (!interaction.isButton()) return;
+
   const id = interaction.customId.replace("reset_", "");
 
-  resetCooldown(id);
+  client.cooldownSystem.resetCooldown(id);
 
   await interaction.reply({
     content: `Cooldown reset for player ID **${id}**.`,
