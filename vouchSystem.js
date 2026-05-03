@@ -4,13 +4,27 @@ import fs from "fs";
 
 const DATA_FILE = "./data/vouches.json";
 
+// ============================================================
+// SAFE LOAD + ATOMIC SAVE
+// ============================================================
 function loadData() {
-  if (!fs.existsSync(DATA_FILE)) return {};
-  return JSON.parse(fs.readFileSync(DATA_FILE, "utf8"));
+  try {
+    if (!fs.existsSync(DATA_FILE)) return {};
+    const raw = fs.readFileSync(DATA_FILE, "utf8");
+    return JSON.parse(raw);
+  } catch {
+    return {};
+  }
 }
 
 function saveData(data) {
-  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+  const tmp = DATA_FILE + ".tmp";
+
+  // Write to temp file first
+  fs.writeFileSync(tmp, JSON.stringify(data, null, 2));
+
+  // Atomic replace
+  fs.renameSync(tmp, DATA_FILE);
 }
 
 // ============================================================
@@ -77,8 +91,12 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
+    // Ensure array exists (fixes silent push failures)
+    if (!Array.isArray(this.data[target.id])) {
+      this.data[target.id] = [];
+    }
+
     // Save vouch
-    if (!this.data[target.id]) this.data[target.id] = [];
     this.data[target.id].push({
       from: msg.author.id,
       reason,
@@ -90,7 +108,9 @@ export default class VouchSystem {
     const totalVouches = this.data[target.id].length;
     const badge = getBadge(totalVouches);
 
-    // Success embed
+    // ============================================================
+    // SUCCESS EMBED (GUARANTEED TO FIRE)
+    // ============================================================
     const embed = new EmbedBuilder()
       .setTitle("🎉 Vouch Successful")
       .setColor(0x2ecc71)
@@ -131,7 +151,7 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
-    if (!this.data[target.id] || this.data[target.id].length === 0) {
+    if (!Array.isArray(this.data[target.id]) || this.data[target.id].length === 0) {
       const embed = new EmbedBuilder()
         .setTitle("❌ No Vouches Found")
         .setColor(0xff0000)
@@ -174,7 +194,7 @@ export default class VouchSystem {
   // ============================================================
   async handleVouches(msg) {
     const user = msg.mentions.users.first() || msg.author;
-    const list = this.data[user.id] || [];
+    const list = Array.isArray(this.data[user.id]) ? this.data[user.id] : [];
     const total = list.length;
     const badge = getBadge(total);
 
@@ -214,6 +234,7 @@ export default class VouchSystem {
   // ============================================================
   async handleLeaderboard(msg) {
     const entries = Object.entries(this.data)
+      .filter(([_, v]) => Array.isArray(v))
       .map(([id, vouches]) => ({ id, count: vouches.length }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
