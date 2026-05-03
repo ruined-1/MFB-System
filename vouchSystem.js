@@ -13,6 +13,18 @@ function saveData(data) {
   fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
 }
 
+// ============================================================
+// BADGE SYSTEM
+// ============================================================
+function getBadge(vouchCount) {
+  if (vouchCount >= 50) return "🟥 **Elite**";
+  if (vouchCount >= 20) return "🟧 **Respected**";
+  if (vouchCount >= 10) return "🟨 **Reputable**";
+  if (vouchCount >= 5) return "🟩 **Trusted**";
+  if (vouchCount >= 1) return "🟦 **Newcomer**";
+  return "⬛ **Unranked**";
+}
+
 export default class VouchSystem {
   constructor() {
     this.data = loadData();
@@ -76,16 +88,24 @@ export default class VouchSystem {
 
     this.save();
 
+    // Badge + count
+    const totalVouches = this.data[target.id].length;
+    const badge = getBadge(totalVouches);
+
     // Success embed
     const embed = new EmbedBuilder()
-      .setTitle("✅ Vouch Recorded")
-      .setColor(0x00ff00)
+      .setTitle("🎉 Vouch Successful")
+      .setColor(0x2ecc71)
       .setThumbnail(target.displayAvatarURL({ size: 256 }))
+      .setDescription(`Your vouch for **${target.username}** has been recorded.`)
       .addFields(
         { name: "From", value: `<@${msg.author.id}>`, inline: true },
         { name: "To", value: `<@${target.id}>`, inline: true },
-        { name: "Reason", value: reason }
+        { name: "Reason", value: reason },
+        { name: "Total Vouches", value: `**${totalVouches}**`, inline: true },
+        { name: "Badge", value: badge, inline: true }
       )
+      .setFooter({ text: "Vouch added successfully" })
       .setTimestamp();
 
     return msg.reply({ embeds: [embed] });
@@ -97,13 +117,16 @@ export default class VouchSystem {
   async handleVouches(msg) {
     const user = msg.mentions.users.first() || msg.author;
     const list = this.data[user.id] || [];
+    const total = list.length;
+    const badge = getBadge(total);
 
-    if (list.length === 0) {
+    if (total === 0) {
       const embed = new EmbedBuilder()
-        .setTitle(`${user.username}'s Vouches`)
+        .setTitle(`${user.username}'s Vouch Profile`)
         .setColor(0x3498db)
         .setThumbnail(user.displayAvatarURL({ size: 256 }))
-        .setDescription("This user has **no vouches**.");
+        .setDescription("This user has **no vouches**.")
+        .addFields({ name: "Badge", value: badge });
       return msg.reply({ embeds: [embed] });
     }
 
@@ -119,7 +142,11 @@ export default class VouchSystem {
           )
           .join("\n")
       )
-      .setFooter({ text: `Total vouches: ${list.length}` });
+      .addFields(
+        { name: "Total Vouches", value: `**${total}**`, inline: true },
+        { name: "Badge", value: badge, inline: true }
+      )
+      .setFooter({ text: `Total vouches: ${total}` });
 
     return msg.reply({ embeds: [embed] });
   }
@@ -136,17 +163,17 @@ export default class VouchSystem {
     if (entries.length === 0)
       return msg.reply("No vouches recorded yet.");
 
+    const description = entries
+      .map((e, i) => {
+        const badge = getBadge(e.count);
+        return `**${i + 1}.** <@${e.id}> — **${e.count}** vouches — ${badge}`;
+      })
+      .join("\n");
+
     const embed = new EmbedBuilder()
       .setTitle("🏆 Vouch Leaderboard")
       .setColor(0xf1c40f)
-      .setDescription(
-        entries
-          .map(
-            (e, i) =>
-              `**${i + 1}.** <@${e.id}> — **${e.count}** vouches`
-          )
-          .join("\n")
-      );
+      .setDescription(description);
 
     return msg.reply({ embeds: [embed] });
   }
