@@ -1,3 +1,8 @@
+process.on("SIGTERM", () => {
+  console.log("Shutting down immediately to avoid overlap");
+  process.exit(0);
+});
+
 // ===============================
 // WEB SERVER (Render Free Tier)
 // ===============================
