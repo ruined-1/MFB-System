@@ -4,7 +4,7 @@ import { Client, GatewayIntentBits, Partials } from "discord.js";
 
 // Clean handlers
 import prefix from "./prefix.js";
-import alertHandler from "./dupe_DISABLED/alerts.js"; // still using dupe for now
+// import alertHandler from "./dupe_DISABLED/alerts.js"; // DISABLED
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 
 // Clean merged systems (root folder)
@@ -31,6 +31,10 @@ client.vouchSystem = new VouchSystem();
 client.on("messageCreate", async (msg) => {
   console.log("MAIN messageCreate fired");
 
+  // ---------------------------------------------------------
+  // WEBHOOK HANDLER DISABLED (this was blocking success embed)
+  // ---------------------------------------------------------
+  /*
   if (msg.webhookId) {
     try {
       await alertHandler(msg, client);
@@ -39,6 +43,7 @@ client.on("messageCreate", async (msg) => {
     }
     return;
   }
+  */
 
   if (msg.author.bot) return;
 
