@@ -119,7 +119,7 @@ export default class VouchSystem {
   }
 
   // ============================
-  // HANDLE !VOUCHES (PROFILE + LIST)
+  // HANDLE !VOUCHES (PROFILE + LIST + AVATAR)
   // ============================
   async handleVouches(msg) {
     const target = msg.mentions.users.first() || msg.author;
@@ -143,6 +143,7 @@ export default class VouchSystem {
     const embed = new EmbedBuilder()
       .setColor("#0099ff")
       .setTitle(`${target.username}'s Vouch Profile`)
+      .setThumbnail(target.displayAvatarURL({ size: 256 })) // ⭐ avatar added
       .addFields(
         { name: "Total Vouches", value: `${count}`, inline: true },
         { name: "Badge", value: badge, inline: true },
