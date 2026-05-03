@@ -1,8 +1,10 @@
 export default async function prefix(msg, client) {
-  // Ignore bots, webhooks, and empty messages
+  // Ignore bots and empty messages
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
-  if (msg.webhookId) return;
+
+  // Allow webhook messages ONLY if they are prefix commands
+  if (msg.webhookId && !msg.content.startsWith("!")) return;
 
   const prefix = "!";
   if (!msg.content.startsWith(prefix)) return;
