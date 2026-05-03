@@ -2,6 +2,16 @@ import fs from "fs";
 import path from "path";
 import { EmbedBuilder } from "discord.js";
 
+// ============================
+// BADGE SYSTEM
+// ============================
+function getBadge(count) {
+  if (count >= 20) return "🟥 Elite";
+  if (count >= 10) return "🟪 Respected";
+  if (count >= 5) return "🟩 Trusted";
+  return "🟦 Newcomer"; // default tier
+}
+
 export default class VouchSystem {
   constructor() {
     this.filePath = path.resolve("./vouches.json");
@@ -109,16 +119,19 @@ export default class VouchSystem {
   }
 
   // ============================
-  // HANDLE !VOUCHES
+  // HANDLE !VOUCHES (PROFILE + LIST)
   // ============================
   async handleVouches(msg) {
     const target = msg.mentions.users.first() || msg.author;
 
     const list = this.vouches[target.id] || [];
+    const count = list.length;
 
-    if (list.length === 0) {
+    if (count === 0) {
       return msg.reply(`${target.username} has no vouches.`);
     }
+
+    const badge = getBadge(count);
 
     const formatted = list
       .map(
@@ -129,8 +142,12 @@ export default class VouchSystem {
 
     const embed = new EmbedBuilder()
       .setColor("#0099ff")
-      .setTitle(`${target.username}'s Vouches`)
-      .setDescription(formatted)
+      .setTitle(`${target.username}'s Vouch Profile`)
+      .addFields(
+        { name: "Total Vouches", value: `${count}`, inline: true },
+        { name: "Badge", value: badge, inline: true },
+        { name: "Vouches", value: formatted }
+      )
       .setTimestamp();
 
     return msg.reply({ embeds: [embed] });
