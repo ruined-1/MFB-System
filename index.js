@@ -3,6 +3,8 @@ process.on("SIGTERM", () => {
   process.exit(0);
 });
 
+await new Promise(res => setTimeout(res, 3000));
+
 // ===============================
 // WEB SERVER (Render Free Tier)
 // ===============================
