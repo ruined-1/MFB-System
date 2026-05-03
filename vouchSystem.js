@@ -40,6 +40,7 @@ export default class VouchSystem {
   async handleVouch(msg, args) {
     const target = msg.mentions.users.first();
 
+    // No mention
     if (!target) {
       const embed = new EmbedBuilder()
         .setTitle("❌ Invalid Vouch")
@@ -48,6 +49,7 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
+    // Can't vouch for yourself
     if (target.id === msg.author.id) {
       const embed = new EmbedBuilder()
         .setTitle("❌ You Can't Vouch For Yourself")
@@ -56,6 +58,7 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
+    // Can't vouch for bots
     if (target.bot) {
       const embed = new EmbedBuilder()
         .setTitle("❌ You Can't Vouch For Bots")
@@ -64,8 +67,8 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
-    args.shift();
-    const reason = args.join(" ");
+    // Extract reason safely (bulletproof)
+    const reason = msg.content.split(" ").slice(2).join(" ").trim();
     if (!reason) {
       const embed = new EmbedBuilder()
         .setTitle("❌ Missing Reason")
@@ -74,6 +77,7 @@ export default class VouchSystem {
       return msg.reply({ embeds: [embed] });
     }
 
+    // Save vouch
     if (!this.data[target.id]) this.data[target.id] = [];
     this.data[target.id].push({
       from: msg.author.id,
@@ -86,11 +90,12 @@ export default class VouchSystem {
     const totalVouches = this.data[target.id].length;
     const badge = getBadge(totalVouches);
 
+    // Success embed
     const embed = new EmbedBuilder()
-      .setTitle("✅ Vouch Successful")
+      .setTitle("🎉 Vouch Successful")
       .setColor(0x2ecc71)
       .setThumbnail(target.displayAvatarURL({ size: 256 }))
-      .setDescription(`Your vouch for **${target.username}** has been successfully recorded.`)
+      .setDescription(`Your vouch for **${target.username}** has been recorded.`)
       .addFields(
         { name: "From", value: `<@${msg.author.id}>`, inline: true },
         { name: "To", value: `<@${target.id}>`, inline: true },
@@ -141,7 +146,9 @@ export default class VouchSystem {
       const embed = new EmbedBuilder()
         .setTitle("❌ Invalid Vouch Number")
         .setColor(0xff0000)
-        .setDescription(`Please provide a valid vouch number between **1** and **${this.data[target.id].length}**.`);
+        .setDescription(
+          `Please provide a valid vouch number between **1** and **${this.data[target.id].length}**.`
+        );
       return msg.reply({ embeds: [embed] });
     }
 
