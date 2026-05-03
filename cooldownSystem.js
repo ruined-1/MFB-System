@@ -1,5 +1,4 @@
-// systems/cooldownSystem.js
-
+// cooldownSystem.js
 export default class CooldownSystem {
   constructor() {
     this.cooldowns = new Map();
@@ -29,7 +28,6 @@ export default class CooldownSystem {
     return Math.max(0, Math.floor((end - Date.now()) / 1000));
   }
 
-  // Optional: used by !cooldowns command
   showCooldowns(msg) {
     if (this.cooldowns.size === 0)
       return msg.reply("No active cooldowns.");
