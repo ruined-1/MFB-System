@@ -1,20 +1,35 @@
-// cooldownSystem.js
+// systems/cooldownSystem.js
+
 export default class CooldownSystem {
   constructor() {
     this.cooldowns = new Map();
   }
 
-  isOnCooldown(id) {
-    const end = this.cooldowns.get(id);
+  isOnCooldown(playerId) {
+    const end = this.cooldowns.get(playerId);
     if (!end) return false;
     return Date.now() < end;
   }
 
-  setCooldownEnd(id, timestamp) {
-    this.cooldowns.set(id, timestamp);
+  getCooldownEnd(playerId) {
+    return this.cooldowns.get(playerId) || null;
   }
 
-  // !cooldowns
+  setCooldownEnd(playerId, timestamp) {
+    this.cooldowns.set(playerId, timestamp);
+  }
+
+  resetCooldown(playerId) {
+    this.cooldowns.delete(playerId);
+  }
+
+  getRemaining(playerId) {
+    const end = this.cooldowns.get(playerId);
+    if (!end) return 0;
+    return Math.max(0, Math.floor((end - Date.now()) / 1000));
+  }
+
+  // Optional: used by !cooldowns command
   showCooldowns(msg) {
     if (this.cooldowns.size === 0)
       return msg.reply("No active cooldowns.");
