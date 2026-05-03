@@ -1,9 +1,16 @@
+// ===============================
+// FORCE OLD INSTANCE TO SHUT DOWN
+// ===============================
 process.on("SIGTERM", () => {
-  console.log("Shutting down immediately to avoid overlap");
+  console.log("Received SIGTERM — shutting down immediately to avoid overlap");
   process.exit(0);
 });
 
-await new Promise(res => setTimeout(res, 3000));
+// Optional: small delay to let old instance die before logging in
+const startupDelay = async () => {
+  await new Promise(res => setTimeout(res, 2000));
+};
+await startupDelay();
 
 // ===============================
 // WEB SERVER (Render Free Tier)
@@ -22,7 +29,6 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 // Handlers
 import prefix from "./prefix.js";
-// import alertHandler from "./dupe_DISABLED/alerts.js"; // disabled
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 
 // Systems
@@ -46,13 +52,14 @@ client.severitySystem = new SeveritySystem();
 client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
+// ===============================
+// MESSAGE HANDLER
+// ===============================
 client.on("messageCreate", async (msg) => {
-  // Prevent duplicate events caused by partials or cache updates
-  if (msg.partial) return;
+  if (msg.partial) return; // safety
+  if (msg.author.bot) return;
 
   console.log("MAIN messageCreate fired");
-
-  if (msg.author.bot) return;
 
   if (msg.content.startsWith("!")) {
     try {
@@ -60,10 +67,12 @@ client.on("messageCreate", async (msg) => {
     } catch (err) {
       console.error("Prefix error:", err);
     }
-    return;
   }
 });
 
+// ===============================
+// BUTTON HANDLER
+// ===============================
 client.on("interactionCreate", async (interaction) => {
   try {
     await resetCooldown(interaction, client);
@@ -72,4 +81,7 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+// ===============================
+// LOGIN
+// ===============================
 client.login(process.env.TOKEN);
