@@ -4,8 +4,8 @@ import { Client, GatewayIntentBits, Partials } from "discord.js";
 
 // Clean handlers
 import prefix from "./prefix.js";
-import alertHandler from "./dupe/alerts.js"; // still using dupe for now
-import resetCooldown from "./dupe/resetCooldown.js";
+import alertHandler from "./dupe_DISABLED/alerts.js"; // still using dupe for now
+import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 
 // Clean merged systems (root folder)
 import CooldownSystem from "./cooldownSystem.js";
