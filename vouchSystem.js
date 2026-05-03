@@ -97,11 +97,11 @@ export default class VouchSystem {
       return msg.reply("You must provide the vouch index to remove.");
     }
 
-    if (!this.vouches[target.id] || !this.vouches[target.id][index]) {
+    if (!this.vouches[target.id] || !this.vouches[target.id][index - 1]) {
       return msg.reply("That vouch does not exist.");
     }
 
-    const removed = this.vouches[target.id].splice(index, 1);
+    const removed = this.vouches[target.id].splice(index - 1, 1);
     this.save();
 
     const embed = new EmbedBuilder()
@@ -120,7 +120,7 @@ export default class VouchSystem {
 
   // ============================
   // HANDLE !VOUCHES (PROFILE + LIST + AVATAR)
-  // ============================
+// ============================
   async handleVouches(msg) {
     const target = msg.mentions.users.first() || msg.author;
 
@@ -136,14 +136,14 @@ export default class VouchSystem {
     const formatted = list
       .map(
         (v, i) =>
-          `**${i}.** From <@${v.from}> — *${v.reason}*`
+          `**${i + 1}.** From <@${v.from}> — *${v.reason}*`
       )
       .join("\n");
 
     const embed = new EmbedBuilder()
       .setColor("#0099ff")
       .setTitle(`${target.username}'s Vouch Profile`)
-      .setThumbnail(target.displayAvatarURL({ size: 256 })) // ⭐ avatar added
+      .setThumbnail(target.displayAvatarURL({ size: 256 }))
       .addFields(
         { name: "Total Vouches", value: `${count}`, inline: true },
         { name: "Badge", value: badge, inline: true },
