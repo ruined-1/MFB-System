@@ -29,6 +29,7 @@ import { Client, GatewayIntentBits } from "discord.js";
 
 // Handlers
 import prefix from "./prefix.js";
+import alertHandler from "./alerts.js";          // ⭐ ALERTS WIRED IN
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 
 // Systems
@@ -43,7 +44,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessages,
     GatewayIntentBits.MessageContent
   ],
-  partials: [] // <--- PARTIALS REMOVED
+  partials: []
 });
 
 // Attach systems
@@ -53,10 +54,10 @@ client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
 // ===============================
-// MESSAGE HANDLER
+// MESSAGE HANDLER (PREFIX COMMANDS)
 // ===============================
 client.on("messageCreate", async (msg) => {
-  if (msg.partial) return; // safety
+  if (msg.partial) return;
   if (msg.author.bot) return;
 
   console.log("MAIN messageCreate fired");
@@ -67,6 +68,17 @@ client.on("messageCreate", async (msg) => {
     } catch (err) {
       console.error("Prefix error:", err);
     }
+  }
+});
+
+// ===============================
+// MESSAGE HANDLER (ALERT SYSTEM)
+// ===============================
+client.on("messageCreate", async (msg) => {
+  try {
+    await alertHandler(msg, client);   // ⭐ ALERTS NOW ACTIVE
+  } catch (err) {
+    console.error("Alert handler error:", err);
   }
 });
 
