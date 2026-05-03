@@ -7,6 +7,7 @@ export default async function prefix(msg, client) {
   const prefix = "!";
   if (!msg.content.startsWith(prefix)) return;
 
+  // Parse command + args
   const args = msg.content.slice(prefix.length).trim().split(/\s+/);
   const command = args.shift()?.toLowerCase();
   if (!command) return;
@@ -36,7 +37,7 @@ export default async function prefix(msg, client) {
     return client.vouchSystem.handleVouches(msg);
   }
 
-  // !leaderboard
+  // !leaderboard / !vouchlb
   if (command === "leaderboard" || command === "vouchlb") {
     if (!client.vouchSystem)
       return msg.reply("Vouch system not loaded.");
