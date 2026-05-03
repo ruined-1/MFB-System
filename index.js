@@ -10,7 +10,7 @@ import ThresholdSystem from "./thresholdSystem.js";
 
 // Clean handlers
 import prefix from "./prefix.js";
-import alertHandler from "./alerts.js";
+import alertHandler from "./dupe/alerts.js";
 import buttonHandler from "./buttonHandler.js";
 
 const client = new Client({
