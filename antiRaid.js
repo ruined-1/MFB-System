@@ -3,7 +3,7 @@ import { EmbedBuilder } from "discord.js";
 
 const LOG_CHANNEL = "1500667249000841367";
 
-// thresholds (soft, just for logging)
+// thresholds (soft)
 const JOIN_WINDOW_MS = 10_000;
 const JOIN_THRESHOLD = 5;
 
@@ -46,7 +46,7 @@ async function logRaidEvent(guild, client, title, description, fields = []) {
   await channel.send({ embeds: [embed] }).catch(() => null);
 }
 
-// called from guildMemberAdd
+// JOIN SPIKE
 export async function handleJoin(member, client) {
   if (!member.guild) return;
 
@@ -59,17 +59,12 @@ export async function handleJoin(member, client) {
       client,
       "Join Spike Detected",
       `Detected **${recentJoins.length}** joins in the last **${JOIN_WINDOW_MS / 1000}s**.`,
-      [
-        {
-          name: "Most Recent Join",
-          value: `<@${member.id}> (${member.user.tag})`,
-        },
-      ]
+      [{ name: "Most Recent Join", value: `<@${member.id}> (${member.user.tag})` }]
     );
   }
 }
 
-// called from messageCreate
+// MESSAGE SPAM + PING SPAM
 export async function handleMessage(msg, client) {
   if (!msg.guild) return;
   if (msg.author.bot) return;
@@ -77,7 +72,7 @@ export async function handleMessage(msg, client) {
   const now = Date.now();
   const userId = msg.author.id;
 
-  // track messages per user
+  // message spam
   if (!userMessages.has(userId)) userMessages.set(userId, []);
   userMessages.get(userId).push(now);
   pruneMap(userMessages, MSG_WINDOW_MS);
@@ -89,17 +84,16 @@ export async function handleMessage(msg, client) {
       client,
       "Message Spam Detected",
       `User <@${userId}> (${msg.author.tag}) sent **${msgCount}** messages in **${MSG_WINDOW_MS / 1000}s**.`,
-      [
-        {
-          name: "Channel",
-          value: `<#${msg.channel.id}>`,
-        },
-      ]
+      [{ name: "Channel", value: `<#${msg.channel.id}>` }]
     );
   }
 
-  // track pings per user
-  const mentionCount = msg.mentions.users.size + msg.mentions.roles.size + (msg.mentions.everyone ? 1 : 0);
+  // ping spam
+  const mentionCount =
+    msg.mentions.users.size +
+    msg.mentions.roles.size +
+    (msg.mentions.everyone ? 1 : 0);
+
   if (mentionCount > 0) {
     if (!userPings.has(userId)) userPings.set(userId, []);
     userPings.get(userId).push(now);
@@ -111,14 +105,25 @@ export async function handleMessage(msg, client) {
         msg.guild,
         client,
         "Ping Spam Detected",
-        `User <@${userId}> (${msg.author.tag}) triggered **${pingCount}** ping-heavy messages in **${PING_WINDOW_MS / 1000}s**.`,
-        [
-          {
-            name: "Channel",
-            value: `<#${msg.channel.id}>`,
-          },
-        ]
+        `User <@${userId}> (${msg.author.tag}) triggered **${pingCount}** ping-heavy messages.`,
+        [{ name: "Channel", value: `<#${msg.channel.id}>` }]
       );
     }
   }
+}
+
+// SAMPLE RAID ALERT
+export async function simulateRaidAlert(msg, client) {
+  const channel = client.channels.cache.get(LOG_CHANNEL);
+  if (!channel) return msg.reply("Log channel not found.");
+
+  const embed = new EmbedBuilder()
+    .setColor("#ffcc00")
+    .setTitle("🛡️ Anti-Raid: Sample Raid Alert")
+    .setDescription("This is a **simulated raid alert**.")
+    .addFields({ name: "Example", value: "Join spike / message spam / ping spam" })
+    .setTimestamp();
+
+  await channel.send({ embeds: [embed] });
+  return msg.reply("Sample raid alert sent.");
 }
