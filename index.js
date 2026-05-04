@@ -31,7 +31,15 @@ import { Client, GatewayIntentBits } from "discord.js";
 import prefix from "./prefix.js";
 import alertHandler from "./dupe_DISABLED/alerts.js";
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
-import boostTracker from "./boostTracker.js";   // ⭐ BOOST TRACKER
+import boostTracker from "./boostTracker.js";
+import { handleJoin, handleMessage } from "./antiRaid.js";
+import {
+  handleChannelDelete,
+  handleRoleDelete,
+  handleGuildBanAdd,
+  handleGuildMemberRemove,
+  handleWebhookUpdate
+} from "./antiNuke.js";
 
 // Systems
 import CooldownSystem from "./cooldownSystem.js";
@@ -43,7 +51,10 @@ const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,
-    GatewayIntentBits.MessageContent
+    GatewayIntentBits.MessageContent,
+    GatewayIntentBits.GuildMembers,
+    GatewayIntentBits.GuildBans,
+    GatewayIntentBits.GuildWebhooks
   ],
   partials: []
 });
@@ -91,6 +102,71 @@ client.on("messageCreate", async (msg) => {
     await boostTracker(msg, client);
   } catch (err) {
     console.error("Boost tracker error:", err);
+  }
+});
+
+// ===============================
+// MESSAGE HANDLER (ANTI-RAID)
+// ===============================
+client.on("messageCreate", async (msg) => {
+  try {
+    await handleMessage(msg, client);
+  } catch (err) {
+    console.error("Anti-raid message error:", err);
+  }
+});
+
+// ===============================
+// GUILD MEMBER ADD (ANTI-RAID)
+// ===============================
+client.on("guildMemberAdd", async (member) => {
+  try {
+    await handleJoin(member, client);
+  } catch (err) {
+    console.error("Anti-raid join error:", err);
+  }
+});
+
+// ===============================
+// ANTI-NUKE EVENTS
+// ===============================
+client.on("channelDelete", async (channel) => {
+  try {
+    await handleChannelDelete(channel, client);
+  } catch (err) {
+    console.error("Anti-nuke channelDelete error:", err);
+  }
+});
+
+client.on("roleDelete", async (role) => {
+  try {
+    await handleRoleDelete(role, client);
+  } catch (err) {
+    console.error("Anti-nuke roleDelete error:", err);
+  }
+});
+
+client.on("guildBanAdd", async (ban) => {
+  try {
+    await handleGuildBanAdd(ban, client);
+  } catch (err) {
+    console.error("Anti-nuke guildBanAdd error:", err);
+  }
+});
+
+client.on("guildMemberRemove", async (member) => {
+  try {
+    await handleGuildMemberRemove(member, client);
+  } catch (err) {
+    console.error("Anti-nuke guildMemberRemove error:", err);
+  }
+});
+
+client.on("webhookUpdate", async (channel) => {
+  try {
+    await handleWebhookUpdate(channel, client);
+  } catch (err) {
+    console.error("Anti-nuke webhookUpdate error:", err);
   }
 });
 
