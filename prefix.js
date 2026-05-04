@@ -1,88 +1,51 @@
-import { boostCommand } from "./boostTracker.js";
+import { simulateRaidAlert } from "./antiRaid.js";
+import { simulateNukeAlert } from "./antiNuke.js";
 
 export default async function prefix(msg, client) {
-  // Ignore bots and empty messages
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
 
-  // Allow webhook messages ONLY if they are prefix commands
   if (msg.webhookId && !msg.content.startsWith("!")) return;
 
   const prefix = "!";
   if (!msg.content.startsWith(prefix)) return;
 
-  // Parse command + args
+  // PERMISSION CHECK
+  if (!msg.member.permissions.has("ManageGuild")) {
+    return msg.reply("You need **Manage Server** to use bot commands.");
+  }
+
   const args = msg.content.slice(prefix.length).trim().split(/\s+/);
   const command = args.shift()?.toLowerCase();
   if (!command) return;
 
-  // -----------------------------
-  // PREFIX COMMANDS
-  // -----------------------------
+  // TEST COMMANDS
+  if (command === "sampleraid") return simulateRaidAlert(msg, client);
+  if (command === "samplenuke") return simulateNukeAlert(msg, client);
 
-  // !ping
+  // EXISTING COMMANDS...
   if (command === "ping") {
     const sent = await msg.reply("Pinging...");
     const latency = sent.createdTimestamp - msg.createdTimestamp;
     return sent.edit(`Pong! Latency: \`${latency}ms\``);
   }
 
-  // !vouch <user> <reason>
-  if (command === "vouch") {
-    if (!client.vouchSystem)
-      return msg.reply("Vouch system not loaded.");
-    return client.vouchSystem.handleVouch(msg, args);
-  }
-
-  // !unvouch <user> <index>
-  if (command === "unvouch") {
-    if (!client.vouchSystem)
-      return msg.reply("Vouch system not loaded.");
-    return client.vouchSystem.handleUnvouch(msg, args);
-  }
-
-  // !vouches
-  if (command === "vouches") {
-    if (!client.vouchSystem)
-      return msg.reply("Vouch system not loaded.");
-    return client.vouchSystem.handleVouches(msg);
-  }
-
-  // !leaderboard / !vouchlb
-  if (command === "leaderboard" || command === "vouchlb") {
-    if (!client.vouchSystem)
-      return msg.reply("Vouch system not loaded.");
+  if (command === "vouch") return client.vouchSystem.handleVouch(msg, args);
+  if (command === "unvouch") return client.vouchSystem.handleUnvouch(msg, args);
+  if (command === "vouches") return client.vouchSystem.handleVouches(msg);
+  if (command === "leaderboard" || command === "vouchlb")
     return client.vouchSystem.handleLeaderboard(msg);
-  }
 
-  // !cooldowns
-  if (command === "cooldowns" || command === "cooldown") {
-    if (!client.cooldownSystem)
-      return msg.reply("Cooldown system not loaded.");
+  if (command === "cooldowns" || command === "cooldown")
     return client.cooldownSystem.showCooldowns(msg);
-  }
 
-  // !severity <amount>
-  if (command === "severity") {
-    if (!client.severitySystem)
-      return msg.reply("Severity system not loaded.");
+  if (command === "severity")
     return client.severitySystem.testSeverity(msg, args);
-  }
 
-  // !threshold <value>
-  if (command === "threshold") {
-    if (!client.thresholdSystem)
-      return msg.reply("Threshold system not loaded.");
+  if (command === "threshold")
     return client.thresholdSystem.setThreshold(msg, args);
-  }
 
-  // !boosts
-  if (command === "boosts") {
-    return boostCommand(msg);
-  }
-
-  // Unknown command
   return msg.reply(
-    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!cooldowns`, `!severity`, `!threshold`, `!boosts`."
+    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`."
   );
 }
