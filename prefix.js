@@ -1,51 +1,97 @@
 import { simulateRaidAlert } from "./antiRaid.js";
 import { simulateNukeAlert } from "./antiNuke.js";
+import { boostCommand } from "./boostTracker.js";
 
 export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
 
+  // Allow webhook messages ONLY if they are prefix commands
   if (msg.webhookId && !msg.content.startsWith("!")) return;
 
   const prefix = "!";
   if (!msg.content.startsWith(prefix)) return;
 
-  // PERMISSION CHECK
-  if (!msg.member.permissions.has("ManageGuild")) {
-    return msg.reply("You need **Manage Server** to use bot commands.");
-  }
-
   const args = msg.content.slice(prefix.length).trim().split(/\s+/);
   const command = args.shift()?.toLowerCase();
   if (!command) return;
 
-  // TEST COMMANDS
-  if (command === "sampleraid") return simulateRaidAlert(msg, client);
-  if (command === "samplenuke") return simulateNukeAlert(msg, client);
+  // -----------------------------
+  // PERMISSION CHECK HELPER
+  // -----------------------------
+  function hasManageServer() {
+    return msg.member && msg.member.permissions.has("ManageGuild");
+  }
 
-  // EXISTING COMMANDS...
+  // -----------------------------
+  // PUBLIC COMMANDS (NO PERMS)
+  // -----------------------------
+
+  // Vouch system
+  if (command === "vouch") {
+    return client.vouchSystem.handleVouch(msg, args);
+  }
+
+  if (command === "unvouch") {
+    return client.vouchSystem.handleUnvouch(msg, args);
+  }
+
+  if (command === "vouches") {
+    return client.vouchSystem.handleVouches(msg);
+  }
+
+  if (command === "leaderboard" || command === "vouchlb") {
+    return client.vouchSystem.handleLeaderboard(msg);
+  }
+
+  // Boost stats
+  if (command === "boosts") {
+    return boostCommand(msg);
+  }
+
+  // -----------------------------
+  // ADMIN‑ONLY COMMANDS
+  // -----------------------------
+  if (!hasManageServer()) {
+    return msg.reply("You need **Manage Server** to use this command.");
+  }
+
+  // Ping
   if (command === "ping") {
     const sent = await msg.reply("Pinging...");
     const latency = sent.createdTimestamp - msg.createdTimestamp;
     return sent.edit(`Pong! Latency: \`${latency}ms\``);
   }
 
-  if (command === "vouch") return client.vouchSystem.handleVouch(msg, args);
-  if (command === "unvouch") return client.vouchSystem.handleUnvouch(msg, args);
-  if (command === "vouches") return client.vouchSystem.handleVouches(msg);
-  if (command === "leaderboard" || command === "vouchlb")
-    return client.vouchSystem.handleLeaderboard(msg);
-
-  if (command === "cooldowns" || command === "cooldown")
+  // Cooldowns
+  if (command === "cooldowns" || command === "cooldown") {
     return client.cooldownSystem.showCooldowns(msg);
+  }
 
-  if (command === "severity")
+  // Severity test
+  if (command === "severity") {
     return client.severitySystem.testSeverity(msg, args);
+  }
 
-  if (command === "threshold")
+  // Threshold set
+  if (command === "threshold") {
     return client.thresholdSystem.setThreshold(msg, args);
+  }
 
+  // Anti‑raid test
+  if (command === "sampleraid") {
+    return simulateRaidAlert(msg, client);
+  }
+
+  // Anti‑nuke test
+  if (command === "samplenuke") {
+    return simulateNukeAlert(msg, client);
+  }
+
+  // -----------------------------
+  // UNKNOWN COMMAND
+  // -----------------------------
   return msg.reply(
-    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`."
+    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`."
   );
 }
