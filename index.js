@@ -6,14 +6,13 @@ process.on("SIGTERM", () => {
   process.exit(0);
 });
 
-// Optional: small delay to let old instance die before logging in
 const startupDelay = async () => {
   await new Promise(res => setTimeout(res, 2000));
 };
 await startupDelay();
 
 // ===============================
-// WEB SERVER (Render Free Tier)
+// WEB SERVER
 // ===============================
 import express from "express";
 const app = express();
@@ -32,6 +31,7 @@ import prefix from "./prefix.js";
 import alertHandler from "./dupe_DISABLED/alerts.js";
 import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 import boostTracker from "./boostTracker.js";
+
 import { handleJoin, handleMessage } from "./antiRaid.js";
 import {
   handleChannelDelete,
@@ -65,14 +65,10 @@ client.severitySystem = new SeveritySystem();
 client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
-// ===============================
-// MESSAGE HANDLER (PREFIX COMMANDS)
-// ===============================
+// PREFIX
 client.on("messageCreate", async (msg) => {
   if (msg.partial) return;
   if (msg.author.bot) return;
-
-  console.log("MAIN messageCreate fired");
 
   if (msg.content.startsWith("!")) {
     try {
@@ -83,9 +79,7 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
-// ===============================
-// MESSAGE HANDLER (ALERT SYSTEM)
-// ===============================
+// ALERTS
 client.on("messageCreate", async (msg) => {
   try {
     await alertHandler(msg, client);
@@ -94,9 +88,7 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
-// ===============================
-// MESSAGE HANDLER (BOOST TRACKER)
-// ===============================
+// BOOST TRACKER
 client.on("messageCreate", async (msg) => {
   try {
     await boostTracker(msg, client);
@@ -105,9 +97,7 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
-// ===============================
-// MESSAGE HANDLER (ANTI-RAID)
-// ===============================
+// ANTI-RAID
 client.on("messageCreate", async (msg) => {
   try {
     await handleMessage(msg, client);
@@ -116,9 +106,6 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
-// ===============================
-// GUILD MEMBER ADD (ANTI-RAID)
-// ===============================
 client.on("guildMemberAdd", async (member) => {
   try {
     await handleJoin(member, client);
@@ -127,9 +114,7 @@ client.on("guildMemberAdd", async (member) => {
   }
 });
 
-// ===============================
-// ANTI-NUKE EVENTS
-// ===============================
+// ANTI-NUKE
 client.on("channelDelete", async (channel) => {
   try {
     await handleChannelDelete(channel, client);
@@ -170,9 +155,7 @@ client.on("webhookUpdate", async (channel) => {
   }
 });
 
-// ===============================
-// BUTTON HANDLER
-// ===============================
+// BUTTONS
 client.on("interactionCreate", async (interaction) => {
   try {
     await resetCooldown(interaction, client);
@@ -181,7 +164,5 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-// ===============================
 // LOGIN
-// ===============================
 client.login(process.env.TOKEN);
