@@ -548,3 +548,62 @@ if (id === "boosts_log_edit") {
       )
   );
 }
+// GENERAL
+if (id === "general_prefix_edit") {
+  return interaction.showModal(
+    new ModalBuilder()
+      .setCustomId("modal_general_prefix")
+      .setTitle("Edit Bot Prefix")
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("input")
+            .setLabel("Prefix")
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder("Enter prefix")
+            .setValue(settings.get("prefix"))
+            .setRequired(true)
+        )
+      )
+  );
+}
+
+if (id === "general_staffroles_edit") {
+  return interaction.showModal(
+    new ModalBuilder()
+      .setCustomId("modal_general_staffroles")
+      .setTitle("Edit Staff Roles")
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("input")
+            .setLabel("Role IDs (comma separated)")
+            .setStyle(TextInputStyle.Paragraph)
+            .setPlaceholder("123,456")
+            .setValue(settings.get("staffRoles").join(","))
+            .setRequired(true)
+        )
+      )
+  );
+}
+
+if (id === "general_logchannels_edit") {
+  return interaction.showModal(
+    new ModalBuilder()
+      .setCustomId("modal_general_logchannels")
+      .setTitle("Edit Log Channels")
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("input")
+            .setLabel("Format: alerts,boosts,vouches")
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder("123,456,789")
+            .setValue(
+              `${settings.get("logChannels.alerts") || ""},${settings.get("logChannels.boosts") || ""},${settings.get("logChannels.vouches") || ""}`
+            )
+            .setRequired(true)
+        )
+      )
+  );
+}
