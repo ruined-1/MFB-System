@@ -474,27 +474,25 @@ export default async function settingsInteractions(interaction, client) {
       );
     }
 
-    if (id === "alerts_cooldowns_edit") {
-      return interaction.showModal(
-        new ModalBuilder()
-          .setCustomId("modal_alerts_cooldowns")
-          .setTitle("Edit Cooldowns")
-          .addComponents(
-            new ActionRowBuilder
-.addComponents(
-  new ActionRowBuilder().addComponents(
-    new TextInputBuilder()
-      .setCustomId("input")
-      .setLabel("Format: YELLOW,ORANGE,RED")
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder("240,120,30")
-      .setValue(
-        `${settings.get("alerts.cooldowns.YELLOW")},${settings.get("alerts.cooldowns.ORANGE")},${settings.get("alerts.cooldowns.RED")}`
+if (id === "alerts_cooldowns_edit") {
+  return interaction.showModal(
+    new ModalBuilder()
+      .setCustomId("modal_alerts_cooldowns")
+      .setTitle("Edit Cooldowns")
+      .addComponents(
+        new ActionRowBuilder().addComponents(
+          new TextInputBuilder()
+            .setCustomId("input")
+            .setLabel("Format: YELLOW,ORANGE,RED")
+            .setStyle(TextInputStyle.Short)
+            .setPlaceholder("240,120,30")
+            .setValue(
+              `${settings.get("alerts.cooldowns.YELLOW")},${settings.get("alerts.cooldowns.ORANGE")},${settings.get("alerts.cooldowns.RED")}`
+            )
+            .setRequired(true)
+        )
       )
-      .setRequired(true)
-  )
-)
-);
+  );
 }
 
 if (id === "alerts_buttons_toggle") {
