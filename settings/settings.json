@@ -1,0 +1,57 @@
+{
+  "prefix": "!",
+  "staffRoles": [],
+  "logChannels": {
+    "alerts": null,
+    "boosts": null,
+    "vouches": null
+  },
+  "modules": {
+    "vouch": true,
+    "antiRaid": true,
+    "antiNuke": true,
+    "alerts": true,
+    "boosts": true
+  },
+  "vouch": {
+    "enabled": true,
+    "logChannel": null,
+    "public": true,
+    "leaderboardVisible": true
+  },
+  "antiRaid": {
+    "enabled": true,
+    "joinSpike": 5,
+    "msgSpam": 10,
+    "pingSpam": 5,
+    "autoLockdown": false
+  },
+  "antiNuke": {
+    "enabled": true,
+    "logChannel": null,
+    "escalationPing": null,
+    "protectedRoles": [],
+    "protectedChannels": []
+  },
+  "alerts": {
+    "enabled": true,
+    "alertChannel": null,
+    "pingRoles": [],
+    "cooldowns": {
+      "YELLOW": 240,
+      "ORANGE": 120,
+      "RED": 30
+    },
+    "severityColors": {
+      "YELLOW": "#ffff00",
+      "ORANGE": "#ff9900",
+      "RED": "#ff0000"
+    },
+    "buttonsEnabled": true
+  },
+  "boosts": {
+    "enabled": true,
+    "rewardRole": null,
+    "logChannel": null
+  }
+}
