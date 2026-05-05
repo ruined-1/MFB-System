@@ -1,7 +1,7 @@
 // ===============================
 // FORCE OLD INSTANCE TO SHUT DOWN
 // ===============================
-process.on("SIGTERM", () => {
+process.on("SIGTERM", async () => {
   console.log("Received SIGTERM — finishing pending saves...");
 
   // Wait for any queued atomic writes to finish
@@ -10,6 +10,7 @@ process.on("SIGTERM", () => {
   console.log("Shutdown complete.");
   process.exit(0);
 });
+
 
 const startupDelay = async () => {
   await new Promise(res => setTimeout(res, 2000));
