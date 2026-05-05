@@ -47,6 +47,10 @@ import SeveritySystem from "./severitySystem.js";
 import ThresholdSystem from "./thresholdSystem.js";
 import VouchSystem from "./vouchSystem.js";
 
+// SETTINGS SYSTEM
+import settingsCommand from "./settings/settingsCommand.js";
+import registerSettingsRouter from "./settings/settingsRouter.js";
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -65,11 +69,21 @@ client.severitySystem = new SeveritySystem();
 client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
-// PREFIX
+// ===============================
+// PREFIX COMMANDS
+// ===============================
 client.on("messageCreate", async (msg) => {
   if (msg.partial) return;
   if (msg.author.bot) return;
 
+  // SETTINGS COMMAND (Admin only)
+  try {
+    await settingsCommand(msg, client);
+  } catch (err) {
+    console.error("Settings command error:", err);
+  }
+
+  // EXISTING PREFIX COMMANDS
   if (msg.content.startsWith("!")) {
     try {
       await prefix(msg, client);
@@ -79,7 +93,9 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
+// ===============================
 // ALERTS
+// ===============================
 client.on("messageCreate", async (msg) => {
   try {
     await alertHandler(msg, client);
@@ -88,7 +104,9 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
+// ===============================
 // BOOST TRACKER
+// ===============================
 client.on("messageCreate", async (msg) => {
   try {
     await boostTracker(msg, client);
@@ -97,7 +115,9 @@ client.on("messageCreate", async (msg) => {
   }
 });
 
+// ===============================
 // ANTI-RAID
+// ===============================
 client.on("messageCreate", async (msg) => {
   try {
     await handleMessage(msg, client);
@@ -114,7 +134,9 @@ client.on("guildMemberAdd", async (member) => {
   }
 });
 
+// ===============================
 // ANTI-NUKE
+// ===============================
 client.on("channelDelete", async (channel) => {
   try {
     await handleChannelDelete(channel, client);
@@ -155,7 +177,11 @@ client.on("webhookUpdate", async (channel) => {
   }
 });
 
-// BUTTONS
+// ===============================
+// BUTTONS + SETTINGS INTERACTIONS
+// ===============================
+registerSettingsRouter(client);
+
 client.on("interactionCreate", async (interaction) => {
   try {
     await resetCooldown(interaction, client);
@@ -164,5 +190,7 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+// ===============================
 // LOGIN
+// ===============================
 client.login(process.env.TOKEN);
