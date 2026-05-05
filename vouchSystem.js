@@ -15,7 +15,7 @@ function getBadge(count) {
 
 export default class VouchSystem {
   constructor() {
-    this.filePath = path.resolve("./vouches.json");
+    this.filePath = path.join(process.cwd(), "vouches.json");
 
     // Ensure file exists
     if (!fs.existsSync(this.filePath)) {
