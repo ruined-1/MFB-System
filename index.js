@@ -47,7 +47,10 @@ import SeveritySystem from "./severitySystem.js";
 import ThresholdSystem from "./thresholdSystem.js";
 import VouchSystem from "./vouchSystem.js";
 
-// SETTINGS SYSTEM
+// ===============================
+// SETTINGS SYSTEM (IMPORTANT)
+// ===============================
+// These MUST match your folder structure EXACTLY
 import settingsCommand from "./settings/settingsCommand.js";
 import registerSettingsRouter from "./settings/settingsRouter.js";
 
