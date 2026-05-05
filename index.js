@@ -2,7 +2,12 @@
 // FORCE OLD INSTANCE TO SHUT DOWN
 // ===============================
 process.on("SIGTERM", () => {
-  console.log("Received SIGTERM — shutting down immediately to avoid overlap");
+  console.log("Received SIGTERM — finishing pending saves...");
+
+  // Wait for any queued atomic writes to finish
+  await new Promise(res => setTimeout(res, 500));
+
+  console.log("Shutdown complete.");
   process.exit(0);
 });
 
