@@ -607,3 +607,114 @@ if (id === "general_logchannels_edit") {
       )
   );
 }
+// ------------------------------------------------------------
+// MODAL SUBMISSION HANDLER
+// ------------------------------------------------------------
+if (interaction.isModalSubmit()) {
+  const id = interaction.customId;
+  const value = interaction.fields.getTextInputValue("input");
+
+  // VOUCH
+  if (id === "modal_vouch_logchannel") {
+    settings.set("vouch.logChannel", value);
+    return interaction.reply({ content: "✅ Updated vouch log channel.", ephemeral: true });
+  }
+
+  // ANTI-RAID
+  if (id === "modal_antiraid_join") {
+    settings.set("antiRaid.joinSpike", Number(value));
+    return interaction.reply({ content: "✅ Updated join spike threshold.", ephemeral: true });
+  }
+
+  if (id === "modal_antiraid_msg") {
+    settings.set("antiRaid.msgSpam", Number(value));
+    return interaction.reply({ content: "✅ Updated message spam threshold.", ephemeral: true });
+  }
+
+  if (id === "modal_antiraid_ping") {
+    settings.set("antiRaid.pingSpam", Number(value));
+    return interaction.reply({ content: "✅ Updated ping spam threshold.", ephemeral: true });
+  }
+
+  // ANTI-NUKE
+  if (id === "modal_antinuke_log") {
+    settings.set("antiNuke.logChannel", value);
+    return interaction.reply({ content: "✅ Updated anti-nuke log channel.", ephemeral: true });
+  }
+
+  if (id === "modal_antinuke_ping") {
+    settings.set("antiNuke.escalationPing", value);
+    return interaction.reply({ content: "✅ Updated escalation ping role.", ephemeral: true });
+  }
+
+  if (id === "modal_antinuke_roles") {
+    const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+    settings.set("antiNuke.protectedRoles", arr);
+    return interaction.reply({ content: "✅ Updated protected roles.", ephemeral: true });
+  }
+
+  if (id === "modal_antinuke_channels") {
+    const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+    settings.set("antiNuke.protectedChannels", arr);
+    return interaction.reply({ content: "✅ Updated protected channels.", ephemeral: true });
+  }
+
+  // ALERTS
+  if (id === "modal_alerts_channel") {
+    settings.set("alerts.alertChannel", value);
+    return interaction.reply({ content: "✅ Updated alert channel.", ephemeral: true });
+  }
+
+  if (id === "modal_alerts_pingroles") {
+    const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+    settings.set("alerts.pingRoles", arr);
+    return interaction.reply({ content: "✅ Updated ping roles.", ephemeral: true });
+  }
+
+  if (id === "modal_alerts_cooldowns") {
+    const parts = value.split(",").map(v => Number(v.trim()));
+    if (parts.length === 3) {
+      settings.set("alerts.cooldowns.YELLOW", parts[0]);
+      settings.set("alerts.cooldowns.ORANGE", parts[1]);
+      settings.set("alerts.cooldowns.RED", parts[2]);
+      return interaction.reply({ content: "✅ Updated alert cooldowns.", ephemeral: true });
+    }
+    return interaction.reply({ content: "❌ Invalid format. Use: YELLOW,ORANGE,RED", ephemeral: true });
+  }
+
+  // BOOSTS
+  if (id === "modal_boosts_reward") {
+    settings.set("boosts.rewardRole", value);
+    return interaction.reply({ content: "✅ Updated boost reward role.", ephemeral: true });
+  }
+
+  if (id === "modal_boosts_log") {
+    settings.set("boosts.logChannel", value);
+    return interaction.reply({ content: "✅ Updated boost log channel.", ephemeral: true });
+  }
+
+  // GENERAL
+  if (id === "modal_general_prefix") {
+    settings.set("prefix", value);
+    return interaction.reply({ content: "✅ Updated bot prefix.", ephemeral: true });
+  }
+
+  if (id === "modal_general_staffroles") {
+    const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+    settings.set("staffRoles", arr);
+    return interaction.reply({ content: "✅ Updated staff roles.", ephemeral: true });
+  }
+
+  if (id === "modal_general_logchannels") {
+    const parts = value.split(",").map(v => v.trim());
+    settings.set("logChannels.alerts", parts[0] || "");
+    settings.set("logChannels.boosts", parts[1] || "");
+    settings.set("logChannels.vouches", parts[2] || "");
+    return interaction.reply({ content: "✅ Updated log channels.", ephemeral: true });
+  }
+}
+}
+// ------------------------------------------------------------
+// EXPORTS
+// ------------------------------------------------------------
+export { settingsInteractions };
