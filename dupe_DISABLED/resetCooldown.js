@@ -26,7 +26,6 @@ export default async function resetCooldown(interaction, client) {
   if (id.startsWith("markbanned_")) {
     const playerId = id.replace("markbanned_", "");
 
-    // Permission check
     if (!interaction.member.permissions.has("BanMembers")) {
       return interaction.reply({
         content: "You do not have permission to mark this user as banned.",
@@ -49,7 +48,39 @@ export default async function resetCooldown(interaction, client) {
 
     return interaction.update({
       embeds: [updated],
-      components: [] // remove buttons
+      components: []
+    });
+  }
+
+  // ============================================================
+  // FALSE ALARM BUTTON
+  // ============================================================
+  if (id.startsWith("falsealarm_")) {
+    const playerId = id.replace("falsealarm_", "");
+
+    if (!interaction.member.permissions.has("ManageMessages")) {
+      return interaction.reply({
+        content: "You do not have permission to mark this as a false alarm.",
+        ephemeral: true
+      });
+    }
+
+    const oldEmbed = interaction.message.embeds[0];
+    if (!oldEmbed) {
+      return interaction.reply({
+        content: "Could not update embed.",
+        ephemeral: true
+      });
+    }
+
+    const updated = EmbedBuilder.from(oldEmbed)
+      .setColor("Yellow")
+      .setTitle("⚠️ False Alarm — No Action Needed.")
+      .setTimestamp();
+
+    return interaction.update({
+      embeds: [updated],
+      components: []
     });
   }
 }
