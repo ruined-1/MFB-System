@@ -1,24 +1,16 @@
 // /settings/settingsRouter.js
-import settingsInteractions, {
-  handleSettingsButtons,
-  handleSettingsModals
-} from "./settingsInteractions.js";
+import settingsInteractions from "./settingsInteractions.js";
 
 export default function registerSettingsRouter(client) {
   client.on("interactionCreate", async interaction => {
     try {
-      // Main handler (category switching, home, refresh, close)
+      // The interactions file handles:
+      // - category switching
+      // - buttons
+      // - modals
+      // - updates
+      // - replies
       await settingsInteractions(interaction, client);
-
-      // Button actions (toggles, open modals, etc.)
-      if (interaction.isButton()) {
-        await handleSettingsButtons(interaction, client);
-      }
-
-      // Modal submissions (editing values)
-      if (interaction.isModalSubmit()) {
-        await handleSettingsModals(interaction, client);
-      }
 
     } catch (err) {
       console.error("Settings system error:", err);
