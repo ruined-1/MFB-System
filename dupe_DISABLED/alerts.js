@@ -80,7 +80,7 @@ export default async function alertHandler(msg, client) {
       const severity = getSeverityLabel(amountOwned);
       const color = getSeverityColor(severity);
 
-      // Cooldowns (NEW SYSTEM)
+      // Cooldowns
       let cooldownSeconds = 0;
       if (severity === "YELLOW") cooldownSeconds = 240;
       else if (severity === "ORANGE") cooldownSeconds = 120;
@@ -114,7 +114,7 @@ export default async function alertHandler(msg, client) {
         )
         .setTimestamp();
 
-      // BUTTONS: Reset Cooldown + Mark as Banned
+      // BUTTONS: Reset Cooldown, Mark as Banned, False Alarm
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`reset_${playerId}`)
@@ -124,7 +124,12 @@ export default async function alertHandler(msg, client) {
         new ButtonBuilder()
           .setCustomId(`markbanned_${playerId}`)
           .setLabel("Mark as Banned")
-          .setStyle(ButtonStyle.Success)
+          .setStyle(ButtonStyle.Success),
+
+        new ButtonBuilder()
+          .setCustomId(`falsealarm_${playerId}`)
+          .setLabel("False Alarm")
+          .setStyle(ButtonStyle.Secondary)
       );
 
       let pingString = `<@${NORMAL_PING}>`;
