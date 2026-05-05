@@ -219,115 +219,243 @@ export default async function settingsInteractions(interaction, client) {
   }
 
   // ------------------------------------------------------------
-  // MODAL SUBMISSION HANDLER
+  // BUTTON HANDLER
   // ------------------------------------------------------------
-  if (interaction.isModalSubmit()) {
+  if (interaction.isButton()) {
     const id = interaction.customId;
-    const value = interaction.fields.getTextInputValue("input");
 
     // VOUCH
-    if (id === "modal_vouch_logchannel") {
-      settings.set("vouch.logChannel", value);
-      return interaction.reply({ content: "✅ Updated vouch log channel.", ephemeral: true });
+    if (id === "vouch_toggle") {
+      settings.set("vouch.enabled", !settings.get("vouch.enabled"));
+      return interaction.update({ embeds: [buildVouchEmbed()], components: [buildCategoryMenu(), buildNavButtons()] });
+    }
+
+    if (id === "vouch_public_toggle") {
+      settings.set("vouch.public", !settings.get("vouch.public"));
+      return interaction.update({ embeds: [buildVouchEmbed()], components: [buildCategoryMenu(), buildNavButtons()] });
+    }
+
+    if (id === "vouch_leaderboard_toggle") {
+      settings.set("vouch.leaderboardVisible", !settings.get("vouch.leaderboardVisible"));
+      return interaction.update({ embeds: [buildVouchEmbed()], components: [buildCategoryMenu(), buildNavButtons()] });
+    }
+
+    if (id === "vouch_logchannel_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_vouch_logchannel")
+          .setTitle("Edit Vouch Log Channel")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Channel ID")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter channel ID")
+                .setValue(settings.get("vouch.logChannel") || "")
+                .setRequired(true)
+            )
+          )
+      );
     }
 
     // ANTI-RAID
-    if (id === "modal_antiraid_join") {
-      settings.set("antiRaid.joinSpike", Number(value));
-      return interaction.reply({ content: "✅ Updated join spike threshold.", ephemeral: true });
+    if (id === "antiraid_toggle") {
+      settings.set("antiRaid.enabled", !settings.get("antiRaid.enabled"));
+      return interaction.update({ embeds: [buildAntiRaidEmbed()], components: [buildCategoryMenu(), buildNavButtons()] });
     }
 
-    if (id === "modal_antiraid_msg") {
-      settings.set("antiRaid.msgSpam", Number(value));
-      return interaction.reply({ content: "✅ Updated message spam threshold.", ephemeral: true });
+    if (id === "antiraid_join_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_antiraid_join")
+          .setTitle("Edit Join Spike Threshold")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Number")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter number")
+                .setValue(String(settings.get("antiRaid.joinSpike")))
+                .setRequired(true)
+            )
+          )
+      );
     }
 
-    if (id === "modal_antiraid_ping") {
-      settings.set("antiRaid.pingSpam", Number(value));
-      return interaction.reply({ content: "✅ Updated ping spam threshold.", ephemeral: true });
+    if (id === "antiraid_msg_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_antiraid_msg")
+          .setTitle("Edit Message Spam Threshold")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Number")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter number")
+                .setValue(String(settings.get("antiRaid.msgSpam")))
+                .setRequired(true)
+            )
+          )
+      );
+    }
+
+    if (id === "antiraid_ping_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_antiraid_ping")
+          .setTitle("Edit Ping Spam Threshold")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Number")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter number")
+                .setValue(String(settings.get("antiRaid.pingSpam")))
+                .setRequired(true)
+            )
+          )
+      );
+    }
+
+    if (id === "antiraid_lockdown_toggle") {
+      settings.set("antiRaid.autoLockdown", !settings.get("antiRaid.autoLockdown"));
+      return interaction.update({ embeds: [buildAntiRaidEmbed()], components: [buildCategoryMenu(), buildNavButtons()] });
     }
 
     // ANTI-NUKE
-    if (id === "modal_antinuke_log") {
-      settings.set("antiNuke.logChannel", value);
-      return interaction.reply({ content: "✅ Updated anti-nuke log channel.", ephemeral: true });
+    if (id === "antinuke_toggle") {
+      settings.set("antiNuke.enabled", !settings.get("antiNuke.enabled"));
+      return interaction.update({ embeds: [buildAntiNukeEmbed()], components: [buildCategoryMenu(), buildNavButtons()] });
     }
 
-    if (id === "modal_antinuke_ping") {
-      settings.set("antiNuke.escalationPing", value);
-      return interaction.reply({ content: "✅ Updated escalation ping role.", ephemeral: true });
+    if (id === "antinuke_log_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_antinuke_log")
+          .setTitle("Edit Anti-Nuke Log Channel")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Channel ID")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter channel ID")
+                .setValue(settings.get("antiNuke.logChannel") || "")
+                .setRequired(true)
+            )
+          )
+      );
     }
 
-    if (id === "modal_antinuke_roles") {
-      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-      settings.set("antiNuke.protectedRoles", arr);
-      return interaction.reply({ content: "✅ Updated protected roles.", ephemeral: true });
+    if (id === "antinuke_ping_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_antinuke_ping")
+          .setTitle("Edit Escalation Ping Role")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Role ID")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter role ID")
+                .setValue(settings.get("antiNuke.escalationPing") || "")
+                .setRequired(true)
+            )
+          )
+      );
     }
 
-    if (id === "modal_antinuke_channels") {
-      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-      settings.set("antiNuke.protectedChannels", arr);
-      return interaction.reply({ content: "✅ Updated protected channels.", ephemeral: true });
+    if (id === "antinuke_protected_roles") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_antinuke_roles")
+          .setTitle("Protected Roles")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Role IDs (comma separated)")
+                .setStyle(TextInputStyle.Paragraph)
+                .setPlaceholder("123,456")
+                .setValue(settings.get("antiNuke.protectedRoles").join(","))
+                .setRequired(true)
+            )
+          )
+      );
+    }
+
+    if (id === "antinuke_protected_channels") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_antinuke_channels")
+          .setTitle("Protected Channels")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Channel IDs (comma separated)")
+                .setStyle(TextInputStyle.Paragraph)
+                .setPlaceholder("123,456")
+                .setValue(settings.get("antiNuke.protectedChannels").join(","))
+                .setRequired(true)
+            )
+          )
+      );
     }
 
     // ALERTS
-    if (id === "modal_alerts_channel") {
-      settings.set("alerts.alertChannel", value);
-      return interaction.reply({ content: "✅ Updated alert channel.", ephemeral: true });
+    if (id === "alerts_toggle") {
+      settings.set("alerts.enabled", !settings.get("alerts.enabled"));
+      return interaction.update({ embeds: [buildAlertsEmbed()], components: [buildCategoryMenu(), buildNavButtons()] });
     }
 
-    if (id === "modal_alerts_pingroles") {
-      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-      settings.set("alerts.pingRoles", arr);
-      return interaction.reply({ content: "✅ Updated ping roles.", ephemeral: true });
+    if (id === "alerts_channel_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_alerts_channel")
+          .setTitle("Edit Alert Channel")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Channel ID")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter channel ID")
+                .setValue(settings.get("alerts.alertChannel") || "")
+                .setRequired(true)
+            )
+          )
+      );
     }
 
-    if (id === "modal_alerts_cooldowns") {
-      const parts = value.split(",").map(v => Number(v.trim()));
-      if (parts.length === 3) {
-        settings.set("alerts.cooldowns.YELLOW", parts[0]);
-        settings.set("alerts.cooldowns.ORANGE", parts[1]);
-        settings.set("alerts.cooldowns.RED", parts[2]);
-        return interaction.reply({ content: "✅ Updated alert cooldowns.", ephemeral: true });
-      }
-      return interaction.reply({ content: "❌ Invalid format. Use: YELLOW,ORANGE,RED", ephemeral: true });
+    if (id === "alerts_pingroles_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_alerts_pingroles")
+          .setTitle("Edit Ping Roles")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Role IDs (comma separated)")
+                .setStyle(TextInputStyle.Paragraph)
+                .setPlaceholder("123,456")
+                .setValue(settings.get("alerts.pingRoles").join(","))
+                .setRequired(true)
+            )
+          )
+      );
     }
 
-    // BOOSTS
-    if (id === "modal_boosts_reward") {
-      settings.set("boosts.rewardRole", value);
-      return interaction.reply({ content: "✅ Updated boost reward role.", ephemeral: true });
-    }
-
-    if (id === "modal_boosts_log") {
-      settings.set("boosts.logChannel", value);
-      return interaction.reply({ content: "✅ Updated boost log channel.", ephemeral: true });
-    }
-
-    // GENERAL
-    if (id === "modal_general_prefix") {
-      settings.set("prefix", value);
-      return interaction.reply({ content: "✅ Updated bot prefix.", ephemeral: true });
-    }
-
-    if (id === "modal_general_staffroles") {
-      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-      settings.set("staffRoles", arr);
-      return interaction.reply({ content: "✅ Updated staff roles.", ephemeral: true });
-    }
-
-    if (id === "modal_general_logchannels") {
-      const parts = value.split(",").map(v => v.trim());
-      settings.set("logChannels.alerts", parts[0] || "");
-      settings.set("logChannels.boosts", parts[1] || "");
-      settings.set("logChannels.vouches", parts[2] || "");
-      return interaction.reply({ content: "✅ Updated log channels.", ephemeral: true });
-    }
-  }
-}
-
-// ------------------------------------------------------------
-// EXPORT BUTTON + MODAL HANDLERS
-// ------------------------------------------------------------
-export { handleSettingsButtons, handleSettingsModals };
-}
+    if (id === "alerts_cooldowns_edit") {
+      return interaction.showModal(
+        new ModalBuilder()
+          .setCustomId("modal_alerts_cooldowns")
+          .setTitle("Edit Cooldowns")
+          .addComponents(
