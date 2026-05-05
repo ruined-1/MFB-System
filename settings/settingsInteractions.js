@@ -217,7 +217,6 @@ export default async function settingsInteractions(interaction, client) {
   if (interaction.customId === "settings_close") {
     return interaction.message.delete().catch(() => {});
   }
-}
 
   // ------------------------------------------------------------
   // MODAL SUBMISSION HANDLER
@@ -331,3 +330,4 @@ export default async function settingsInteractions(interaction, client) {
 // EXPORT BUTTON + MODAL HANDLERS
 // ------------------------------------------------------------
 export { handleSettingsButtons, handleSettingsModals };
+}
