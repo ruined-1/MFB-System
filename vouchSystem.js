@@ -15,9 +15,19 @@ function getBadge(count) {
 
 export default class VouchSystem {
   constructor() {
-    this.filePath = path.join(process.cwd(), "vouches.json");
+    // ============================
+    // RENDER‑SAFE PERSISTENT STORAGE
+    // ============================
+    const dataDir = path.join(process.cwd(), "data");
 
-    // Ensure file exists
+    // Ensure /data exists (Render persists this directory)
+    if (!fs.existsSync(dataDir)) {
+      fs.mkdirSync(dataDir);
+    }
+
+    this.filePath = path.join(dataDir, "vouches.json");
+
+    // Create file if missing (ONLY inside persistent /data)
     if (!fs.existsSync(this.filePath)) {
       fs.writeFileSync(this.filePath, JSON.stringify({}, null, 2));
     }
@@ -41,7 +51,7 @@ export default class VouchSystem {
     this.saving = false;
     this.saveQueued = false;
 
-    console.log("LOADED VOUCH SYSTEM FROM:", import.meta.url);
+    console.log("LOADED VOUCH SYSTEM FROM:", this.filePath);
   }
 
   // ============================
