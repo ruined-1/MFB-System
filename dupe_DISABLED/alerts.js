@@ -114,11 +114,17 @@ export default async function alertHandler(msg, client) {
         )
         .setTimestamp();
 
+      // BUTTONS: Reset Cooldown + Mark as Banned
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`reset_${playerId}`)
           .setLabel("Reset Cooldown")
-          .setStyle(ButtonStyle.Danger)
+          .setStyle(ButtonStyle.Danger),
+
+        new ButtonBuilder()
+          .setCustomId(`markbanned_${playerId}`)
+          .setLabel("Mark as Banned")
+          .setStyle(ButtonStyle.Success)
       );
 
       let pingString = `<@${NORMAL_PING}>`;
