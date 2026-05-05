@@ -1,3 +1,4 @@
+// vouchSystem.js
 import fs from "fs";
 import path from "path";
 import { EmbedBuilder } from "discord.js";
@@ -9,29 +10,66 @@ function getBadge(count) {
   if (count >= 20) return "🟥 Elite";
   if (count >= 10) return "🟪 Respected";
   if (count >= 5) return "🟩 Trusted";
-  return "🟦 Newcomer"; // default tier
+  return "🟦 Newcomer";
 }
 
 export default class VouchSystem {
   constructor() {
     this.filePath = path.resolve("./vouches.json");
 
-    // Load or initialize file
+    // Ensure file exists
     if (!fs.existsSync(this.filePath)) {
       fs.writeFileSync(this.filePath, JSON.stringify({}, null, 2));
     }
 
-    this.vouches = JSON.parse(fs.readFileSync(this.filePath));
+    // Load safely
+    try {
+      const raw = fs.readFileSync(this.filePath, "utf8");
+      this.vouches = JSON.parse(raw || "{}");
+
+      if (typeof this.vouches !== "object" || Array.isArray(this.vouches)) {
+        console.error("[Vouch] Invalid JSON, resetting.");
+        this.vouches = {};
+        fs.writeFileSync(this.filePath, JSON.stringify({}, null, 2));
+      }
+    } catch (err) {
+      console.error("[Vouch] Failed to load vouches:", err);
+      this.vouches = {};
+    }
+
+    // Atomic write state
+    this.saving = false;
+    this.saveQueued = false;
+
     console.log("LOADED VOUCH SYSTEM FROM:", import.meta.url);
   }
 
   // ============================
-  // SAFE SAVE (ATOMIC WRITE)
+  // ATOMIC SAVE (RESTART SAFE)
   // ============================
   save() {
+    if (this.saving) {
+      this.saveQueued = true;
+      return;
+    }
+
+    this.saving = true;
+
     const tmp = this.filePath + ".tmp";
-    fs.writeFileSync(tmp, JSON.stringify(this.vouches, null, 2));
-    fs.renameSync(tmp, this.filePath);
+
+    try {
+      fs.writeFileSync(tmp, JSON.stringify(this.vouches, null, 2));
+      fs.renameSync(tmp, this.filePath);
+    } catch (err) {
+      console.error("[Vouch] Failed to save:", err);
+    }
+
+    this.saving = false;
+
+    if (this.saveQueued) {
+      this.saveQueued = false;
+      this.save();
+    }
   }
 
   // ============================
@@ -39,26 +77,19 @@ export default class VouchSystem {
   // ============================
   async handleVouch(msg, args) {
     const target = msg.mentions.users.first();
-    if (!target) {
-      return msg.reply("You must mention a user to vouch for.");
-    }
+    if (!target) return msg.reply("You must mention a user to vouch for.");
 
     if (target.id === msg.author.id) {
       return msg.reply("You cannot vouch for yourself.");
     }
 
-    // Extract reason
     const reason = args.slice(1).join(" ");
-    if (!reason) {
-      return msg.reply("You must provide a reason for the vouch.");
-    }
+    if (!reason) return msg.reply("You must provide a reason for the vouch.");
 
-    // Ensure user entry exists
     if (!this.vouches[target.id]) {
       this.vouches[target.id] = [];
     }
 
-    // Add vouch
     this.vouches[target.id].push({
       from: msg.author.id,
       reason,
@@ -67,7 +98,6 @@ export default class VouchSystem {
 
     this.save();
 
-    // SUCCESS EMBED
     const embed = new EmbedBuilder()
       .setColor("#00ff88")
       .setTitle("Vouch Added")
@@ -80,12 +110,9 @@ export default class VouchSystem {
       )
       .setTimestamp();
 
-    // Send success embed
     await msg.reply({ embeds: [embed] });
 
-    // ============================
-    // LOG TO CHANNEL 1500564029444325416
-    // ============================
+    // LOG CHANNEL
     const logChannel = msg.client.channels.cache.get("1500564029444325416");
     if (logChannel) {
       const logEmbed = new EmbedBuilder()
@@ -102,8 +129,6 @@ export default class VouchSystem {
 
       await logChannel.send({ embeds: [logEmbed] });
     }
-
-    return;
   }
 
   // ============================
@@ -111,14 +136,10 @@ export default class VouchSystem {
   // ============================
   async handleUnvouch(msg, args) {
     const target = msg.mentions.users.first();
-    if (!target) {
-      return msg.reply("You must mention a user to unvouch.");
-    }
+    if (!target) return msg.reply("You must mention a user to unvouch.");
 
     const index = parseInt(args[1], 10);
-    if (isNaN(index)) {
-      return msg.reply("You must provide the vouch index to remove.");
-    }
+    if (isNaN(index)) return msg.reply("You must provide the vouch index to remove.");
 
     if (!this.vouches[target.id] || !this.vouches[target.id][index - 1]) {
       return msg.reply("That vouch does not exist.");
@@ -130,19 +151,15 @@ export default class VouchSystem {
     const embed = new EmbedBuilder()
       .setColor("#ff4444")
       .setTitle("Vouch Removed")
-      .setDescription(
-        `Removed vouch #${index} from **${target.username}**`
-      )
-      .addFields(
-        { name: "Removed Reason", value: removed[0].reason }
-      )
+      .setDescription(`Removed vouch #${index} from **${target.username}**`)
+      .addFields({ name: "Removed Reason", value: removed[0].reason })
       .setTimestamp();
 
     return msg.reply({ embeds: [embed] });
   }
 
   // ============================
-  // HANDLE !VOUCHES (PROFILE + LIST + AVATAR)
+  // HANDLE !VOUCHES
   // ============================
   async handleVouches(msg) {
     const target = msg.mentions.users.first() || msg.author;
@@ -157,10 +174,7 @@ export default class VouchSystem {
     const badge = getBadge(count);
 
     const formatted = list
-      .map(
-        (v, i) =>
-          `**${i + 1}.** From <@${v.from}> — *${v.reason}*`
-      )
+      .map((v, i) => `**${i + 1}.** From <@${v.from}> — *${v.reason}*`)
       .join("\n");
 
     const embed = new EmbedBuilder()
@@ -194,10 +208,7 @@ export default class VouchSystem {
     }
 
     const formatted = entries
-      .map(
-        (e, i) =>
-          `**${i + 1}. <@${e.userId}> — ${e.count} vouches**`
-      )
+      .map((e, i) => `**${i + 1}. <@${e.userId}> — ${e.count} vouches**`)
       .join("\n");
 
     const embed = new EmbedBuilder()
