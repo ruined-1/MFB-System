@@ -1,16 +1,16 @@
+// index.js
+
 // ===============================
 // FORCE OLD INSTANCE TO SHUT DOWN
 // ===============================
 process.on("SIGTERM", async () => {
   console.log("Received SIGTERM — finishing pending saves...");
 
-  // Wait for any queued atomic writes to finish
   await new Promise(res => setTimeout(res, 500));
 
   console.log("Shutdown complete.");
   process.exit(0);
 });
-
 
 const startupDelay = async () => {
   await new Promise(res => setTimeout(res, 2000));
@@ -53,10 +53,7 @@ import SeveritySystem from "./severitySystem.js";
 import ThresholdSystem from "./thresholdSystem.js";
 import VouchSystem from "./vouchSystem.js";
 
-// ===============================
-// SETTINGS SYSTEM (IMPORTANT)
-// ===============================
-// These MUST match your folder structure EXACTLY
+// SETTINGS SYSTEM
 import settingsCommand from "./settings/settingsCommand.js";
 import registerSettingsRouter from "./settings/settingsRouter.js";
 
@@ -79,20 +76,60 @@ client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
 // ===============================
-// PREFIX COMMANDS
+// AFK SYSTEM
+// ===============================
+client.afk = {
+  enabled: false,
+  reason: ""
+};
+
+// ===============================
+// PREFIX COMMANDS + AFK LOGIC
 // ===============================
 client.on("messageCreate", async (msg) => {
   if (msg.partial) return;
   if (msg.author.bot) return;
 
-  // SETTINGS COMMAND (Admin only)
+  // AFK AUTO-CLEAR
+  if (msg.author.id === "775991906173452288" && client.afk.enabled) {
+    client.afk.enabled = false;
+    client.afk.reason = "";
+    msg.reply("🟩 Welcome back — AFK removed.");
+  }
+
+  // AFK NOTIFY
+  if (client.afk.enabled) {
+    const ruinedId = "775991906173452288";
+
+    let isReply = false;
+    if (msg.reference?.messageId) {
+      try {
+        const replied = await msg.channel.messages.fetch(msg.reference.messageId);
+        isReply = replied.author.id === ruinedId;
+      } catch {}
+    }
+
+    const pinged =
+      msg.mentions.users.has(ruinedId) ||
+      msg.content.includes(`<@${ruinedId}>`) ||
+      msg.content.includes(`<@!${ruinedId}>`) ||
+      isReply;
+
+    if (pinged) {
+      return msg.reply(
+        `💤 <@${ruinedId}> is currently **AFK**.\nReason: **${client.afk.reason}**`
+      );
+    }
+  }
+
+  // SETTINGS COMMAND
   try {
     await settingsCommand(msg, client);
   } catch (err) {
     console.error("Settings command error:", err);
   }
 
-  // EXISTING PREFIX COMMANDS
+  // PREFIX COMMANDS
   if (msg.content.startsWith("!")) {
     try {
       await prefix(msg, client);
