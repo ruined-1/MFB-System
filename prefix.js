@@ -56,7 +56,7 @@ export default async function prefix(msg, client) {
     return client.vouchSystem.handleVouches(msg);
   }
 
-  if (command === "leaderboard" || command === "vouchlb") {
+  if (command === "leaderboard" || command === "vouchlb" || command === "lb") {
     return client.vouchSystem.handleLeaderboard(msg);
   }
 

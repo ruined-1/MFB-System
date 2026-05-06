@@ -17,6 +17,7 @@ const ESCALATION_PING = "750441339195490335";
 const recentRequests = new Map();
 
 export default async function alertHandler(msg, client) {
+
   try {
     console.log("ALERT HANDLER TRIGGERED:", {
       webhookId: msg.webhookId,
@@ -150,4 +151,5 @@ export default async function alertHandler(msg, client) {
   } catch (err) {
     console.error("Error in alertHandler:", err);
   }
+    
 }
