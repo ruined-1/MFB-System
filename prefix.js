@@ -1,3 +1,4 @@
+// prefix.js
 import { simulateRaidAlert } from "./antiRaid.js";
 import { simulateNukeAlert } from "./antiNuke.js";
 import { boostCommand } from "./boostTracker.js";
@@ -26,6 +27,21 @@ export default async function prefix(msg, client) {
   // -----------------------------
   // PUBLIC COMMANDS (NO PERMS)
   // -----------------------------
+
+  // AFK COMMAND (ONLY RUINED)
+  if (command === "afk") {
+    if (msg.author.id !== "775991906173452288") {
+      return msg.reply("❌ Only the bot owner can use this command.");
+    }
+
+    const reason = args.join(" ").trim();
+    if (!reason) return msg.reply("❌ You must provide an AFK reason.");
+
+    client.afk.enabled = true;
+    client.afk.reason = reason;
+
+    return msg.reply(`🟦 You are now **AFK**.\nReason: **${reason}**`);
+  }
 
   // Vouch system
   if (command === "vouch") {
@@ -92,6 +108,6 @@ export default async function prefix(msg, client) {
   // UNKNOWN COMMAND
   // -----------------------------
   return msg.reply(
-    "Unknown command. Available: `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`."
+    "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`."
   );
 }
