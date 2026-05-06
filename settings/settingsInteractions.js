@@ -80,6 +80,64 @@ function buildNavButtons() {
 }
 
 // ------------------------------------------------------------
+// CATEGORY BUTTON ROWS (THE FIX YOU WERE MISSING)
+// ------------------------------------------------------------
+function vouchButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("vouch_toggle").setLabel("Toggle Enabled").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("vouch_public_toggle").setLabel("Toggle Public").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("vouch_leaderboard_toggle").setLabel("Toggle Leaderboard").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("vouch_logchannel_edit").setLabel("Edit Log Channel").setStyle(ButtonStyle.Success)
+  );
+}
+
+function antiRaidButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("antiraid_toggle").setLabel("Toggle Enabled").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("antiraid_join_edit").setLabel("Edit Join Spike").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("antiraid_msg_edit").setLabel("Edit Msg Spam").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("antiraid_ping_edit").setLabel("Edit Ping Spam").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("antiraid_lockdown_toggle").setLabel("Toggle Lockdown").setStyle(ButtonStyle.Danger)
+  );
+}
+
+function antiNukeButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("antinuke_toggle").setLabel("Toggle Enabled").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("antinuke_log_edit").setLabel("Edit Log Channel").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("antinuke_ping_edit").setLabel("Edit Escalation Ping").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("antinuke_protected_roles").setLabel("Protected Roles").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId("antinuke_protected_channels").setLabel("Protected Channels").setStyle(ButtonStyle.Success)
+  );
+}
+
+function alertsButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("alerts_toggle").setLabel("Toggle Enabled").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("alerts_channel_edit").setLabel("Edit Channel").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("alerts_pingroles_edit").setLabel("Edit Ping Roles").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("alerts_cooldowns_edit").setLabel("Edit Cooldowns").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("alerts_buttons_toggle").setLabel("Toggle Buttons").setStyle(ButtonStyle.Success)
+  );
+}
+
+function boostsButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("boosts_toggle").setLabel("Toggle Enabled").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("boosts_reward_edit").setLabel("Edit Reward Role").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("boosts_log_edit").setLabel("Edit Log Channel").setStyle(ButtonStyle.Secondary)
+  );
+}
+
+function generalButtons() {
+  return new ActionRowBuilder().addComponents(
+    new ButtonBuilder().setCustomId("general_prefix_edit").setLabel("Edit Prefix").setStyle(ButtonStyle.Primary),
+    new ButtonBuilder().setCustomId("general_staffroles_edit").setLabel("Edit Staff Roles").setStyle(ButtonStyle.Secondary),
+    new ButtonBuilder().setCustomId("general_logchannels_edit").setLabel("Edit Log Channels").setStyle(ButtonStyle.Secondary)
+  );
+}
+
+// ------------------------------------------------------------
 // CATEGORY EMBEDS
 // ------------------------------------------------------------
 function buildVouchEmbed() {
@@ -181,9 +239,19 @@ export default async function settingsInteractions(interaction, client) {
       general: buildGeneralEmbed()
     };
 
+    const rows = {
+      main: [],
+      vouch: [vouchButtons()],
+      antiraid: [antiRaidButtons()],
+      antinuke: [antiNukeButtons()],
+      alerts: [alertsButtons()],
+      boosts: [boostsButtons()],
+      general: [generalButtons()]
+    };
+
     return interaction.update({
       embeds: [embeds[value]],
-      components: [buildCategoryMenu(), buildNavButtons()]
+      components: [buildCategoryMenu(), ...rows[value], buildNavButtons()]
     });
   }
 
@@ -200,16 +268,18 @@ export default async function settingsInteractions(interaction, client) {
     const title = interaction.message.embeds[0]?.title || "";
 
     let embed = buildMainEmbed();
-    if (title.includes("Vouch")) embed = buildVouchEmbed();
-    if (title.includes("Anti-Raid")) embed = buildAntiRaidEmbed();
-    if (title.includes("Anti-Nuke")) embed = buildAntiNukeEmbed();
-    if (title.includes("Alert System")) embed = buildAlertsEmbed();
-    if (title.includes("Boost Tracker")) embed = buildBoostsEmbed();
-    if (title.includes("General Bot Settings")) embed = buildGeneralEmbed();
+    let buttons = [];
+
+    if (title.includes("Vouch")) { embed = buildVouchEmbed(); buttons = [vouchButtons()]; }
+    if (title.includes("Anti-Raid")) { embed = buildAntiRaidEmbed(); buttons = [antiRaidButtons()]; }
+    if (title.includes("Anti-Nuke")) { embed = buildAntiNukeEmbed(); buttons = [antiNukeButtons()]; }
+    if (title.includes("Alert System")) { embed = buildAlertsEmbed(); buttons = [alertsButtons()]; }
+    if (title.includes("Boost Tracker")) { embed = buildBoostsEmbed(); buttons = [boostsButtons()]; }
+    if (title.includes("General Bot Settings")) { embed = buildGeneralEmbed(); buttons = [generalButtons()]; }
 
     return interaction.update({
       embeds: [embed],
-      components: [buildCategoryMenu(), buildNavButtons()]
+      components: [buildCategoryMenu(), ...buttons, buildNavButtons()]
     });
   }
 
@@ -229,7 +299,7 @@ export default async function settingsInteractions(interaction, client) {
       settings.set("vouch.enabled", !settings.get("vouch.enabled"));
       return interaction.update({
         embeds: [buildVouchEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
+        components: [buildCategoryMenu(), vouchButtons(), buildNavButtons()]
       });
     }
 
@@ -237,7 +307,7 @@ export default async function settingsInteractions(interaction, client) {
       settings.set("vouch.public", !settings.get("vouch.public"));
       return interaction.update({
         embeds: [buildVouchEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
+        components: [buildCategoryMenu(), vouchButtons(), buildNavButtons()]
       });
     }
 
@@ -245,7 +315,7 @@ export default async function settingsInteractions(interaction, client) {
       settings.set("vouch.leaderboardVisible", !settings.get("vouch.leaderboardVisible"));
       return interaction.update({
         embeds: [buildVouchEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
+        components: [buildCategoryMenu(), vouchButtons(), buildNavButtons()]
       });
     }
 
@@ -273,7 +343,7 @@ export default async function settingsInteractions(interaction, client) {
       settings.set("antiRaid.enabled", !settings.get("antiRaid.enabled"));
       return interaction.update({
         embeds: [buildAntiRaidEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
+        components: [buildCategoryMenu(), antiRaidButtons(), buildNavButtons()]
       });
     }
 
@@ -334,20 +404,12 @@ export default async function settingsInteractions(interaction, client) {
       );
     }
 
-    if (id === "antiraid_lockdown_toggle") {
-      settings.set("antiRaid.autoLockdown", !settings.get("antiRaid.autoLockdown"));
-      return interaction.update({
-        embeds: [buildAntiRaidEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
-      });
-    }
-
     // ANTI-NUKE
     if (id === "antinuke_toggle") {
       settings.set("antiNuke.enabled", !settings.get("antiNuke.enabled"));
       return interaction.update({
         embeds: [buildAntiNukeEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
+        components: [buildCategoryMenu(), antiNukeButtons(), buildNavButtons()]
       });
     }
 
@@ -432,7 +494,7 @@ export default async function settingsInteractions(interaction, client) {
       settings.set("alerts.enabled", !settings.get("alerts.enabled"));
       return interaction.update({
         embeds: [buildAlertsEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
+        components: [buildCategoryMenu(), alertsButtons(), buildNavButtons()]
       });
     }
 
@@ -470,256 +532,256 @@ export default async function settingsInteractions(interaction, client) {
                 .setValue(settings.get("alerts.pingRoles").join(","))
                 .setRequired(true)
             )
-        )
-    );
-}
+          )
+      );
+    }
 
-if (id === "alerts_cooldowns_edit") {
-    return interaction.showModal(
+    if (id === "alerts_cooldowns_edit") {
+      return interaction.showModal(
         new ModalBuilder()
-            .setCustomId("modal_alerts_cooldowns")
-            .setTitle("Edit Cooldowns")
-            .addComponents(
-                new ActionRowBuilder().addComponents(
-                    new TextInputBuilder()
-                        .setCustomId("input")
-                        .setLabel("Format: YELLOW,ORANGE,RED")
-                        .setStyle(TextInputStyle.Short)
-                        .setPlaceholder("240,120,30")
-                        .setValue(
-                            `${settings.get("alerts.cooldowns.YELLOW")},${settings.get("alerts.cooldowns.ORANGE")},${settings.get("alerts.cooldowns.RED")}`
-                        )
-                        .setRequired(true)
+          .setCustomId("modal_alerts_cooldowns")
+          .setTitle("Edit Cooldowns")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Format: YELLOW,ORANGE,RED")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("240,120,30")
+                .setValue(
+                  `${settings.get("alerts.cooldowns.YELLOW")},${settings.get("alerts.cooldowns.ORANGE")},${settings.get("alerts.cooldowns.RED")}`
                 )
+                .setRequired(true)
             )
-    );
-}
+          )
+      );
+    }
 
-if (id === "alerts_buttons_toggle") {
-    settings.set("alerts.buttonsEnabled", !settings.get("alerts.buttonsEnabled"));
-    return interaction.update({
+    if (id === "alerts_buttons_toggle") {
+      settings.set("alerts.buttonsEnabled", !settings.get("alerts.buttonsEnabled"));
+      return interaction.update({
         embeds: [buildAlertsEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
-    });
-}
+        components: [buildCategoryMenu(), alertsButtons(), buildNavButtons()]
+      });
+    }
 
-// BOOSTS
-if (id === "boosts_toggle") {
-    settings.set("boosts.enabled", !settings.get("boosts.enabled"));
-    return interaction.update({
+    // BOOSTS
+    if (id === "boosts_toggle") {
+      settings.set("boosts.enabled", !settings.get("boosts.enabled"));
+      return interaction.update({
         embeds: [buildBoostsEmbed()],
-        components: [buildCategoryMenu(), buildNavButtons()]
-    });
-}
+        components: [buildCategoryMenu(), boostsButtons(), buildNavButtons()]
+      });
+    }
 
-if (id === "boosts_reward_edit") {
-    return interaction.showModal(
+    if (id === "boosts_reward_edit") {
+      return interaction.showModal(
         new ModalBuilder()
-            .setCustomId("modal_boosts_reward")
-            .setTitle("Edit Reward Role")
-            .addComponents(
-                new ActionRowBuilder().addComponents(
-                    new TextInputBuilder()
-                        .setCustomId("input")
-                        .setLabel("Role ID")
-                        .setStyle(TextInputStyle.Short)
-                        .setPlaceholder("Enter role ID")
-                        .setValue(settings.get("boosts.rewardRole") || "")
-                        .setRequired(true)
-                )
+          .setCustomId("modal_boosts_reward")
+          .setTitle("Edit Reward Role")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Role ID")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter role ID")
+                .setValue(settings.get("boosts.rewardRole") || "")
+                .setRequired(true)
             )
-    );
-}
+          )
+      );
+    }
 
-if (id === "boosts_log_edit") {
-    return interaction.showModal(
+    if (id === "boosts_log_edit") {
+      return interaction.showModal(
         new ModalBuilder()
-            .setCustomId("modal_boosts_log")
-            .setTitle("Edit Boost Log Channel")
-            .addComponents(
-                new ActionRowBuilder().addComponents(
-                    new TextInputBuilder()
-                        .setCustomId("input")
-                        .setLabel("Channel ID")
-                        .setStyle(TextInputStyle.Short)
-                        .setPlaceholder("Enter channel ID")
-                        .setValue(settings.get("boosts.logChannel") || "")
-                        .setRequired(true)
-                )
+          .setCustomId("modal_boosts_log")
+          .setTitle("Edit Boost Log Channel")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Channel ID")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter channel ID")
+                .setValue(settings.get("boosts.logChannel") || "")
+                .setRequired(true)
             )
-    );
-}
+          )
+      );
+    }
 
-// GENERAL
-if (id === "general_prefix_edit") {
-    return interaction.showModal(
+    // GENERAL
+    if (id === "general_prefix_edit") {
+      return interaction.showModal(
         new ModalBuilder()
-            .setCustomId("modal_general_prefix")
-            .setTitle("Edit Bot Prefix")
-            .addComponents(
-                new ActionRowBuilder().addComponents(
-                    new TextInputBuilder()
-                        .setCustomId("input")
-                        .setLabel("Prefix")
-                        .setStyle(TextInputStyle.Short)
-                        .setPlaceholder("Enter prefix")
-                        .setValue(settings.get("prefix"))
-                        .setRequired(true)
-                )
+          .setCustomId("modal_general_prefix")
+          .setTitle("Edit Bot Prefix")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Prefix")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("Enter prefix")
+                .setValue(settings.get("prefix"))
+                .setRequired(true)
             )
-    );
-}
+          )
+      );
+    }
 
-if (id === "general_staffroles_edit") {
-    return interaction.showModal(
+    if (id === "general_staffroles_edit") {
+      return interaction.showModal(
         new ModalBuilder()
-            .setCustomId("modal_general_staffroles")
-            .setTitle("Edit Staff Roles")
-            .addComponents(
-                new ActionRowBuilder().addComponents(
-                    new TextInputBuilder()
-                        .setCustomId("input")
-                        .setLabel("Role IDs (comma separated)")
-                        .setStyle(TextInputStyle.Paragraph)
-                        .setPlaceholder("123,456")
-                        .setValue(settings.get("staffRoles").join(","))
-                        .setRequired(true)
-                )
+          .setCustomId("modal_general_staffroles")
+          .setTitle("Edit Staff Roles")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Role IDs (comma separated)")
+                .setStyle(TextInputStyle.Paragraph)
+                .setPlaceholder("123,456")
+                .setValue(settings.get("staffRoles").join(","))
+                .setRequired(true)
             )
-    );
-}
+          )
+      );
+    }
 
-if (id === "general_logchannels_edit") {
-    return interaction.showModal(
+    if (id === "general_logchannels_edit") {
+      return interaction.showModal(
         new ModalBuilder()
-            .setCustomId("modal_general_logchannels")
-            .setTitle("Edit Log Channels")
-            .addComponents(
-                new ActionRowBuilder().addComponents(
-                    new TextInputBuilder()
-                        .setCustomId("input")
-                        .setLabel("Format: alerts,boosts,vouches")
-                        .setStyle(TextInputStyle.Short)
-                        .setPlaceholder("123,456,789")
-                        .setValue(
-                            `${settings.get("logChannels.alerts") || ""},${settings.get("logChannels.boosts") || ""},${settings.get("logChannels.vouches") || ""}`
-                        )
-                        .setRequired(true)
+          .setCustomId("modal_general_logchannels")
+          .setTitle("Edit Log Channels")
+          .addComponents(
+            new ActionRowBuilder().addComponents(
+              new TextInputBuilder()
+                .setCustomId("input")
+                .setLabel("Format: alerts,boosts,vouches")
+                .setStyle(TextInputStyle.Short)
+                .setPlaceholder("123,456,789")
+                .setValue(
+                  `${settings.get("logChannels.alerts") || ""},${settings.get("logChannels.boosts") || ""},${settings.get("logChannels.vouches") || ""}`
                 )
+                .setRequired(true)
             )
-    );
-}
-}
+          )
+      );
+    }
+  }
 
-// ------------------------------------------------------------
-// MODAL SUBMISSION HANDLER
-// ------------------------------------------------------------
-if (interaction.isModalSubmit()) {
+  // ------------------------------------------------------------
+  // MODAL SUBMISSION HANDLER
+  // ------------------------------------------------------------
+  if (interaction.isModalSubmit()) {
     const id = interaction.customId;
     const value = interaction.fields.getTextInputValue("input");
 
     // VOUCH
     if (id === "modal_vouch_logchannel") {
-        settings.set("vouch.logChannel", value);
-        return interaction.reply({ content: "✅ Updated vouch log channel.", ephemeral: true });
+      settings.set("vouch.logChannel", value);
+      return interaction.reply({ content: "✅ Updated vouch log channel.", ephemeral: true });
     }
 
     // ANTI-RAID
     if (id === "modal_antiraid_join") {
-        settings.set("antiRaid.joinSpike", Number(value));
-        return interaction.reply({ content: "✅ Updated join spike threshold.", ephemeral: true });
+      settings.set("antiRaid.joinSpike", Number(value));
+      return interaction.reply({ content: "✅ Updated join spike threshold.", ephemeral: true });
     }
 
     if (id === "modal_antiraid_msg") {
-        settings.set("antiRaid.msgSpam", Number(value));
-        return interaction.reply({ content: "✅ Updated message spam threshold.", ephemeral: true });
+      settings.set("antiRaid.msgSpam", Number(value));
+      return interaction.reply({ content: "✅ Updated message spam threshold.", ephemeral: true });
     }
 
     if (id === "modal_antiraid_ping") {
-        settings.set("antiRaid.pingSpam", Number(value));
-        return interaction.reply({ content: "✅ Updated ping spam threshold.", ephemeral: true });
+      settings.set("antiRaid.pingSpam", Number(value));
+      return interaction.reply({ content: "✅ Updated ping spam threshold.", ephemeral: true });
     }
 
     // ANTI-NUKE
     if (id === "modal_antinuke_log") {
-        settings.set("antiNuke.logChannel", value);
-        return interaction.reply({ content: "✅ Updated anti-nuke log channel.", ephemeral: true });
+      settings.set("antiNuke.logChannel", value);
+      return interaction.reply({ content: "✅ Updated anti-nuke log channel.", ephemeral: true });
     }
 
     if (id === "modal_antinuke_ping") {
-        settings.set("antiNuke.escalationPing", value);
-        return interaction.reply({ content: "✅ Updated escalation ping role.", ephemeral: true });
+      settings.set("antiNuke.escalationPing", value);
+      return interaction.reply({ content: "✅ Updated escalation ping role.", ephemeral: true });
     }
 
     if (id === "modal_antinuke_roles") {
-        const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-        settings.set("antiNuke.protectedRoles", arr);
-        return interaction.reply({ content: "✅ Updated protected roles.", ephemeral: true });
+      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+      settings.set("antiNuke.protectedRoles", arr);
+      return interaction.reply({ content: "✅ Updated protected roles.", ephemeral: true });
     }
 
     if (id === "modal_antinuke_channels") {
-        const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-        settings.set("antiNuke.protectedChannels", arr);
-        return interaction.reply({ content: "✅ Updated protected channels.", ephemeral: true });
+      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+      settings.set("antiNuke.protectedChannels", arr);
+      return interaction.reply({ content: "✅ Updated protected channels.", ephemeral: true });
     }
 
     // ALERTS
     if (id === "modal_alerts_channel") {
-        settings.set("alerts.alertChannel", value);
-        return interaction.reply({ content: "✅ Updated alert channel.", ephemeral: true });
+      settings.set("alerts.alertChannel", value);
+      return interaction.reply({ content: "✅ Updated alert channel.", ephemeral: true });
     }
 
     if (id === "modal_alerts_pingroles") {
-        const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-        settings.set("alerts.pingRoles", arr);
-        return interaction.reply({ content: "✅ Updated ping roles.", ephemeral: true });
+      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+      settings.set("alerts.pingRoles", arr);
+      return interaction.reply({ content: "✅ Updated ping roles.", ephemeral: true });
     }
 
     if (id === "modal_alerts_cooldowns") {
-        const parts = value.split(",").map(v => Number(v.trim()));
-        if (parts.length === 3) {
-            settings.set("alerts.cooldowns.YELLOW", parts[0]);
-            settings.set("alerts.cooldowns.ORANGE", parts[1]);
-            settings.set("alerts.cooldowns.RED", parts[2]);
-            return interaction.reply({ content: "✅ Updated alert cooldowns.", ephemeral: true });
-        }
-        return interaction.reply({ content: "❌ Invalid format. Use: YELLOW,ORANGE,RED", ephemeral: true });
+      const parts = value.split(",").map(v => Number(v.trim()));
+      if (parts.length === 3) {
+        settings.set("alerts.cooldowns.YELLOW", parts[0]);
+        settings.set("alerts.cooldowns.ORANGE", parts[1]);
+        settings.set("alerts.cooldowns.RED", parts[2]);
+        return interaction.reply({ content: "✅ Updated alert cooldowns.", ephemeral: true });
+      }
+      return interaction.reply({ content: "❌ Invalid format. Use: YELLOW,ORANGE,RED", ephemeral: true });
     }
 
     // BOOSTS
     if (id === "modal_boosts_reward") {
-        settings.set("boosts.rewardRole", value);
-        return interaction.reply({ content: "✅ Updated boost reward role.", ephemeral: true });
+      settings.set("boosts.rewardRole", value);
+      return interaction.reply({ content: "✅ Updated boost reward role.", ephemeral: true });
     }
 
     if (id === "modal_boosts_log") {
-        settings.set("boosts.logChannel", value);
-        return interaction.reply({ content: "✅ Updated boost log channel.", ephemeral: true });
+      settings.set("boosts.logChannel", value);
+      return interaction.reply({ content: "✅ Updated boost log channel.", ephemeral: true });
     }
 
     // GENERAL
     if (id === "modal_general_prefix") {
-        settings.set("prefix", value);
-        return interaction.reply({ content: "✅ Updated bot prefix.", ephemeral: true });
+      settings.set("prefix", value);
+      return interaction.reply({ content: "✅ Updated bot prefix.", ephemeral: true });
     }
 
     if (id === "modal_general_staffroles") {
-        const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
-        settings.set("staffRoles", arr);
-        return interaction.reply({ content: "✅ Updated staff roles.", ephemeral: true });
+      const arr = value.split(",").map(v => v.trim()).filter(v => v.length > 0);
+      settings.set("staffRoles", arr);
+      return interaction.reply({ content: "✅ Updated staff roles.", ephemeral: true });
     }
 
     if (id === "modal_general_logchannels") {
-        const parts = value.split(",").map(v => v.trim());
-        settings.set("logChannels.alerts", parts[0] || "");
-        settings.set("logChannels.boosts", parts[1] || "");
-        settings.set("logChannels.vouches", parts[2] || "");
-        return interaction.reply({ content: "✅ Updated log channels.", ephemeral: true });
+      const parts = value.split(",").map(v => v.trim());
+      settings.set("logChannels.alerts", parts[0] || "");
+      settings.set("logChannels.boosts", parts[1] || "");
+      settings.set("logChannels.vouches", parts[2] || "");
+      return interaction.reply({ content: "✅ Updated log channels.", ephemeral: true });
     }
-}
+  }
 }
 
 // ------------------------------------------------------------
-// EXPORTS
+// EXPORT
 // ------------------------------------------------------------
 export { settingsInteractions };
