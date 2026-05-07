@@ -1,0 +1,6 @@
+.env
+.env.*
+node_modules
+data/vouches.json
+boosts.json
+package-lock.json

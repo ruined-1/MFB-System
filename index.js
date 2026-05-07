@@ -31,6 +31,7 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // DISCORD BOT
 // ===============================
 import { Client, GatewayIntentBits } from "discord.js";
+import { ConnectToDatabase } from "./db.js";
 
 // Handlers
 import prefix from "./prefix.js";
@@ -74,6 +75,8 @@ client.cooldownSystem = new CooldownSystem();
 client.severitySystem = new SeveritySystem();
 client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
+
+await ConnectToDatabase();
 
 // ===============================
 // AFK SYSTEM
