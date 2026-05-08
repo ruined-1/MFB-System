@@ -24,6 +24,10 @@ export default class VouchSystem {
       return msg.reply("You cannot vouch for yourself.");
     }
 
+    if (target.bot) {
+      return msg.reply("You cannot vouch for bots.");
+    }
+
     const reason = args.slice(1).join(" ");
     if (!reason) return msg.reply("You must provide a reason for the vouch.");
 
