@@ -85,6 +85,8 @@ export default class VouchSystem {
     const index = parseInt(args[1], 10);
     if (isNaN(index)) return msg.reply("You must provide the vouch index to remove.");
 
+    const vouches = await GetVouches(target.id);
+    
     const vouch = vouches[index - 1];
 
     if (!vouch ) {

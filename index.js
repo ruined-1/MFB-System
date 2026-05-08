@@ -7,6 +7,7 @@ process.on("SIGTERM", async () => {
   console.log("Received SIGTERM — finishing pending saves...");
 
   await new Promise(res => setTimeout(res, 500));
+  await CloseDatabaseConnection();
 
   console.log("Shutdown complete.");
   process.exit(0);
@@ -31,7 +32,7 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // DISCORD BOT
 // ===============================
 import { Client, GatewayIntentBits } from "discord.js";
-import { ConnectToDatabase } from "./db.js";
+import { CloseDatabaseConnection, ConnectToDatabase } from "./db.js";
 
 // Handlers
 import prefix from "./prefix.js";
