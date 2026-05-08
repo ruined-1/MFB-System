@@ -178,7 +178,7 @@ export default class VouchSystem {
   }
 
   async handleCleanVouch(msg, args) {
-    const userFlags = msg.member?.flags ?? Flags.INVALID;
+    const userFlags = msg.member.flags ?? Flags.INVALID;
 
     if (!hasRoleOrHigher(userFlags, Flags.MOD)) {
       return msg.reply("You need to be Mod or higher to use this command.");
@@ -210,7 +210,7 @@ export default class VouchSystem {
       .setDescription(`A vouch was removed from **${target.username}** by staff action`)
       .addFields(
         { name: "Original Author", value: `<@${vouch.from}>`, inline: true },
-        { name: "Reason", value: vouch.reason ?? "No reason provided", inline: true },
+        { name: "Reason", value: vouch.reason, inline: true },
         { name: "Index", value: `#${index}`, inline: true }
       )
       .setTimestamp();
