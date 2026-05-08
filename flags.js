@@ -61,9 +61,32 @@ export function getHighestRole(userFlags) {
   for (const role of RoleHierarchy) {
     if (userFlags & role) return role;
   }
-  return Flags.INVALID;
+  return Flags.Invalid;
 }
 
+export function IsModOrHigher(userFlags) {
+  return hasRoleOrHigher(userFlags, Flags.Mod);
+}
+
+export function IsAdminOrHigher(userFlags) {
+  return hasRoleOrHigher(userFlags, Flags.Admin);
+}
+
+export function IsDirectorOrHigher(userFlags) {
+  return hasRoleOrHigher(userFlags, Flags.Director);
+}
+
+export function IsCommunityManagerOrHigher(userFlags) {
+  return hasRoleOrHigher(userFlags, Flags.CommunityManager);
+}
+
+export function IsDeveloperOrHigher(userFlags) {
+  return hasRoleOrHigher(userFlags, Flags.Developer);
+}
+
+export function IsOwner(userFlags) {
+  return hasFlag(userFlags, Flags.Owner);
+}
 
 export function getRoleId(flag) {
   return RoleIds[flag] ?? null;

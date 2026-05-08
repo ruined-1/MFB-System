@@ -1,6 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import { GetVouches, SaveVouch, GetAllVouches, DeleteVouch } from "./db.js";
-import { Flags, hasRoleOrHigher } from "./flags.js";
+import { Flags, hasRoleOrHigher, IsModOrHigher } from "./flags.js";
 
 // ============================
 // BADGE SYSTEM
@@ -180,7 +180,7 @@ export default class VouchSystem {
   async handleCleanVouch(msg, args) {
     const userFlags = msg.member.flags ?? Flags.Invalid;
 
-    if (!hasRoleOrHigher(userFlags, Flags.Mod)) {
+    if (!IsModOrHigher(userFlags)) {
       return msg.reply("You need to be Mod or higher to use this command.");
     }
 
