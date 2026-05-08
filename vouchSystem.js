@@ -1,5 +1,6 @@
 import { EmbedBuilder } from "discord.js";
 import { GetVouches, SaveVouch, GetAllVouches, DeleteVouch } from "./db.js";
+import { Flags, hasRoleOrHigher } from "./flags.js";
 
 // ============================
 // BADGE SYSTEM
@@ -86,7 +87,7 @@ export default class VouchSystem {
     if (isNaN(index)) return msg.reply("You must provide the vouch index to remove.");
 
     const vouches = await GetVouches(target.id);
-    
+
     const vouch = vouches[index - 1];
 
     if (!vouch ) {
@@ -171,6 +172,47 @@ export default class VouchSystem {
       .setColor("#ffaa00")
       .setTitle("Vouch Leaderboard")
       .setDescription(formatted)
+      .setTimestamp();
+
+    return msg.reply({ embeds: [embed] });
+  }
+
+  async handleCleanVouch(msg, args) {
+    const userFlags = msg.member?.flags ?? Flags.INVALID;
+
+    if (!hasRoleOrHigher(userFlags, Flags.MOD)) {
+      return msg.reply("You need to be Mod or higher to use this command.");
+    }
+
+    const target = msg.mentions.users.first();
+    if (!target) {
+      return msg.reply("You must mention a user to clean a vouch from.");
+    }
+
+    const index = parseInt(args[1], 10);
+    if (isNaN(index)) {
+      return msg.reply("You must provide the vouch index to remove.");
+    }
+
+    const vouches = await GetVouches(target.id);
+
+    const vouch = vouches[index - 1];
+
+    if (!vouch) {
+      return msg.reply("That vouch does not exist.");
+    }
+
+    await DeleteVouch(vouch._id);
+
+    const embed = new EmbedBuilder()
+      .setColor("#ff4444")
+      .setTitle("Staff Vouch Removal")
+      .setDescription(`A vouch was removed from **${target.username}** by staff action`)
+      .addFields(
+        { name: "Original Author", value: `<@${vouch.from}>`, inline: true },
+        { name: "Reason", value: vouch.reason ?? "No reason provided", inline: true },
+        { name: "Index", value: `#${index}`, inline: true }
+      )
       .setTimestamp();
 
     return msg.reply({ embeds: [embed] });
