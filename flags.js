@@ -1,36 +1,36 @@
 export const Flags = {
-  INVALID: 0,
+  Invalid: 0, // 0
 
-  USER: 1 << 0,
-  MOD: 1 << 1,
-  ADMIN: 1 << 2,
-  DIRECTOR: 1 << 3,
-  COMMUNITY_MANAGER: 1 << 4,
-  DEVELOPER: 1 << 5,
-  OWNER: 1 << 6,
+  User: 1 << 0, // 1
+  Mod: 1 << 1, // 2
+  Admin: 1 << 2, // 4
+  Director: 1 << 3, // 8
+  CommunityManager: 1 << 4, // 16
+  Developer: 1 << 5, // 32
+  Owner: 1 << 6, // 64
 };
 
 
 export const RoleIds = ({
-  [Flags.INVALID]: null,
+  [Flags.Invalid]: null,
 
-  [Flags.USER]: "1139945613035847750",
-  [Flags.MOD]: "1139945562314129438",
-  [Flags.ADMIN]: "1139945433192476702",
-  [Flags.DIRECTOR]: "1487503432549138503",
-  [Flags.COMMUNITY_MANAGER]: "1139954764868763768",
-  [Flags.DEVELOPER]: "1139945088957554721",
-  [Flags.OWNER]: "1268309914858557562",
+  [Flags.User]: "1139945613035847750",
+  [Flags.Mod]: "1139945562314129438",
+  [Flags.Admin]: "1139945433192476702",
+  [Flags.Director]: "1487503432549138503",
+  [Flags.CommunityManager]: "1139954764868763768",
+  [Flags.Developer]: "1139945088957554721",
+  [Flags.Owner]: "1268309914858557562",
 });
 
 const RoleHierarchy = [
-  Flags.OWNER,
-  Flags.DEVELOPER,
-  Flags.COMMUNITY_MANAGER,
-  Flags.DIRECTOR,
-  Flags.ADMIN,
-  Flags.MOD,
-  Flags.USER,
+  Flags.Owner,
+  Flags.Developer,
+  Flags.CommunityManager,
+  Flags.Director,
+  Flags.Admin,
+  Flags.Mod,
+  Flags.User,
 ];
 
 

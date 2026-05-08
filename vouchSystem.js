@@ -178,9 +178,9 @@ export default class VouchSystem {
   }
 
   async handleCleanVouch(msg, args) {
-    const userFlags = msg.member.flags ?? Flags.INVALID;
+    const userFlags = msg.member.flags ?? Flags.Invalid;
 
-    if (!hasRoleOrHigher(userFlags, Flags.MOD)) {
+    if (!hasRoleOrHigher(userFlags, Flags.Mod)) {
       return msg.reply("You need to be Mod or higher to use this command.");
     }
 
@@ -189,12 +189,30 @@ export default class VouchSystem {
       return msg.reply("You must mention a user to clean a vouch from.");
     }
 
-    const index = parseInt(args[1], 10);
-    if (isNaN(index)) {
-      return msg.reply("You must provide the vouch index to remove.");
+    const mode = args[1];
+    const vouches = await GetVouches(target.id);
+
+    if (!vouches.length) {
+      return msg.reply("This user has no vouches.");
     }
 
-    const vouches = await GetVouches(target.id);
+    if (mode === "all") {
+      await Promise.all(vouches.map(v => DeleteVouch(v._id)));
+
+      const embed = new EmbedBuilder()
+        .setColor("#ff4444")
+        .setTitle("Staff Vouch Removal (Bulk)")
+        .setDescription(`All vouches removed from **${target.username}** by staff action`)
+        .setTimestamp();
+
+      return msg.reply({ embeds: [embed] });
+    }
+
+    const index = parseInt(mode, 10);
+
+    if (Number.isNaN(index)) {
+      return msg.reply("You must provide a vouch index or use `all`.");
+    }
 
     const vouch = vouches[index - 1];
 
