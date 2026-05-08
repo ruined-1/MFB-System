@@ -12,7 +12,7 @@ export async function ConnectToDatabase() {
 
     try {
         client = new MongoClient(uri);
-        await client.connect()
+        await client.connect();
 
         db = client.db("mfb");
 
@@ -23,9 +23,23 @@ export async function ConnectToDatabase() {
     
 }
 
-export async function SaveVouch(vouchData) {
+export async function CloseDatabaseConnection() {
+    try {
+        await client.close();
+        client = null;
+        db = null;
+    } catch (err) {
+        console.error("Failed to close DB connection: " + err);
+    }
+}
+
+export async function GetCollection() {
     const { db } = await ConnectToDatabase();
-    const vouches = db.collection("vouches");
+    return db.collection("vouches");
+}
+
+export async function SaveVouch(vouchData) {
+    const vouches = await GetCollection();
 
     try {
         await vouches.insertOne(vouchData);
@@ -35,8 +49,7 @@ export async function SaveVouch(vouchData) {
 }
 
 export async function GetVouches(userId) {
-    const { db } = await ConnectToDatabase();
-    const vouches = db.collection("vouches");
+    const vouches = await GetCollection();
 
     try {
         return await vouches.find({ userId }).toArray();
@@ -46,8 +59,7 @@ export async function GetVouches(userId) {
 }
 
 export async function GetAllVouches() {
-    const { db } = await ConnectToDatabase();
-    const vouches = db.collection("vouches");
+    const vouches = await GetCollection();
 
     try {
         return await vouches.find({}).toArray();
@@ -57,8 +69,7 @@ export async function GetAllVouches() {
 }
 
 export async function DeleteVouch(vouchId) {
-    const { db } = await ConnectToDatabase();
-    const vouches = db.collection("vouches");
+    const vouches = await GetCollection();
 
     try {
         await vouches.deleteOne({ _id: new ObjectId(vouchId) });
