@@ -110,7 +110,10 @@ export default async function alertHandler(msg, client) {
           { name: "Upgrade", value: upgrade.toString(), inline: true },
           { name: "Playtime", value: playtime },
           { name: "Cash", value: cash },
-          { name: "Cooldown", value: `<t:${cooldownUnix}:R>` }
+          { name: "Cooldown", value: `<t:${cooldownUnix}:R>` },
+
+          // ⭐ ADDED: Jump to Log link
+          { name: "Source", value: `[Jump to Log](${msg.url})` }
         )
         .setTimestamp();
 
