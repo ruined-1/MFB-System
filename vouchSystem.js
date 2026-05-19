@@ -68,7 +68,7 @@ export default class VouchSystem {
           { name: "Vouched User", value: `<@${target.id}>`, inline: true },
           { name: "From", value: `<@${msg.author.id}>`, inline: true },
           { name: "Reason", value: reason },
-          { name: "Total Vouches", value: `${this.vouches[target.id].length}` }
+          { name: "Total Vouches", value: `${userVouches.length}` }
         )
         .setTimestamp();
 
