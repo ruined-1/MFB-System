@@ -11,7 +11,7 @@ export const Flags = {
 };
 
 
-export const RoleIds = ({
+const RoleIds = ({
   [Flags.Invalid]: null,
 
   [Flags.User]: "1139945613035847750",

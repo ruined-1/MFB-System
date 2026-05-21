@@ -14,7 +14,25 @@ export default async function resetCooldown(interaction, client) {
 
     client.cooldownSystem.resetCooldown(playerId);
 
-    return interaction.reply({
+    const oldEmbed = interaction.message.embeds[0];
+    if (!oldEmbed) {
+      return interaction.reply({
+        content: "Could not update embed.",
+        ephemeral: true
+      });
+    }
+
+    const updated = EmbedBuilder.from(oldEmbed)
+      .setColor("Yellow")
+      .setTitle("✅ Cooldown reset.")
+      .setTimestamp();
+
+    await interaction.update({
+      embeds: [updated],
+      components: []
+    });
+
+    return interaction.followUp({
       content: `Cooldown reset for player ID **${playerId}**.`,
       ephemeral: true
     });
