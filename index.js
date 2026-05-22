@@ -240,13 +240,6 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-client.user.setPresence({
-        status: 'online', 
-        activities: [{
-            name: 'I see you... dupers.', 
-            type: ActivityType.Watching 
-        }]
-    });
 
 // ===============================
 // LOGIN
