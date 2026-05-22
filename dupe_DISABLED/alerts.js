@@ -61,7 +61,7 @@ export default async function alertHandler(msg, client) {
       const cash = fullCash[1];
 
       // Threshold
-      if (amountOwned < 20) {
+      if (amountOwned < 30) {
         console.log("SKIPPED: Below threshold");
         return;
       }
