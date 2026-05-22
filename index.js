@@ -240,16 +240,11 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-// Status
-  client.user.setActivity({
-    status: "online",
-    activities: [
-      {
-        name: "I see you... dupers.",
-        type: 3 // (Watching)
-      }
-    ]
-  });
+const { ActivityType } = require('discord.js');
+
+client.user.setActivity('I see you... dupers.', {
+    type: ActivityType.Watching
+});
 
 // ===============================
 // LOGIN
