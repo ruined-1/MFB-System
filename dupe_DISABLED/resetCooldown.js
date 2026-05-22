@@ -23,7 +23,7 @@ export default async function resetCooldown(interaction, client) {
     }
 
     const updated = EmbedBuilder.from(oldEmbed)
-      .setColor("Yellow")
+      .setColor("Green")
       .setTitle("✅ Cooldown reset.")
       .setTimestamp();
 

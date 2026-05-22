@@ -10,8 +10,6 @@ export async function ConnectToDatabase() {
         return { db }; 
     }
 
-    console.log("ruined is noob");
-
     try {
         client = new MongoClient(uri);
         await client.connect();
