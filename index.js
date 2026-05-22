@@ -247,6 +247,6 @@ client.login(process.env.TOKEN);
 
 client.user.setActivity({
   name: "I see you... dupers.",
-  type: "WATCHING"
+  type: ActivityType.Watching
 })
 
