@@ -114,8 +114,19 @@ export default class VouchSystem {
   // HANDLE !VOUCHES
   // ============================
   async handleVouches(msg) {
-    const target = msg.mentions.users.first() || msg.author;
-
+    let target = msg.mentions.users.first() || msg.author;
+    if (!target) {
+      const id = args[0];
+      if (!/^\d+$/.test(id)) {
+        return msg.reply("You must provide a valid user ID or mention a user.");
+      }
+    // Fetch data from user that left the server
+    try {
+      target = await msg.client.users.fetch(id);
+    } catch {
+      return msg.reply("Invalid User ID.");
+    }
+  }
     const list = await GetVouches(target.id);
     const count = list.length;
 
