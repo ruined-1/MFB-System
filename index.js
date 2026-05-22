@@ -36,8 +36,8 @@ import { CloseDatabaseConnection, ConnectToDatabase } from "./db.js";
 
 // Handlers
 import prefix from "./prefix.js";
-import alertHandler from "./dupe_DISABLED/alerts.js";
-import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
+// import alertHandler from "./dupe_DISABLED/alerts.js";
+// import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 import boostTracker from "./boostTracker.js";
 
 import { handleJoin, handleMessage } from "./antiRaid.js";
