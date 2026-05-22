@@ -241,7 +241,7 @@ client.on("interactionCreate", async (interaction) => {
 });
 
 // Status
-  client.user.setPresence({
+  client.user.setActivity({
     status: "online",
     activities: [
       {
