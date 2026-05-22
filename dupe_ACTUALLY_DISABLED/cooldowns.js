@@ -1,5 +1,5 @@
 // cooldowns.js
-const cooldowns = new Map();
+/* const cooldowns = new Map();
 
 export function isOnCooldown(playerId) {
   const end = cooldowns.get(playerId);
@@ -23,4 +23,4 @@ export function getRemaining(playerId) {
   const end = cooldowns.get(playerId);
   if (!end) return 0;
   return Math.max(0, Math.floor((end - Date.now()) / 1000));
-}
+} */

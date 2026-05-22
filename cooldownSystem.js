@@ -1,5 +1,5 @@
 // cooldownSystem.js
-export default class CooldownSystem {
+/* export default class CooldownSystem {
   constructor() {
     this.cooldowns = new Map();
   }
@@ -41,3 +41,4 @@ export default class CooldownSystem {
     return msg.reply(lines.join("\n"));
   }
 }
+ */

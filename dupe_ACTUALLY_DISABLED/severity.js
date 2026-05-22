@@ -1,5 +1,5 @@
 // severity.js
-
+/*
 export const severityLevels = {
     YELLOW: 20,
     ORANGE: 50,
@@ -24,4 +24,4 @@ export function getSeverityColor(severity) {
         case "YELLOW": return 0xf5e342;   // ⭐ your exact yellow
         default: return 0xf5e342;         // LOW (yellow)
     }
-}
+} */

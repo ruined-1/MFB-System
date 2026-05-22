@@ -31,7 +31,7 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // ===============================
 // DISCORD BOT
 // ===============================
-import { Client, GatewayIntentBits } from "discord.js";
+import { Client, GatewayIntentBits, ActivityType } from "discord.js";
 import { CloseDatabaseConnection, ConnectToDatabase } from "./db.js";
 
 // Handlers
@@ -50,7 +50,7 @@ import {
 } from "./antiNuke.js";
 
 // Systems
-import CooldownSystem from "./cooldownSystem.js";
+// import CooldownSystem from "./cooldownSystem.js";
 import SeveritySystem from "./severitySystem.js";
 import ThresholdSystem from "./thresholdSystem.js";
 import VouchSystem from "./vouchSystem.js";
@@ -72,7 +72,7 @@ const client = new Client({
 });
 
 // Attach systems
-client.cooldownSystem = new CooldownSystem();
+// client.cooldownSystem = new CooldownSystem();
 client.severitySystem = new SeveritySystem();
 client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
@@ -240,11 +240,13 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
-const { ActivityType } = require('discord.js');
-
-client.user.setActivity('I see you... dupers.', {
-    type: ActivityType.Watching
-});
+client.user.setPresence({
+        status: 'online', 
+        activities: [{
+            name: 'I see you... dupers.', 
+            type: ActivityType.Watching 
+        }]
+    });
 
 // ===============================
 // LOGIN

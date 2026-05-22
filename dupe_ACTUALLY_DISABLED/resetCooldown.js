@@ -1,5 +1,5 @@
 // resetCooldown.js
-import { EmbedBuilder } from "discord.js";
+/* import { EmbedBuilder } from "discord.js";
 
 export default async function resetCooldown(interaction, client) {
   if (!interaction.isButton()) return;
@@ -108,4 +108,4 @@ export default async function resetCooldown(interaction, client) {
       components: []
     });
   }
-}
+} */
