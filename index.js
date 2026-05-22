@@ -240,13 +240,20 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+// Status
+  console.log(`Logged in as ${client.user.tag}`);
+
+  client.user.setPresence({
+    status: "online",
+    activities: [
+      {
+        name: "I see you... dupers.",
+        type: 3 // (Watching)
+      }
+    ]
+  });
+
 // ===============================
 // LOGIN
 // ===============================
 client.login(process.env.TOKEN);
-
-client.user.setActivity({
-  name: "I see you... dupers.",
-  type: ActivityType.Watching
-})
-
