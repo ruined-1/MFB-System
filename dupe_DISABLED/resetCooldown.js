@@ -37,12 +37,7 @@ export default async function resetCooldown(interaction, client) {
         return f;
       });
 
-    updated.setFields(fields);
-
-    await interaction.update({
-      embeds: [updated],
-      components: []
-    });
+    updated.setFields(fields);git
 
     return interaction.update({
     embeds: [updated],
