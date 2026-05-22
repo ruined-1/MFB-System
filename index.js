@@ -246,7 +246,7 @@ client.on("interactionCreate", async (interaction) => {
 client.login(process.env.TOKEN);
 
 client.user.setActivity({
-  name: "I see you... dupers",
+  name: "I see you... dupers.",
   type: "WATCHING"
 })
 
