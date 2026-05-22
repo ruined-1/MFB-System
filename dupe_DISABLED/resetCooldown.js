@@ -31,7 +31,7 @@ export default async function resetCooldown(interaction, client) {
         if (f.name === "Cooldown") {
           return {
           name: "Cooldown",
-          value: "Cooldown reset by **${interaction.member.user.username}**."
+          value: "Cooldown reset by **${interaction.user.username}**."
           };
         }
         return f;
