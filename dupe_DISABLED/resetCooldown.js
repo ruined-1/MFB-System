@@ -22,19 +22,31 @@ export default async function resetCooldown(interaction, client) {
       });
     }
 
+    // Cooldown Reset Embed Updater
     const updated = EmbedBuilder.from(oldEmbed)
       .setColor("Green")
-      .setTitle("✅ Cooldown reset.")
       .setTimestamp();
+
+      const fields = updated.data.fields?.map(f => {
+        if (f.name === "Cooldown") {
+          return {
+          name: "Cooldown",
+          value: "Cooldown reset by **${interaction.member.user.username}**."
+          };
+        }
+        return f;
+      });
+
+    updated.setFields(fields);
 
     await interaction.update({
       embeds: [updated],
       components: []
     });
 
-    return interaction.followUp({
-      content: `Cooldown reset for player ID **${playerId}**.`,
-      ephemeral: true
+    return interaction.update({
+    embeds: [updated],
+    components: []
     });
   }
 
