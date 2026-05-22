@@ -114,19 +114,8 @@ export default class VouchSystem {
   // HANDLE !VOUCHES
   // ============================
   async handleVouches(msg) {
-    let target = msg.mentions.users.first() || msg.author;
-    if (!target) {
-      const id = args[0];
-      if (!/^\d+$/.test(id)) {
-        return msg.reply("You must provide a valid user ID or mention a user.");
-      }
-    // Fetch data from user that left the server
-    try {
-      target = await msg.client.users.fetch(id);
-    } catch {
-      return msg.reply("Invalid User ID.");
-    }
-  }
+    const target = msg.mentions.users.first() || msg.author;
+
     const list = await GetVouches(target.id);
     const count = list.length;
 
@@ -188,6 +177,9 @@ export default class VouchSystem {
     return msg.reply({ embeds: [embed] });
   }
 
+  // ============================
+  // HANDLE !CLEANVOUCH
+  // ============================
   async handleCleanVouch(msg, args) {
     const userFlags = msg.member.flags ?? Flags.Invalid;
 
@@ -195,11 +187,24 @@ export default class VouchSystem {
       return msg.reply("You need to be Mod or higher to use this command.");
     }
 
-    const target = msg.mentions.users.first();
+    // ID Based CleanVouching
+    let target = msg.mentions.users.first();
+
     if (!target) {
-      return msg.reply("You must mention a user to clean a vouch from.");
+    const id = args[0];
+
+
+    if (!/^\d+$/.test(id)) {
+      return msg.reply("You must provide a valid user ID.");
     }
 
+    try {
+      // Fetches server member that left ID
+      target = await msg.client.users.fetch(id);
+    } catch {
+      return msg.reply("Invalid User ID.");
+    }
+  }
     const mode = args[1];
     const vouches = await GetVouches(target.id);
 
