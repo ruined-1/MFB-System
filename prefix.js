@@ -45,123 +45,101 @@ export default async function prefix(msg, client) {
   }
 
   // Vouch system
-  if (command === "vouch") {
-    return client.vouchSystem.handleVouch(msg, args);
-  }
-
-  if (command === "unvouch") {
-    return client.vouchSystem.handleUnvouch(msg, args);
-  }
-
-  if (command === "vouches") {
-    return client.vouchSystem.handleVouches(msg);
-  }
-
-  if (command === "leaderboard" || command === "vouchlb" || command === "lb") {
+  if (command === "vouch") return client.vouchSystem.handleVouch(msg, args);
+  if (command === "unvouch") return client.vouchSystem.handleUnvouch(msg, args);
+  if (command === "vouches") return client.vouchSystem.handleVouches(msg);
+  if (command === "leaderboard" || command === "vouchlb" || command === "lb")
     return client.vouchSystem.handleLeaderboard(msg);
-  }
-
-  if (command === "cleanvouch") {
+  if (command === "cleanvouch")
     return client.vouchSystem.handleCleanVouch(msg, args);
-  }
 
   // Boost stats
-  if (command === "boosts") {
-    return boostCommand(msg);
-  }
+  if (command === "boosts") return boostCommand(msg);
 
-  if (command === "aatime") {
-    return handleAATime(msg);
-  }
+  // ============================
+  // AATime — Live Countdown
+  // ============================
+  if (command === "aatime") return handleAATime(msg);
 
-
-// -----------------------------
-// AA Countdown Command
-// -----------------------------
   async function handleAATime(msg) {
-  let targetDate = getNextSaturdayAt6PM();
-  let unix = Math.floor(targetDate.getTime() - 3600000 / 1000);
+    let targetDate = getNextSaturdayAt6PM();
 
-  const embed = new EmbedBuilder()
-    .setColor("#00aaff")
-    .setTitle("⏳ AA Countdown")
-    .setDescription(
-      `Starts: <t:${unix}:F>\n` +
-      `Discord Countdown: <t:${unix}:R>\n` +
-      `Custom Countdown: **calculating...**`
-    )
-    .setTimestamp();
+    // Subtract 1 hour from UNIX timestamp (3600000 ms)
+    let unix = Math.floor((targetDate.getTime() - 3600000) / 1000);
 
-  const sent = await msg.reply({ embeds: [embed] });
-
-  const interval = setInterval(async () => {
-    const now = new Date();
-
-    let diff = Math.floor((targetDate.getTime() - now.getTime()) / 1000);
-
-    if (diff <= 0) {
-      targetDate = getNextSaturdayAt6PM();
-      unix = Math.floor(targetDate.getTime() - 3600000 / 1000);
-
-      diff = Math.floor(
-        (targetDate.getTime() - now.getTime()) / 1000
-      );
-    }
-
-    const days = Math.floor(diff / 86400);
-    const hours = Math.floor((diff % 86400) / 3600);
-    const minutes = Math.floor((diff % 3600) / 60);
-    const seconds = diff % 60;
-
-    const countdown =
-      `${String(days).padStart(2, "0")}d ` +
-      `${String(hours).padStart(2, "0")}h ` +
-      `${String(minutes).padStart(2, "0")}m ` +
-      `${String(seconds).padStart(2, "0")}s remaining till AA`;
-
-    const updated = new EmbedBuilder()
+    const embed = new EmbedBuilder()
       .setColor("#00aaff")
       .setTitle("⏳ AA Countdown")
       .setDescription(
         `Starts: <t:${unix}:F>\n` +
         `Discord Countdown: <t:${unix}:R>\n` +
-        `Custom Countdown: **${countdown}**`
+        `Custom Countdown: **calculating...**`
       )
       .setTimestamp();
 
-    try {
-      await sent.edit({ embeds: [updated] });
-    } catch {
-      clearInterval(interval);
-    }
-  }, 1000);
-}
+    const sent = await msg.reply({ embeds: [embed] });
 
+    // LIVE UPDATE LOOP
+    const interval = setInterval(async () => {
+      const now = new Date();
+      let diff = Math.floor((targetDate - now) / 1000);
 
-function getNextSaturdayAt6PM() {
-  const now = new Date();
+      // If event passed → roll to next Saturday
+      if (diff <= 0) {
+        targetDate = getNextSaturdayAt6PM();
+        unix = Math.floor((targetDate.getTime() - 3600000) / 1000);
+        diff = Math.floor((targetDate - now) / 1000);
+      }
 
-  const day = now.getDay(); // 0 = Sun, 6 = Sat
-  let daysUntilSaturday = (6 - day + 7) % 7;
+      const hours = String(Math.floor(diff / 3600)).padStart(2, "0");
+      const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
+      const seconds = String(diff % 60).padStart(2, "0");
 
-  // If it's Saturday and it's already past 6 PM → next week
-  if (daysUntilSaturday === 0 && now.getHours() >= 18) {
-    daysUntilSaturday = 7;
+      const countdown = `${hours} : ${minutes} : ${seconds} remaining till AA`;
+
+      const updated = new EmbedBuilder()
+        .setColor("#00aaff")
+        .setTitle("⏳ AA Countdown")
+        .setDescription(
+          `Starts: <t:${unix}:F>\n` +
+          `Discord Countdown: <t:${unix}:R>\n` +
+          `Custom Countdown: **${countdown}**`
+        )
+        .setTimestamp();
+
+      try {
+        await sent.edit({ embeds: [updated] });
+      } catch {
+        clearInterval(interval);
+      }
+    }, 1000);
   }
 
-  // Build the target date in LOCAL TIME
-  const target = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + daysUntilSaturday,
-    18, // 6 PM local
-    0,
-    0,
-    0
-  );
+  // ============================
+  // LOCAL TIME — NO CONVERSION
+  // ============================
+  function getNextSaturdayAt6PM() {
+    const now = new Date();
 
-  return target;
-}
+    const day = now.getDay(); // 0 = Sun, 6 = Sat
+    let daysUntilSaturday = (6 - day + 7) % 7;
+
+    // If it's Saturday and it's already past 6 PM → next week
+    if (daysUntilSaturday === 0 && now.getHours() >= 18) {
+      daysUntilSaturday = 7;
+    }
+
+    // Build the target date in LOCAL TIME
+    return new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate() + daysUntilSaturday,
+      18, // 6 PM local
+      0,
+      0,
+      0
+    );
+  }
 
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
@@ -170,37 +148,26 @@ function getNextSaturdayAt6PM() {
     return msg.reply("You need **Manage Server** to use this command.");
   }
 
-  // Ping
   if (command === "ping") {
     const sent = await msg.reply("Pinging...");
     const latency = sent.createdTimestamp - msg.createdTimestamp;
     return sent.edit(`Pong! Latency: \`${latency}ms\``);
   }
 
-  // Cooldowns
-  if (command === "cooldowns" || command === "cooldown") {
+  if (command === "cooldowns" || command === "cooldown")
     return client.cooldownSystem.showCooldowns(msg);
-  }
 
-  // Severity test
-  if (command === "severity") {
+  if (command === "severity")
     return client.severitySystem.testSeverity(msg, args);
-  }
 
-  // Threshold set
-  if (command === "threshold") {
+  if (command === "threshold")
     return client.thresholdSystem.setThreshold(msg, args);
-  }
 
-  // Anti‑raid test
-  if (command === "sampleraid") {
+  if (command === "sampleraid")
     return simulateRaidAlert(msg, client);
-  }
 
-  // Anti‑nuke test
-  if (command === "samplenuke") {
+  if (command === "samplenuke")
     return simulateNukeAlert(msg, client);
-  }
 
   // -----------------------------
   // UNKNOWN COMMAND
