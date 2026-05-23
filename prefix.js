@@ -69,7 +69,7 @@ export default async function prefix(msg, client) {
 
     const embed = new EmbedBuilder()
       .setColor("#00aaff")
-      .setTitle("⏳ AA Countdown")
+      .setTitle("⏳ Admin Abuse Countdown")
       .setDescription(
         `Starts: <t:${unix}:F>\n` +
         `Discord Countdown: <t:${unix}:R>\n` +
@@ -95,7 +95,7 @@ export default async function prefix(msg, client) {
       const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
       const seconds = String(diff % 60).padStart(2, "0");
 
-      const countdown = `${hours} : ${minutes} : ${seconds} remaining till AA`;
+      const countdown = `${hours} : ${minutes} : ${seconds} remaining till Admin Abuse`;
 
       const updated = new EmbedBuilder()
         .setColor("#00aaff")
