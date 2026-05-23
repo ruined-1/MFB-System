@@ -240,6 +240,25 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+// STATUS [Render Safe]
+client.once("ready", () => {
+    console.log(`Logged in as ${client.user.tag}`);
+
+  // Delay to let render boot before setting status
+  setTimeout(() => {
+    client.user.setPresence({
+      status: "online",
+      activities: [
+        {
+          name: "everything.",
+          type: 3 // (Watching)
+        }
+      ]
+    });
+
+    console.log("Presence Set Successfully.");
+  }, 1500); // 1.5s delay
+});
 
 // ===============================
 // LOGIN
