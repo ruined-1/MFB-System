@@ -109,7 +109,7 @@ export default async function prefix(msg, client) {
       const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
       const seconds = String(diff % 60).padStart(2, "0");
 
-      const countdown = `${hours} : ${minutes} : ${seconds} remaining till AA`;
+      const countdown = `${hours} : ${minutes} : ${seconds} remaining till Admin Abuse`;
 
       const updated = new EmbedBuilder()
         .setColor("#00aaff")
@@ -135,55 +135,27 @@ export default async function prefix(msg, client) {
   function getNextSaturdayAt6PM() {
     // Get current NY time using Intl
     const now = new Date();
-    const ny = new Intl.DateTimeFormat("en-US", {
-      timeZone: "America/New_York",
-      year: "numeric",
-      month: "numeric",
-      day: "numeric",
-      hour: "numeric",
-      minute: "numeric",
-      second: "numeric",
-      hour12: false
-    }).formatToParts(now).reduce((acc, part) => {
-      if (part.type !== "literal") acc[part.type] = parseInt(part.value);
-      return acc;
-    }, {});
 
-    const nowNY = new Date(ny.year, ny.month - 1, ny.day, ny.hour, ny.minute, ny.second);
+    const day = now.getDay(); // 0 (Sun) to 6 (Sat)
+    let daysUntilSaturday = (6 - day + 7) % 7; // Days until next Saturday
 
-    const day = nowNY.getDay();
-    const isSaturday = day === 6;
-
-    // If today is Saturday and it's BEFORE 6 PM → use TODAY
-    if (isSaturday && nowNY.getHours() < 18) {
-      return new Date(Date.UTC(
-        nowNY.getFullYear(),
-        nowNY.getMonth(),
-        nowNY.getDate(),
-        18, 0, 0
-      ));
-    }
-
-    // Otherwise: next Saturday
-    const daysUntilSaturday = (6 - day + 7) % 7 || 7;
-
-    const targetNY = new Date(
-      nowNY.getFullYear(),
-      nowNY.getMonth(),
-      nowNY.getDate() + daysUntilSaturday,
-      18, 0, 0
-    );
-
-    return new Date(Date.UTC(
-      targetNY.getFullYear(),
-      targetNY.getMonth(),
-      targetNY.getDate(),
-      targetNY.getHours(),
-      targetNY.getMinutes(),
-      targetNY.getSeconds()
-    ));
+    // If it's Saturday and it's already 6 PM -> next week
+    if (daysUntilSaturday === 0 && now.getHours() >= 18) {
+      daysUntilSaturday = 7;
   }
 
+  // Build the target date in LOCAL time
+  const target = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + daysUntilSaturday,
+    18, // 6 PM
+    0,
+    0,
+    0
+  );
+    return target;
+}
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
   // -----------------------------
