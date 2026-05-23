@@ -126,7 +126,7 @@ export default async function prefix(msg, client) {
 
     // If it's Saturday and it's already past 6 PM → next week
     if (daysUntilSaturday === 0 && now.getHours() >= 18) {
-      daysUntilSaturday = 7;
+     daysUntilSaturday = 7;
     }
 
     // Build the target date in LOCAL TIME
@@ -134,7 +134,7 @@ export default async function prefix(msg, client) {
       now.getFullYear(),
       now.getMonth(),
       now.getDate() + daysUntilSaturday,
-      18, // 6 PM local
+      18, // 6 PM LOCAL
       0,
       0,
       0
