@@ -51,8 +51,8 @@ import {
 
 // Systems
 // import CooldownSystem from "./cooldownSystem.js";
-import SeveritySystem from "./severitySystem.js";
-import ThresholdSystem from "./thresholdSystem.js";
+// import SeveritySystem from "./severitySystem.js";
+// import ThresholdSystem from "./thresholdSystem.js";
 import VouchSystem from "./vouchSystem.js";
 
 // SETTINGS SYSTEM
@@ -73,8 +73,8 @@ const client = new Client({
 
 // Attach systems
 // client.cooldownSystem = new CooldownSystem();
-client.severitySystem = new SeveritySystem();
-client.thresholdSystem = new ThresholdSystem();
+// client.severitySystem = new SeveritySystem();
+// client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
 await ConnectToDatabase();

@@ -85,7 +85,7 @@ async function handleAATime(msg) {
     const unix = Math.floor(date.getTime() / 1000);
 
     events.push({
-      name: `Saturday Event #${i + 1}`,
+      name: `Saturday Admin Abuse Event #${i + 1}`,
       unix,
       countdown: formatCountdown(date)
     });
@@ -97,13 +97,13 @@ async function handleAATime(msg) {
         `**${e.name}**\n` +
         `Starts: <t:${e.unix}:F>\n` +
         `Discord Countdown: <t:${e.unix}:R>\n` +
-        `Custom Countdown: **${e.countdown} remaining till AA**\n`
+        `Custom Countdown: **${e.countdown} remaining till Admin Abuse**\n`
     )
     .join("\n");
 
   const embed = new EmbedBuilder()
     .setColor("#00aaff")
-    .setTitle("📅 Upcoming Saturday Events")
+    .setTitle("📅 Upcoming Saturday Admin Abuses")
     .setDescription(formatted)
     .setTimestamp();
 
