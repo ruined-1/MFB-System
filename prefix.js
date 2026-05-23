@@ -131,40 +131,44 @@ async function handleAATime(msg) {
 
 // Next Saturday @ 6 PM EST
 function getNextSaturdayAt6PM(offset = 0) {
-  // Step 1: Get current NY time using Intl
-  const now = new Date();
-  const nyFormatter = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/New_York",
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "numeric",
-    minute: "numeric",
-    second: "numeric",
-    hour12: false
-  });
-
-  const parts = nyFormatter.formatToParts(now);
-  const ny = Object.fromEntries(parts.map(p => [p.type, parseInt(p.value)]));
-  
-  const currentNY = new Date(ny.year, ny.month - 1, ny.day, ny.hour, ny.minute, ny.second);
-
-  const day = currentNY.getDay();
-  const daysUntilSaturday = (6 - day + 7) % 7;
-
-  // Step 2: Build target NY date
-  const targetNY = new Date(
-    currentNY.getFullYear(),
-    currentNY.getMonth(),
-    currentNY.getDate() + daysUntilSaturday + offset * 7,
-    18, // 6 PM NY time
-    0,
-    0,
-    0
+  // Get current NY time
+  const nowNY = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
   );
 
-  // Step 3: Convert NY date → UTC date
-  const targetUTC = new Date(Date.UTC(
+  const day = nowNY.getDay();
+  const isSaturday = day === 6;
+
+  // If today is Saturday and it's BEFORE 6 PM → use TODAY
+  if (isSaturday && nowNY.getHours() < 18) {
+    const targetNY = new Date(
+      nowNY.getFullYear(),
+      nowNY.getMonth(),
+      nowNY.getDate(),
+      18, 0, 0, 0
+    );
+
+    return new Date(Date.UTC(
+      targetNY.getFullYear(),
+      targetNY.getMonth(),
+      targetNY.getDate(),
+      targetNY.getHours(),
+      targetNY.getMinutes(),
+      targetNY.getSeconds()
+    ));
+  }
+
+  // Otherwise: next Saturday
+  const daysUntilSaturday = (6 - day + 7) % 7 || 7;
+
+  const targetNY = new Date(
+    nowNY.getFullYear(),
+    nowNY.getMonth(),
+    nowNY.getDate() + daysUntilSaturday + offset * 7,
+    18, 0, 0, 0
+  );
+
+  return new Date(Date.UTC(
     targetNY.getFullYear(),
     targetNY.getMonth(),
     targetNY.getDate(),
@@ -172,8 +176,6 @@ function getNextSaturdayAt6PM(offset = 0) {
     targetNY.getMinutes(),
     targetNY.getSeconds()
   ));
-
-  return targetUTC;
 }
 
   // -----------------------------
