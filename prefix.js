@@ -70,82 +70,108 @@ export default async function prefix(msg, client) {
     return boostCommand(msg);
   }
 
-// ============================
-// AATime
-// ============================
-if (command === "aatime") {
-  return handleAATime(msg);
-}
+  // ============================
+  // AATime — Live Countdown
+  // ============================
+  if (command === "aatime") {
+    return handleAATime(msg);
+  }
 
-async function handleAATime(msg) {
-  let targetDate = getNextSaturdayAt6PM(0);
-  let unix = Math.floor(targetDate.getTime() / 1000);
+  async function handleAATime(msg) {
+    let targetDate = getNextSaturdayAt6PM();
+    let unix = Math.floor(targetDate.getTime() / 1000);
 
-  const embed = new EmbedBuilder()
-    .setColor("#00aaff")
-    .setTitle("⏳ AA Countdown")
-    .setDescription(
-      `Starts: <t:${unix}:F>\n` +
-      `Discord Countdown: <t:${unix}:R>\n` +
-      `Custom Countdown: **calculating...**`
-    )
-    .setTimestamp();
-
-  const sent = await msg.reply({ embeds: [embed] });
-
-  // LIVE UPDATE LOOP
-  const interval = setInterval(async () => {
-    const now = new Date();
-    let diff = Math.floor((targetDate - now) / 1000);
-
-    // If event passed → roll to next Saturday
-    if (diff <= 0) {
-      targetDate = getNextSaturdayAt6PM(0);
-      unix = Math.floor(targetDate.getTime() / 1000);
-      diff = Math.floor((targetDate - now) / 1000);
-    }
-
-    const hours = String(Math.floor(diff / 3600)).padStart(2, "0");
-    const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
-    const seconds = String(diff % 60).padStart(2, "0");
-
-    const countdown = `${hours} : ${minutes} : ${seconds} remaining till AA`;
-
-    const updated = new EmbedBuilder()
+    const embed = new EmbedBuilder()
       .setColor("#00aaff")
       .setTitle("⏳ AA Countdown")
       .setDescription(
         `Starts: <t:${unix}:F>\n` +
         `Discord Countdown: <t:${unix}:R>\n` +
-        `Custom Countdown: **${countdown}**`
+        `Custom Countdown: **calculating...**`
       )
       .setTimestamp();
 
-    try {
-      await sent.edit({ embeds: [updated] });
-    } catch {
-      clearInterval(interval);
+    const sent = await msg.reply({ embeds: [embed] });
+
+    // LIVE UPDATE LOOP
+    const interval = setInterval(async () => {
+      const now = new Date();
+      let diff = Math.floor((targetDate - now) / 1000);
+
+      // If event passed → roll to next Saturday
+      if (diff <= 0) {
+        targetDate = getNextSaturdayAt6PM();
+        unix = Math.floor(targetDate.getTime() / 1000);
+        diff = Math.floor((targetDate - now) / 1000);
+      }
+
+      const hours = String(Math.floor(diff / 3600)).padStart(2, "0");
+      const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
+      const seconds = String(diff % 60).padStart(2, "0");
+
+      const countdown = `${hours} : ${minutes} : ${seconds} remaining till AA`;
+
+      const updated = new EmbedBuilder()
+        .setColor("#00aaff")
+        .setTitle("⏳ AA Countdown")
+        .setDescription(
+          `Starts: <t:${unix}:F>\n` +
+          `Discord Countdown: <t:${unix}:R>\n` +
+          `Custom Countdown: **${countdown}**`
+        )
+        .setTimestamp();
+
+      try {
+        await sent.edit({ embeds: [updated] });
+      } catch {
+        clearInterval(interval);
+      }
+    }, 1000);
+  }
+
+  // ============================
+  // Correct NY → UTC Conversion
+  // ============================
+  function getNextSaturdayAt6PM() {
+    // Get current NY time using Intl
+    const now = new Date();
+    const ny = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/New_York",
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false
+    }).formatToParts(now).reduce((acc, part) => {
+      if (part.type !== "literal") acc[part.type] = parseInt(part.value);
+      return acc;
+    }, {});
+
+    const nowNY = new Date(ny.year, ny.month - 1, ny.day, ny.hour, ny.minute, ny.second);
+
+    const day = nowNY.getDay();
+    const isSaturday = day === 6;
+
+    // If today is Saturday and it's BEFORE 6 PM → use TODAY
+    if (isSaturday && nowNY.getHours() < 18) {
+      return new Date(Date.UTC(
+        nowNY.getFullYear(),
+        nowNY.getMonth(),
+        nowNY.getDate(),
+        18, 0, 0
+      ));
     }
-  }, 1000);
-}
 
-// Next Saturday @ 6 PM EST
-function getNextSaturdayAt6PM(offset = 0) {
-  // Get current NY time
-  const nowNY = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
-  );
+    // Otherwise: next Saturday
+    const daysUntilSaturday = (6 - day + 7) % 7 || 7;
 
-  const day = nowNY.getDay();
-  const isSaturday = day === 6;
-
-  // If today is Saturday and it's BEFORE 6 PM → use TODAY
-  if (isSaturday && nowNY.getHours() < 18) {
     const targetNY = new Date(
       nowNY.getFullYear(),
       nowNY.getMonth(),
-      nowNY.getDate(),
-      18, 0, 0, 0
+      nowNY.getDate() + daysUntilSaturday,
+      18, 0, 0
     );
 
     return new Date(Date.UTC(
@@ -157,26 +183,6 @@ function getNextSaturdayAt6PM(offset = 0) {
       targetNY.getSeconds()
     ));
   }
-
-  // Otherwise: next Saturday
-  const daysUntilSaturday = (6 - day + 7) % 7 || 7;
-
-  const targetNY = new Date(
-    nowNY.getFullYear(),
-    nowNY.getMonth(),
-    nowNY.getDate() + daysUntilSaturday + offset * 7,
-    18, 0, 0, 0
-  );
-
-  return new Date(Date.UTC(
-    targetNY.getFullYear(),
-    targetNY.getMonth(),
-    targetNY.getDate(),
-    targetNY.getHours(),
-    targetNY.getMinutes(),
-    targetNY.getSeconds()
-  ));
-}
 
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
