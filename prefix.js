@@ -110,7 +110,7 @@ export default async function prefix(msg, client) {
   // CLEAN LOCAL-TIME DATE LOGIC
   // ============================
   function getNextSaturdayAt6PM() {
-  // Get current time in America/New_York
+  // Step 1: Get current time in America/New_York
   const nowNY = new Date(
     new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
   );
@@ -123,7 +123,7 @@ export default async function prefix(msg, client) {
     daysUntilSaturday = 7;
   }
 
-  // Build the target date in NY local time
+  // Step 2: Build the target date in NY local time
   const targetNY = new Date(
     nowNY.getFullYear(),
     nowNY.getMonth(),
@@ -134,8 +134,8 @@ export default async function prefix(msg, client) {
     0
   );
 
-  // Convert NY time → UTC timestamp
-  return new Date(
+  // Step 3: Convert NY time → UTC Date object
+  const targetUTC = new Date(
     Date.UTC(
       targetNY.getFullYear(),
       targetNY.getMonth(),
@@ -145,7 +145,10 @@ export default async function prefix(msg, client) {
       targetNY.getSeconds()
     )
   );
+
+  return targetUTC;
 }
+
 
   // -----------------------------
   // ADMIN COMMANDS
