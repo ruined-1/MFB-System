@@ -74,6 +74,10 @@ export default async function prefix(msg, client) {
     return handleAATime(msg);
   }
 
+
+// -----------------------------
+// AA Countdown Command
+// -----------------------------
   async function handleAATime(msg) {
   let targetDate = getNextSaturdayAt6PM();
   let unix = Math.floor(targetDate.getTime() / 1000);
@@ -137,40 +141,26 @@ export default async function prefix(msg, client) {
 function getNextSaturdayAt6PM() {
   const now = new Date();
 
-  const nyNow = new Date(
-    now.toLocaleString("en-US", {
-      timeZone: "America/New_York"
-    })
-  );
+  const day = now.getDay(); // 0 = Sun, 6 = Sat
+  let daysUntilSaturday = (6 - day + 7) % 7;
 
-  let daysUntilSaturday =
-    (6 - nyNow.getDay() + 7) % 7;
-
-  if (
-    daysUntilSaturday === 0 &&
-    nyNow.getHours() >= 18
-  ) {
+  // If it's Saturday and it's already past 6 PM → next week
+  if (daysUntilSaturday === 0 && now.getHours() >= 18) {
     daysUntilSaturday = 7;
   }
 
-  const targetNY = new Date(nyNow);
-
-  targetNY.setDate(
-    targetNY.getDate() + daysUntilSaturday
+  // Build the target date in LOCAL TIME
+  const target = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + daysUntilSaturday,
+    18, // 6 PM local
+    0,
+    0,
+    0
   );
-
-  targetNY.setHours(18, 0, 0, 0);
-
-  const utcEquivalent = new Date(
-    targetNY.toLocaleString("en-US", {
-      timeZone: "UTC"
-    })
-  );
-
-  const offset =
-    targetNY.getTime() - utcEquivalent.getTime();
-
-  return new Date(targetNY.getTime() + offset);
+  
+  return target;
 }
 
   // -----------------------------
