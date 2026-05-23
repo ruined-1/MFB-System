@@ -70,92 +70,109 @@ export default async function prefix(msg, client) {
     return boostCommand(msg);
   }
 
-  // ============================
-  // AATime — Live Countdown
-  // ============================
   if (command === "aatime") {
     return handleAATime(msg);
   }
 
   async function handleAATime(msg) {
-    let targetDate = getNextSaturdayAt6PM();
-    let unix = Math.floor(targetDate.getTime() / 1000);
+  let targetDate = getNextSaturdayAt6PM();
+  let unix = Math.floor(targetDate.getTime() / 1000);
 
-    const embed = new EmbedBuilder()
+  const embed = new EmbedBuilder()
+    .setColor("#00aaff")
+    .setTitle("⏳ AA Countdown")
+    .setDescription(
+      `Starts: <t:${unix}:F>\n` +
+      `Discord Countdown: <t:${unix}:R>\n` +
+      `Custom Countdown: **calculating...**`
+    )
+    .setTimestamp();
+
+  const sent = await msg.reply({ embeds: [embed] });
+
+  const interval = setInterval(async () => {
+    const now = new Date();
+
+    let diff = Math.floor((targetDate.getTime() - now.getTime()) / 1000);
+
+    if (diff <= 0) {
+      targetDate = getNextSaturdayAt6PM();
+      unix = Math.floor(targetDate.getTime() / 1000);
+
+      diff = Math.floor(
+        (targetDate.getTime() - now.getTime()) / 1000
+      );
+    }
+
+    const days = Math.floor(diff / 86400);
+    const hours = Math.floor((diff % 86400) / 3600);
+    const minutes = Math.floor((diff % 3600) / 60);
+    const seconds = diff % 60;
+
+    const countdown =
+      `${String(days).padStart(2, "0")}d ` +
+      `${String(hours).padStart(2, "0")}h ` +
+      `${String(minutes).padStart(2, "0")}m ` +
+      `${String(seconds).padStart(2, "0")}s remaining till AA`;
+
+    const updated = new EmbedBuilder()
       .setColor("#00aaff")
       .setTitle("⏳ AA Countdown")
       .setDescription(
         `Starts: <t:${unix}:F>\n` +
         `Discord Countdown: <t:${unix}:R>\n` +
-        `Custom Countdown: **calculating...**`
+        `Custom Countdown: **${countdown}**`
       )
       .setTimestamp();
 
-    const sent = await msg.reply({ embeds: [embed] });
-
-    // LIVE UPDATE LOOP
-    const interval = setInterval(async () => {
-      const now = new Date();
-      let diff = Math.floor((targetDate - now) / 1000);
-
-      // If event passed → roll to next Saturday
-      if (diff <= 0) {
-        targetDate = getNextSaturdayAt6PM();
-        unix = Math.floor(targetDate.getTime() / 1000);
-        diff = Math.floor((targetDate - now) / 1000);
-      }
-
-      const hours = String(Math.floor(diff / 3600)).padStart(2, "0");
-      const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
-      const seconds = String(diff % 60).padStart(2, "0");
-
-      const countdown = `${hours} : ${minutes} : ${seconds} remaining till Admin Abuse`;
-
-      const updated = new EmbedBuilder()
-        .setColor("#00aaff")
-        .setTitle("⏳ AA Countdown")
-        .setDescription(
-          `Starts: <t:${unix}:F>\n` +
-          `Discord Countdown: <t:${unix}:R>\n` +
-          `Custom Countdown: **${countdown}**`
-        )
-        .setTimestamp();
-
-      try {
-        await sent.edit({ embeds: [updated] });
-      } catch {
-        clearInterval(interval);
-      }
-    }, 1000);
-  }
-
-  // ============================
-  // Correct NY → UTC Conversion
-  // ============================
-  function getNextSaturdayAt6PM() {
-    // Get current NY time using Intl
-    const now = new Date();
-
-    const day = now.getDay(); // 0 (Sun) to 6 (Sat)
-    let daysUntilSaturday = (6 - day + 7) % 7; // Days until next Saturday
-
-    // If it's Saturday and it's already 6 PM -> next week
-    if (daysUntilSaturday === 0 && now.getHours() >= 18) {
-      daysUntilSaturday = 7;
-  }
-
-  // Build the target date in LOCAL time
-  const target = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    now.getDate() + daysUntilSaturday,
-    18, // 6 PM
-    0,
-    0,
-    0
-  );
-    return target;
+    try {
+      await sent.edit({ embeds: [updated] });
+    } catch {
+      clearInterval(interval);
+    }
+  }, 1000);
 }
+
+
+function getNextSaturdayAt6PM() {
+  const now = new Date();
+
+  const nyNow = new Date(
+    now.toLocaleString("en-US", {
+      timeZone: "America/New_York"
+    })
+  );
+
+  let daysUntilSaturday =
+    (6 - nyNow.getDay() + 7) % 7;
+
+  if (
+    daysUntilSaturday === 0 &&
+    nyNow.getHours() >= 18
+  ) {
+    daysUntilSaturday = 7;
+  }
+
+  const targetNY = new Date(nyNow);
+
+  targetNY.setDate(
+    targetNY.getDate() + daysUntilSaturday
+  );
+
+  targetNY.setHours(18, 0, 0, 0);
+
+  const utcEquivalent = new Date(
+    targetNY.toLocaleString("en-US", {
+      timeZone: "UTC"
+    })
+  );
+
+  const offset =
+    targetNY.getTime() - utcEquivalent.getTime();
+
+  return new Date(targetNY.getTime() + offset);
+}
+
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
   // -----------------------------
