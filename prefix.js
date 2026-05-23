@@ -8,7 +8,6 @@ export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
 
-  // Allow webhook messages ONLY if they are prefix commands
   if (msg.webhookId && !msg.content.startsWith("!")) return;
 
   const prefix = "!";
@@ -18,18 +17,14 @@ export default async function prefix(msg, client) {
   const command = args.shift()?.toLowerCase();
   if (!command) return;
 
-  // -----------------------------
-  // PERMISSION CHECK HELPER
-  // -----------------------------
   function hasManageServer() {
     return msg.member && msg.member.permissions.has("ManageGuild");
   }
 
   // -----------------------------
-  // PUBLIC COMMANDS (NO PERMS)
+  // PUBLIC COMMANDS
   // -----------------------------
 
-  // AFK COMMAND (ONLY RUINED)
   if (command === "afk") {
     if (msg.author.id !== "775991906173452288") {
       return msg.reply("❌ Only the bot owner can use this command.");
@@ -44,7 +39,6 @@ export default async function prefix(msg, client) {
     return msg.reply(`🟦 You are now **AFK**.\nReason: **${reason}**`);
   }
 
-  // Vouch system
   if (command === "vouch") return client.vouchSystem.handleVouch(msg, args);
   if (command === "unvouch") return client.vouchSystem.handleUnvouch(msg, args);
   if (command === "vouches") return client.vouchSystem.handleVouches(msg);
@@ -53,16 +47,17 @@ export default async function prefix(msg, client) {
   if (command === "cleanvouch")
     return client.vouchSystem.handleCleanVouch(msg, args);
 
-  // Boost stats
   if (command === "boosts") return boostCommand(msg);
 
   // ============================
-  // AATime — BRAND NEW SYSTEM
+  // BRAND NEW AA SYSTEM
   // ============================
   if (command === "aatime") return handleAATime(msg);
 
   async function handleAATime(msg) {
     let targetDate = getNextSaturdayAt6PM();
+
+    // ⭐ UNIX timestamp based on LOCAL TIME
     let unix = Math.floor(targetDate.getTime() / 1000);
 
     const embed = new EmbedBuilder()
@@ -112,32 +107,48 @@ export default async function prefix(msg, client) {
   }
 
   // ============================
-  // CLEAN NEW DATE FUNCTION
+  // CLEAN LOCAL-TIME DATE LOGIC
   // ============================
   function getNextSaturdayAt6PM() {
-    const now = new Date();
+  // Get current time in America/New_York
+  const nowNY = new Date(
+    new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
+  );
 
-    const day = now.getDay(); // 0 = Sun, 6 = Sat
-    let daysUntilSaturday = (6 - day + 7) % 7;
+  const day = nowNY.getDay(); // 0 = Sun, 6 = Sat
+  let daysUntilSaturday = (6 - day + 7) % 7;
 
-    // If it's Saturday and already past 6 PM → next week
-    if (daysUntilSaturday === 0 && now.getHours() >= 18) {
-      daysUntilSaturday = 7;
-    }
-
-    return new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate() + daysUntilSaturday,
-      18, // 6 PM LOCAL
-      0,
-      0,
-      0
-    );
+  // If it's Saturday and past 6 PM → next week
+  if (daysUntilSaturday === 0 && nowNY.getHours() >= 18) {
+    daysUntilSaturday = 7;
   }
 
+  // Build the target date in NY local time
+  const targetNY = new Date(
+    nowNY.getFullYear(),
+    nowNY.getMonth(),
+    nowNY.getDate() + daysUntilSaturday,
+    18, // 6 PM Eastern
+    0,
+    0,
+    0
+  );
+
+  // Convert NY time → UTC timestamp
+  return new Date(
+    Date.UTC(
+      targetNY.getFullYear(),
+      targetNY.getMonth(),
+      targetNY.getDate(),
+      targetNY.getHours(),
+      targetNY.getMinutes(),
+      targetNY.getSeconds()
+    )
+  );
+}
+
   // -----------------------------
-  // ADMIN‑ONLY COMMANDS
+  // ADMIN COMMANDS
   // -----------------------------
   if (!hasManageServer()) {
     return msg.reply("You need **Manage Server** to use this command.");
@@ -164,9 +175,6 @@ export default async function prefix(msg, client) {
   if (command === "samplenuke")
     return simulateNukeAlert(msg, client);
 
-  // -----------------------------
-  // UNKNOWN COMMAND
-  // -----------------------------
   return msg.reply(
     "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`, `!aatime`."
   );
