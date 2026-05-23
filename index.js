@@ -150,9 +150,9 @@ client.on("messageCreate", async (msg) => {
   try {
     await alertHandler(msg, client);
   } catch (err) {
-    console.error("Alert handler error:", err);
+//   console.error("Alert handler error:", err);
   }
-});
+ });
 
 // ===============================
 // BOOST TRACKER
@@ -242,7 +242,7 @@ client.on("interactionCreate", async (interaction) => {
 
 // STATUS [Render Safe]
 client.once("ready", () => {
-    console.log(`Logged in as ${client.user.tag}`);
+//   console.log(`Logged in as ${client.user.tag}`);
 
   // Delay to let render boot before setting status
   setTimeout(() => {
@@ -258,7 +258,7 @@ client.once("ready", () => {
 
     console.log("Presence Set Successfully.");
   }, 1500); // 1.5s delay
-});
+ });
 
 // ===============================
 // LOGIN
