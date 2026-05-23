@@ -88,11 +88,21 @@ export default async function prefix(msg, client) {
         diff = Math.floor((targetDate - now) / 1000);
       }
 
-      const hours = String(Math.floor(diff / 3600)).padStart(2, "0");
-      const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
-      const seconds = String(diff % 60).padStart(2, "0");
+      // ============================
+      // NEW COUNTDOWN FORMAT (D H M S)
+      // ============================
+      const days = Math.floor(diff / 86400);
+      const hours = Math.floor((diff % 86400) / 3600);
+      const minutes = Math.floor((diff % 3600) / 60);
+      const seconds = diff % 60;
 
-      const countdown = `${hours}h ${minutes}m ${seconds}s remaining till Admin Abuse`;
+      const countdown =
+        `${days}D ` +
+        `${String(hours).padStart(2, "0")}H ` +
+        `${String(minutes).padStart(2, "0")}M ` +
+        `${String(seconds).padStart(2, "0")}S remaining till Admin Abuse`;
+
+      // ============================
 
       const updated = new EmbedBuilder()
         .setColor("#00aaff")
