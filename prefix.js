@@ -80,7 +80,7 @@ export default async function prefix(msg, client) {
 // -----------------------------
   async function handleAATime(msg) {
   let targetDate = getNextSaturdayAt6PM();
-  let unix = Math.floor(targetDate.getTime() / 1000);
+  let unix = Math.floor(targetDate.getTime() - 3600000 / 1000);
 
   const embed = new EmbedBuilder()
     .setColor("#00aaff")
@@ -101,7 +101,7 @@ export default async function prefix(msg, client) {
 
     if (diff <= 0) {
       targetDate = getNextSaturdayAt6PM();
-      unix = Math.floor(targetDate.getTime() / 1000);
+      unix = Math.floor(targetDate.getTime() - 3600000 / 1000);
 
       diff = Math.floor(
         (targetDate.getTime() - now.getTime()) / 1000
@@ -159,7 +159,7 @@ function getNextSaturdayAt6PM() {
     0,
     0
   );
-  
+
   return target;
 }
 
