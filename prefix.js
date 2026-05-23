@@ -71,15 +71,15 @@ export default async function prefix(msg, client) {
   }
 
 // ============================
-// AATime — Live Countdown
+// AATime
 // ============================
 if (command === "aatime") {
   return handleAATime(msg);
 }
 
 async function handleAATime(msg) {
-  const targetDate = getNextSaturdayAt6PM(0);
-  const unix = Math.floor(targetDate.getTime() / 1000);
+  let targetDate = getNextSaturdayAt6PM(0);
+  let unix = Math.floor(targetDate.getTime() / 1000);
 
   const embed = new EmbedBuilder()
     .setColor("#00aaff")
@@ -98,7 +98,12 @@ async function handleAATime(msg) {
     const now = new Date();
     let diff = Math.floor((targetDate - now) / 1000);
 
-    if (diff < 0) diff = 0;
+    // If event passed → roll to next Saturday
+    if (diff <= 0) {
+      targetDate = getNextSaturdayAt6PM(0);
+      unix = Math.floor(targetDate.getTime() / 1000);
+      diff = Math.floor((targetDate - now) / 1000);
+    }
 
     const hours = String(Math.floor(diff / 3600)).padStart(2, "0");
     const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
@@ -121,14 +126,10 @@ async function handleAATime(msg) {
     } catch {
       clearInterval(interval);
     }
-
-    if (diff <= 0) {
-      clearInterval(interval);
-    }
   }, 1000);
 }
 
-// Helper: Next Saturday @ 6 PM EST
+// Next Saturday @ 6 PM EST
 function getNextSaturdayAt6PM(offset = 0) {
   const now = new Date();
 
@@ -144,6 +145,7 @@ function getNextSaturdayAt6PM(offset = 0) {
 
   return new Date(target.getTime() + estOffset * 60000);
 }
+
 
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
