@@ -8,6 +8,7 @@ export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
 
+  // Allow webhook messages ONLY if they are prefix commands
   if (msg.webhookId && !msg.content.startsWith("!")) return;
 
   const prefix = "!";
@@ -17,14 +18,18 @@ export default async function prefix(msg, client) {
   const command = args.shift()?.toLowerCase();
   if (!command) return;
 
+  // -----------------------------
+  // PERMISSION CHECK HELPER
+  // -----------------------------
   function hasManageServer() {
     return msg.member && msg.member.permissions.has("ManageGuild");
   }
 
   // -----------------------------
-  // PUBLIC COMMANDS
+  // PUBLIC COMMANDS (NO PERMS)
   // -----------------------------
 
+  // AFK COMMAND (ONLY RUINED)
   if (command === "afk") {
     if (msg.author.id !== "775991906173452288") {
       return msg.reply("❌ Only the bot owner can use this command.");
@@ -39,6 +44,7 @@ export default async function prefix(msg, client) {
     return msg.reply(`🟦 You are now **AFK**.\nReason: **${reason}**`);
   }
 
+  // Vouch system
   if (command === "vouch") return client.vouchSystem.handleVouch(msg, args);
   if (command === "unvouch") return client.vouchSystem.handleUnvouch(msg, args);
   if (command === "vouches") return client.vouchSystem.handleVouches(msg);
@@ -47,18 +53,17 @@ export default async function prefix(msg, client) {
   if (command === "cleanvouch")
     return client.vouchSystem.handleCleanVouch(msg, args);
 
+  // Boost stats
   if (command === "boosts") return boostCommand(msg);
 
   // ============================
-  // BRAND NEW AA SYSTEM
+  // AATime — FINAL FIXED VERSION
   // ============================
   if (command === "aatime") return handleAATime(msg);
 
   async function handleAATime(msg) {
-    let targetDate = getNextSaturdayAt6PM();
-
-    // ⭐ UNIX timestamp based on LOCAL TIME
-    let unix = Math.floor(targetDate.getTime() / 1000);
+    let targetDate = getNextSaturdayAt6PM_ET_asUTC();
+    let unix = Math.floor(targetDate.getTime() / 1000); // UTC → UNIX
 
     const embed = new EmbedBuilder()
       .setColor("#00aaff")
@@ -73,11 +78,12 @@ export default async function prefix(msg, client) {
     const sent = await msg.reply({ embeds: [embed] });
 
     const interval = setInterval(async () => {
-      const now = new Date();
+      const now = new Date(); // UTC on Render
       let diff = Math.floor((targetDate - now) / 1000);
 
       if (diff <= 0) {
-        targetDate = getNextSaturdayAt6PM();
+        // Move to next Saturday 6 PM Eastern (as UTC)
+        targetDate = getNextSaturdayAt6PM_ET_asUTC();
         unix = Math.floor(targetDate.getTime() / 1000);
         diff = Math.floor((targetDate - now) / 1000);
       }
@@ -107,51 +113,47 @@ export default async function prefix(msg, client) {
   }
 
   // ============================
-  // CLEAN LOCAL-TIME DATE LOGIC
+  // 6 PM EASTERN → UTC (Render‑safe)
   // ============================
-  function getNextSaturdayAt6PM() {
-  // Step 1: Get current time in America/New_York
-  const nowNY = new Date(
-    new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
-  );
+  function getNextSaturdayAt6PM_ET_asUTC() {
+    // "now" in UTC (Render default)
+    const nowUTC = new Date();
 
-  const day = nowNY.getDay(); // 0 = Sun, 6 = Sat
-  let daysUntilSaturday = (6 - day + 7) % 7;
+    // "now" in America/New_York
+    const nowNY = new Date(
+      nowUTC.toLocaleString("en-US", { timeZone: "America/New_York" })
+    );
 
-  // If it's Saturday and past 6 PM → next week
-  if (daysUntilSaturday === 0 && nowNY.getHours() >= 18) {
-    daysUntilSaturday = 7;
+    const day = nowNY.getDay(); // 0 = Sun, 6 = Sat
+    let daysUntilSaturday = (6 - day + 7) % 7;
+
+    // If it's Saturday and past 6 PM Eastern → next week
+    if (daysUntilSaturday === 0 && nowNY.getHours() >= 18) {
+      daysUntilSaturday = 7;
+    }
+
+    // Build target in NY local time (6 PM Eastern)
+    const targetNY = new Date(
+      nowNY.getFullYear(),
+      nowNY.getMonth(),
+      nowNY.getDate() + daysUntilSaturday,
+      18,
+      0,
+      0,
+      0
+    );
+
+    // Offset between UTC and NY at this moment
+    const offsetMs = nowUTC.getTime() - nowNY.getTime(); // UTC - NY
+
+    // Convert that NY time to the equivalent UTC time
+    const targetUTC = new Date(targetNY.getTime() + offsetMs);
+
+    return targetUTC;
   }
 
-  // Step 2: Build the target date in NY local time
-  const targetNY = new Date(
-    nowNY.getFullYear(),
-    nowNY.getMonth(),
-    nowNY.getDate() + daysUntilSaturday,
-    18, // 6 PM Eastern
-    0,
-    0,
-    0
-  );
-
-  // Step 3: Convert NY time → UTC Date object
-  const targetUTC = new Date(
-    Date.UTC(
-      targetNY.getFullYear(),
-      targetNY.getMonth(),
-      targetNY.getDate(),
-      targetNY.getHours(),
-      targetNY.getMinutes(),
-      targetNY.getSeconds()
-    )
-  );
-
-  return targetUTC;
-}
-
-
   // -----------------------------
-  // ADMIN COMMANDS
+  // ADMIN‑ONLY COMMANDS
   // -----------------------------
   if (!hasManageServer()) {
     return msg.reply("You need **Manage Server** to use this command.");
@@ -178,6 +180,9 @@ export default async function prefix(msg, client) {
   if (command === "samplenuke")
     return simulateNukeAlert(msg, client);
 
+  // -----------------------------
+  // UNKNOWN COMMAND
+  // -----------------------------
   return msg.reply(
     "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`, `!aatime`."
   );
