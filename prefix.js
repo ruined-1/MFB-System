@@ -70,51 +70,69 @@ export default async function prefix(msg, client) {
     return boostCommand(msg);
   }
 
-  // ============================
-// AATime — Every Saturday @ 6 PM EST
+// ============================
+// AATime — Live Countdown
 // ============================
 if (command === "aatime") {
   return handleAATime(msg);
 }
 
 async function handleAATime(msg) {
-  const events = [];
-
-  for (let i = 0; i < 4; i++) {
-    const date = getNextSaturdayAt6PM(i);
-    const unix = Math.floor(date.getTime() / 1000);
-
-    events.push({
-      name: `Saturday Admin Abuse Event #${i + 1}`,
-      unix,
-      countdown: formatCountdown(date)
-    });
-  }
-
-  const formatted = events
-    .map(
-      e =>
-        `**${e.name}**\n` +
-        `Starts: <t:${e.unix}:F>\n` +
-        `Discord Countdown: <t:${e.unix}:R>\n` +
-        `Custom Countdown: **${e.countdown} remaining till Admin Abuse**\n`
-    )
-    .join("\n");
+  const targetDate = getNextSaturdayAt6PM(0);
+  const unix = Math.floor(targetDate.getTime() / 1000);
 
   const embed = new EmbedBuilder()
     .setColor("#00aaff")
-    .setTitle("📅 Upcoming Saturday Admin Abuses")
-    .setDescription(formatted)
+    .setTitle("⏳ AA Countdown")
+    .setDescription(
+      `Starts: <t:${unix}:F>\n` +
+      `Discord Countdown: <t:${unix}:R>\n` +
+      `Custom Countdown: **calculating...**`
+    )
     .setTimestamp();
 
-  return msg.reply({ embeds: [embed] });
+  const sent = await msg.reply({ embeds: [embed] });
+
+  // LIVE UPDATE LOOP
+  const interval = setInterval(async () => {
+    const now = new Date();
+    let diff = Math.floor((targetDate - now) / 1000);
+
+    if (diff < 0) diff = 0;
+
+    const hours = String(Math.floor(diff / 3600)).padStart(2, "0");
+    const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
+    const seconds = String(diff % 60).padStart(2, "0");
+
+    const countdown = `${hours} : ${minutes} : ${seconds} remaining till AA`;
+
+    const updated = new EmbedBuilder()
+      .setColor("#00aaff")
+      .setTitle("⏳ AA Countdown")
+      .setDescription(
+        `Starts: <t:${unix}:F>\n` +
+        `Discord Countdown: <t:${unix}:R>\n` +
+        `Custom Countdown: **${countdown}**`
+      )
+      .setTimestamp();
+
+    try {
+      await sent.edit({ embeds: [updated] });
+    } catch {
+      clearInterval(interval);
+    }
+
+    if (diff <= 0) {
+      clearInterval(interval);
+    }
+  }, 1000);
 }
 
-// Convert next Saturday @ 6 PM EST
+// Helper: Next Saturday @ 6 PM EST
 function getNextSaturdayAt6PM(offset = 0) {
   const now = new Date();
 
-  const estOffset = now.getTimezoneOffset() + 300; 
+  const estOffset = now.getTimezoneOffset() + 300;
   const estNow = new Date(now.getTime() - estOffset * 60000);
 
   const day = estNow.getDay();
@@ -126,27 +144,6 @@ function getNextSaturdayAt6PM(offset = 0) {
 
   return new Date(target.getTime() + estOffset * 60000);
 }
-
-// Format HH : MM : SS countdown
-function formatCountdown(targetDate) {
-  const now = new Date();
-  let diff = Math.floor((targetDate - now) / 1000);
-
-  if (diff < 0) diff = 0;
-
-  const hours = Math.floor(diff / 3600);
-  const minutes = Math.floor((diff % 3600) / 60);
-  const seconds = diff % 60;
-
-  return (
-    String(hours).padStart(2, "0") +
-    " : " +
-    String(minutes).padStart(2, "0") +
-    " : " +
-    String(seconds).padStart(2, "0")
-  );
-}
-
 
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
