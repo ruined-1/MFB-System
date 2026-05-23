@@ -131,7 +131,7 @@ async function handleAATime(msg) {
 
 // Next Saturday @ 6 PM EST
 function getNextSaturdayAt6PM(offset = 0) {
-  // Step 1: Get current NY time
+  // Get current NY time
   const nowNY = new Date(
     new Date().toLocaleString("en-US", { timeZone: "America/New_York" })
   );
@@ -139,7 +139,7 @@ function getNextSaturdayAt6PM(offset = 0) {
   const day = nowNY.getDay();
   const daysUntilSaturday = (6 - day + 7) % 7;
 
-  // Step 2: Build the target date in NY time
+  // Build the target date in NY time
   const targetNY = new Date(
     nowNY.getFullYear(),
     nowNY.getMonth(),
@@ -150,7 +150,7 @@ function getNextSaturdayAt6PM(offset = 0) {
     0
   );
 
-  // Step 3: Convert NY time → UTC timestamp manually
+  // Extract NY components
   const year = targetNY.getFullYear();
   const month = targetNY.getMonth();
   const dayNum = targetNY.getDate();
@@ -158,7 +158,7 @@ function getNextSaturdayAt6PM(offset = 0) {
   const minute = targetNY.getMinutes();
   const second = targetNY.getSeconds();
 
-  // Step 4: Build a REAL UTC date
+  // Build a REAL UTC date
   const targetUTC = new Date(Date.UTC(year, month, dayNum, hour, minute, second));
 
   return targetUTC;
