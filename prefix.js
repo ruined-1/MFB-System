@@ -131,21 +131,35 @@ async function handleAATime(msg) {
 
 // Next Saturday @ 6 PM EST
 function getNextSaturdayAt6PM(offset = 0) {
+  // Always use ruined timezone (EST/EDT auto-handled)
   const now = new Date();
 
-  const estOffset = now.getTimezoneOffset() + 300;
-  const estNow = new Date(now.getTime() - estOffset * 60000);
+  // Convert "now" into ruined time components
+  const ny = new Date(
+    now.toLocaleString("en-US", { timeZone: "America/New_York" })
+  );
 
-  const day = estNow.getDay();
+  const day = ny.getDay();
   const daysUntilSaturday = (6 - day + 7) % 7;
 
-  const target = new Date(estNow);
-  target.setDate(estNow.getDate() + daysUntilSaturday + offset * 7);
-  target.setHours(18, 0, 0, 0);
+  // Build the target date in ruined time
+  const targetNY = new Date(
+    ny.getFullYear(),
+    ny.getMonth(),
+    ny.getDate() + daysUntilSaturday + offset * 7,
+    18, // 6 PM
+    0,
+    0,
+    0
+  );
 
-  return new Date(target.getTime() + estOffset * 60000);
+  // Convert ruined time → real UTC Date object
+  const targetUTC = new Date(
+    targetNY.toLocaleString("en-US", { timeZone: "UTC" })
+  );
+
+  return targetUTC;
 }
-
 
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
