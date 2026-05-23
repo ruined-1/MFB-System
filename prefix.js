@@ -2,6 +2,7 @@
 import { simulateRaidAlert } from "./antiRaid.js";
 import { simulateNukeAlert } from "./antiNuke.js";
 import { boostCommand } from "./boostTracker.js";
+import { EmbedBuilder } from "discord.js";
 
 export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
@@ -69,6 +70,84 @@ export default async function prefix(msg, client) {
     return boostCommand(msg);
   }
 
+  // ============================
+// AATime — Every Saturday @ 6 PM EST
+// ============================
+if (command === "aatime") {
+  return handleAATime(msg);
+}
+
+async function handleAATime(msg) {
+  const events = [];
+
+  for (let i = 0; i < 4; i++) {
+    const date = getNextSaturdayAt6PM(i);
+    const unix = Math.floor(date.getTime() / 1000);
+
+    events.push({
+      name: `Saturday Event #${i + 1}`,
+      unix,
+      countdown: formatCountdown(date)
+    });
+  }
+
+  const formatted = events
+    .map(
+      e =>
+        `**${e.name}**\n` +
+        `Starts: <t:${e.unix}:F>\n` +
+        `Discord Countdown: <t:${e.unix}:R>\n` +
+        `Custom Countdown: **${e.countdown} remaining till AA**\n`
+    )
+    .join("\n");
+
+  const embed = new EmbedBuilder()
+    .setColor("#00aaff")
+    .setTitle("📅 Upcoming Saturday Events")
+    .setDescription(formatted)
+    .setTimestamp();
+
+  return msg.reply({ embeds: [embed] });
+}
+
+// Convert next Saturday @ 6 PM EST
+function getNextSaturdayAt6PM(offset = 0) {
+  const now = new Date();
+
+  const estOffset = now.getTimezoneOffset() + 300; 
+  const estNow = new Date(now.getTime() - estOffset * 60000);
+
+  const day = estNow.getDay();
+  const daysUntilSaturday = (6 - day + 7) % 7;
+
+  const target = new Date(estNow);
+  target.setDate(estNow.getDate() + daysUntilSaturday + offset * 7);
+  target.setHours(18, 0, 0, 0);
+
+  return new Date(target.getTime() + estOffset * 60000);
+}
+
+// Format HH : MM : SS countdown
+function formatCountdown(targetDate) {
+  const now = new Date();
+  let diff = Math.floor((targetDate - now) / 1000);
+
+  if (diff < 0) diff = 0;
+
+  const hours = Math.floor(diff / 3600);
+  const minutes = Math.floor((diff % 3600) / 60);
+  const seconds = diff % 60;
+
+  return (
+    String(hours).padStart(2, "0") +
+    " : " +
+    String(minutes).padStart(2, "0") +
+    " : " +
+    String(seconds).padStart(2, "0")
+  );
+}
+
+
   // -----------------------------
   // ADMIN‑ONLY COMMANDS
   // -----------------------------
@@ -112,6 +191,6 @@ export default async function prefix(msg, client) {
   // UNKNOWN COMMAND
   // -----------------------------
   return msg.reply(
-    "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`."
+    "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`, `!aatime`."
   );
 }
