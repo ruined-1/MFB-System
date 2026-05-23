@@ -57,15 +57,13 @@ export default async function prefix(msg, client) {
   if (command === "boosts") return boostCommand(msg);
 
   // ============================
-  // AATime — Live Countdown
+  // AATime — BRAND NEW SYSTEM
   // ============================
   if (command === "aatime") return handleAATime(msg);
 
   async function handleAATime(msg) {
     let targetDate = getNextSaturdayAt6PM();
-
-    // Subtract 1 hour from UNIX timestamp (3600000 ms)
-    let unix = Math.floor((targetDate.getTime() - 3600000) / 1000);
+    let unix = Math.floor(targetDate.getTime() / 1000);
 
     const embed = new EmbedBuilder()
       .setColor("#00aaff")
@@ -79,15 +77,13 @@ export default async function prefix(msg, client) {
 
     const sent = await msg.reply({ embeds: [embed] });
 
-    // LIVE UPDATE LOOP
     const interval = setInterval(async () => {
       const now = new Date();
       let diff = Math.floor((targetDate - now) / 1000);
 
-      // If event passed → roll to next Saturday
       if (diff <= 0) {
         targetDate = getNextSaturdayAt6PM();
-        unix = Math.floor((targetDate.getTime() - 3600000) / 1000);
+        unix = Math.floor(targetDate.getTime() / 1000);
         diff = Math.floor((targetDate - now) / 1000);
       }
 
@@ -95,11 +91,11 @@ export default async function prefix(msg, client) {
       const minutes = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
       const seconds = String(diff % 60).padStart(2, "0");
 
-      const countdown = `${hours} : ${minutes} : ${seconds} remaining till Admin Abuse`;
+      const countdown = `${hours}h ${minutes}m ${seconds}s remaining till Admin Abuse`;
 
       const updated = new EmbedBuilder()
         .setColor("#00aaff")
-        .setTitle("⏳ AA Countdown")
+        .setTitle("⏳ Admin Abuse Countdown")
         .setDescription(
           `Starts: <t:${unix}:F>\n` +
           `Discord Countdown: <t:${unix}:R>\n` +
@@ -116,7 +112,7 @@ export default async function prefix(msg, client) {
   }
 
   // ============================
-  // LOCAL TIME — NO CONVERSION
+  // CLEAN NEW DATE FUNCTION
   // ============================
   function getNextSaturdayAt6PM() {
     const now = new Date();
@@ -124,12 +120,11 @@ export default async function prefix(msg, client) {
     const day = now.getDay(); // 0 = Sun, 6 = Sat
     let daysUntilSaturday = (6 - day + 7) % 7;
 
-    // If it's Saturday and it's already past 6 PM → next week
+    // If it's Saturday and already past 6 PM → next week
     if (daysUntilSaturday === 0 && now.getHours() >= 18) {
-     daysUntilSaturday = 7;
+      daysUntilSaturday = 7;
     }
 
-    // Build the target date in LOCAL TIME
     return new Date(
       now.getFullYear(),
       now.getMonth(),
