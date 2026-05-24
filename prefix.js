@@ -3,22 +3,29 @@ import { simulateRaidAlert } from "./antiRaid.js";
 import { simulateNukeAlert } from "./antiNuke.js";
 import { boostCommand } from "./boostTracker.js";
 import { EmbedBuilder } from "discord.js";
-import { getBugReportPanel } from "./bug/bugPanel.js";
 
-// Bug Report System Imports (inside /bug folder)
+// Bug Report System Imports
 import {
   handleDM,
   handleBugButton,
   handleBugStatus
 } from "./bug/bugReport.js";
 
+// Suggestion System Imports
+import {
+  getSuggestionPanel,
+  handleSuggestionDM
+} from "./suggestions/suggestionSystem.js";
+
 export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
 
-  // Handle DM responses for bug report system
+  // Handle DM responses for bug report + suggestion system
   if (msg.channel.type === 1) {
-    return handleDM(msg, client);
+    await handleDM(msg, client);
+    await handleSuggestionDM(msg, client);
+    return;
   }
 
   // Allow webhook messages ONLY if they are prefix commands
@@ -95,15 +102,11 @@ export default async function prefix(msg, client) {
       let diff = Math.floor((targetDate - now) / 1000);
 
       if (diff <= 0) {
-        // Move to next Saturday 6 PM Eastern (as UTC)
         targetDate = getNextSaturdayAt6PM_ET_asUTC();
         unix = Math.floor(targetDate.getTime() / 1000);
         diff = Math.floor((targetDate - now) / 1000);
       }
 
-      // ============================
-      // NEW COUNTDOWN FORMAT (D H M S)
-      // ============================
       const days = Math.floor(diff / 86400);
       const hours = Math.floor((diff % 86400) / 3600);
       const minutes = Math.floor((diff % 3600) / 60);
@@ -114,8 +117,6 @@ export default async function prefix(msg, client) {
         `${String(hours).padStart(2, "0")}H ` +
         `${String(minutes).padStart(2, "0")}M ` +
         `${String(seconds).padStart(2, "0")}S remaining till Admin Abuse`;
-
-      // ============================
 
       const updated = new EmbedBuilder()
         .setColor("#00aaff")
@@ -135,27 +136,19 @@ export default async function prefix(msg, client) {
     }, 1000);
   }
 
-  // ============================
-  // 6 PM EASTERN → UTC (Render‑safe)
-  // ============================
   function getNextSaturdayAt6PM_ET_asUTC() {
-    // "now" in UTC (Render default)
     const nowUTC = new Date();
-
-    // "now" in America/New_York
     const nowNY = new Date(
       nowUTC.toLocaleString("en-US", { timeZone: "America/New_York" })
     );
 
-    const day = nowNY.getDay(); // 0 = Sun, 6 = Sat
+    const day = nowNY.getDay();
     let daysUntilSaturday = (6 - day + 7) % 7;
 
-    // If it's Saturday and past 6 PM Eastern → next week
     if (daysUntilSaturday === 0 && nowNY.getHours() >= 18) {
       daysUntilSaturday = 7;
     }
 
-    // Build target in NY local time (6 PM Eastern)
     const targetNY = new Date(
       nowNY.getFullYear(),
       nowNY.getMonth(),
@@ -166,13 +159,8 @@ export default async function prefix(msg, client) {
       0
     );
 
-    // Offset between UTC and NY at this moment
-    const offsetMs = nowUTC.getTime() - nowNY.getTime(); // UTC - NY
-
-    // Convert that NY time to the equivalent UTC time
-    const targetUTC = new Date(targetNY.getTime() + offsetMs);
-
-    return targetUTC;
+    const offsetMs = nowUTC.getTime() - nowNY.getTime();
+    return new Date(targetNY.getTime() + offsetMs);
   }
 
   // -----------------------------
@@ -203,16 +191,21 @@ export default async function prefix(msg, client) {
   if (command === "samplenuke")
     return simulateNukeAlert(msg, client);
 
+  // BUG PANEL
   if (command === "bugpanel") {
     const { getBugReportPanel } = await import("./bug/bugPanel.js");
     return msg.channel.send(getBugReportPanel());
   }
 
+  // ⭐ SUGGESTION PANEL ⭐
+  if (command === "suggestpanel") {
+    return msg.channel.send(getSuggestionPanel());
+  }
 
   // -----------------------------
   // UNKNOWN COMMAND
   // -----------------------------
   return msg.reply(
-    "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`, `!aatime`, `!bugpanel`."
+    "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`, `!aatime`, `!bugpanel`, `!suggestpanel`."
   );
 }
