@@ -7,7 +7,7 @@ import {
   ThreadAutoArchiveDuration
 } from "discord.js";
 
-const SUGGESTION_CHANNEL = "YOUR_CHANNEL_ID_HERE"; // Replace this
+const SUGGESTION_CHANNEL = "1508213601792692476"; // Replace this
 
 // Active DM sessions
 const suggestionSessions = new Map();
