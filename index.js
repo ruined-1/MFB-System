@@ -59,6 +59,9 @@ import VouchSystem from "./vouchSystem.js";
 import settingsCommand from "./settings/settingsCommand.js";
 import registerSettingsRouter from "./settings/settingsRouter.js";
 
+// ⭐ BUG REPORT SYSTEM IMPORTS ⭐
+import { handleBugButton, handleBugStatus } from "./bug/bugReport.js";
+
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -152,7 +155,7 @@ client.on("messageCreate", async (msg) => {
   } catch (err) {
 //   console.error("Alert handler error:", err);
   }
- });
+});
 
 // ===============================
 // BOOST TRACKER
@@ -233,41 +236,37 @@ client.on("webhookUpdate", async (channel) => {
 registerSettingsRouter(client);
 
 client.on("interactionCreate", async (interaction) => {
-    try {
-        // Bug Report System — START
-        if (interaction.isButton()) {
-            await handleBugButton(interaction, client);
-            await handleBugStatus(interaction, client);
-        }
-        // Bug Report System — END
-
-        // Your existing cooldown handler
-        await resetCooldown(interaction, client);
-
-    } catch (err) {
-        console.error("Button error:", err);
+  try {
+    // ⭐ BUG REPORT SYSTEM ⭐
+    if (interaction.isButton()) {
+      await handleBugButton(interaction, client);
+      await handleBugStatus(interaction, client);
     }
+
+    // Existing cooldown handler (if enabled)
+    await resetCooldown?.(interaction, client);
+
+  } catch (err) {
+    console.error("Button error:", err);
+  }
 });
 
 // STATUS [Render Safe]
 client.once("ready", () => {
-//   console.log(`Logged in as ${client.user.tag}`);
-
-  // Delay to let render boot before setting status
   setTimeout(() => {
     client.user.setPresence({
       status: "online",
       activities: [
         {
           name: "everything.",
-          type: 3 // (Watching)
+          type: 3 // Watching
         }
       ]
     });
 
     console.log("Presence Set Successfully.");
-  }, 1500); // 1.5s delay
- });
+  }, 1500);
+});
 
 // ===============================
 // LOGIN
