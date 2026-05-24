@@ -3,11 +3,10 @@ import {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
-  ButtonStyle,
-  ThreadAutoArchiveDuration
+  ButtonStyle
 } from "discord.js";
 
-const SUGGESTION_CHANNEL = "1508213601792692476"; // Replace this
+const SUGGESTION_CHANNEL = "YOUR_CHANNEL_ID_HERE"; // Replace this
 
 // Active DM sessions
 const suggestionSessions = new Map();
@@ -96,7 +95,7 @@ export async function handleSuggestionDM(message, client) {
 }
 
 // ===============================
-// POST SUGGESTION (NO DEV BUTTONS)
+// POST SUGGESTION (NO THREADS)
 // ===============================
 async function postSuggestion(user, data, client) {
   const channel = await client.channels.fetch(SUGGESTION_CHANNEL);
@@ -112,11 +111,6 @@ async function postSuggestion(user, data, client) {
     )
     .setTimestamp();
 
-  // No buttons — clean community suggestion post
-  const msg = await channel.send({ embeds: [embed] });
-
-  await msg.startThread({
-    name: `suggestion-${msg.id}`,
-    autoArchiveDuration: ThreadAutoArchiveDuration.OneWeek
-  });
+  // No threads, no buttons — clean post
+  await channel.send({ embeds: [embed] });
 }
