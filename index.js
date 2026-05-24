@@ -59,8 +59,15 @@ import VouchSystem from "./vouchSystem.js";
 import settingsCommand from "./settings/settingsCommand.js";
 import registerSettingsRouter from "./settings/settingsRouter.js";
 
-// ⭐ BUG REPORT SYSTEM IMPORTS ⭐
+// BUG REPORT SYSTEM IMPORTS
 import { handleBugButton, handleBugStatus, handleDM } from "./bug/bugReport.js";
+
+// SUGGESTION SYSTEM IMPORTS (NO DEV BUTTONS)
+import {
+  getSuggestionPanel,
+  handleSuggestionButton,
+  handleSuggestionDM
+} from "./suggestions/suggestionSystem.js";
 
 const client = new Client({
   intents: [
@@ -89,7 +96,7 @@ client.afk = {
 };
 
 // ===============================
-// PREFIX COMMANDS + AFK LOGIC
+// PREFIX COMMANDS + AFK LOGIC + DM ROUTING
 // ===============================
 client.on("messageCreate", async (msg) => {
   if (msg.partial) return;
@@ -97,7 +104,9 @@ client.on("messageCreate", async (msg) => {
 
   // ⭐ BUG REPORT SYSTEM — DM HANDLER ⭐
   if (msg.channel.type === 1) {
-    return handleDM(msg, client);
+    await handleDM(msg, client);
+    await handleSuggestionDM(msg, client);
+    return;
   }
 
   // AFK AUTO-CLEAR
@@ -238,10 +247,13 @@ registerSettingsRouter(client);
 
 client.on("interactionCreate", async (interaction) => {
   try {
-    // ⭐ BUG REPORT SYSTEM — BUTTON HANDLER ⭐
     if (interaction.isButton()) {
+      // BUG REPORT SYSTEM
       await handleBugButton(interaction, client);
       await handleBugStatus(interaction, client);
+
+      // SUGGESTION SYSTEM
+      await handleSuggestionButton(interaction, client);
     }
 
     // Existing cooldown handler (if enabled)
@@ -252,7 +264,9 @@ client.on("interactionCreate", async (interaction) => {
   }
 });
 
+// ===============================
 // STATUS [Render Safe]
+// ===============================
 client.once("ready", () => {
   setTimeout(() => {
     client.user.setPresence({
