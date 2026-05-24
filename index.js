@@ -227,17 +227,26 @@ client.on("webhookUpdate", async (channel) => {
   }
 });
 
-// ===============================
+// ==============================
 // BUTTONS + SETTINGS INTERACTIONS
-// ===============================
+// ==============================
 registerSettingsRouter(client);
 
 client.on("interactionCreate", async (interaction) => {
-  try {
-    await resetCooldown(interaction, client);
-  } catch (err) {
-    console.error("Button error:", err);
-  }
+    try {
+        // Bug Report System — START
+        if (interaction.isButton()) {
+            await handleBugButton(interaction, client);
+            await handleBugStatus(interaction, client);
+        }
+        // Bug Report System — END
+
+        // Your existing cooldown handler
+        await resetCooldown(interaction, client);
+
+    } catch (err) {
+        console.error("Button error:", err);
+    }
 });
 
 // STATUS [Render Safe]

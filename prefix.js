@@ -3,10 +3,23 @@ import { simulateRaidAlert } from "./antiRaid.js";
 import { simulateNukeAlert } from "./antiNuke.js";
 import { boostCommand } from "./boostTracker.js";
 import { EmbedBuilder } from "discord.js";
+import { getBugReportPanel } from "./bug/bugPanel.js";
+
+// Bug Report System Imports (inside /bug folder)
+import {
+  handleDM,
+  handleBugButton,
+  handleBugStatus
+} from "./bug/bugReport.js";
 
 export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
+
+  // Handle DM responses for bug report system
+  if (msg.channel.type === 1) {
+    return handleDM(msg, client);
+  }
 
   // Allow webhook messages ONLY if they are prefix commands
   if (msg.webhookId && !msg.content.startsWith("!")) return;
@@ -189,6 +202,12 @@ export default async function prefix(msg, client) {
 
   if (command === "samplenuke")
     return simulateNukeAlert(msg, client);
+
+  if (command === "bugpanel") {
+    const { getBugReportPanel } = await import("./bug/bugPanel.js");
+    return msg.channel.send(getBugReportPanel());
+  }
+
 
   // -----------------------------
   // UNKNOWN COMMAND
