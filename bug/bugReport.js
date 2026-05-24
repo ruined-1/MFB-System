@@ -13,6 +13,9 @@ const BUG_CHANNEL = "1508141164602327210"; // Your bug report channel
 // Store active DM sessions
 const activeSessions = new Map();
 
+// ===============================
+// BUG REPORT PANEL
+// ===============================
 export function getBugReportPanel() {
   const embed = new EmbedBuilder()
     .setColor("#ff4444")
@@ -32,10 +35,12 @@ export function getBugReportPanel() {
   return { embeds: [embed], components: [row] };
 }
 
+// ===============================
+// BUTTON HANDLER (START FORM)
+// ===============================
 export async function handleBugButton(interaction, client) {
   if (interaction.customId !== "bug_start") return;
 
-  // Try to DM the user
   try {
     const dm = await interaction.user.send(
       "🐞 **Bug Report Form**\nLet's get started!\n\n" +
@@ -61,6 +66,9 @@ export async function handleBugButton(interaction, client) {
   }
 }
 
+// ===============================
+// DM HANDLER (FORM LOGIC)
+// ===============================
 export async function handleDM(message, client) {
   const session = activeSessions.get(message.author.id);
   if (!session) return;
@@ -72,18 +80,22 @@ export async function handleDM(message, client) {
       session.answers.device = content;
       session.step = 2;
       return message.channel.send("🧭 **Steps to Reproduce:**\nExplain step-by-step how to trigger the bug.");
+
     case 2:
       session.answers.steps = content;
       session.step = 3;
       return message.channel.send("🎯 **Expected Behavior:**\nWhat did you expect to happen?");
+
     case 3:
       session.answers.expected = content;
       session.step = 4;
       return message.channel.send("💥 **Actual Behavior:**\nWhat actually happened?");
+
     case 4:
       session.answers.actual = content;
       session.step = 5;
       return message.channel.send("📎 **Media Link (optional):**\nYou can send a video/screenshot link, or type `none`.");
+
     case 5:
       session.answers.media = content === "none" ? "No media provided." : content;
 
@@ -94,6 +106,9 @@ export async function handleDM(message, client) {
   }
 }
 
+// ===============================
+// POST BUG REPORT TO CHANNEL
+// ===============================
 async function postBugReport(user, data, client) {
   const channel = await client.channels.fetch(BUG_CHANNEL);
 
@@ -111,16 +126,20 @@ async function postBugReport(user, data, client) {
     )
     .setTimestamp();
 
-  const row = new ActionRowBuilder().addComponents(
+  // ⭐ FIXED: Split into 2 rows (Discord max 5 buttons per row)
+  const row1 = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId("bug_confirm").setLabel("Confirm").setStyle(ButtonStyle.Primary),
     new ButtonBuilder().setCustomId("bug_accept").setLabel("Accept").setStyle(ButtonStyle.Success),
     new ButtonBuilder().setCustomId("bug_progress").setLabel("In Progress").setStyle(ButtonStyle.Secondary),
-    new ButtonBuilder().setCustomId("bug_fixed").setLabel("Fixed").setStyle(ButtonStyle.Success),
+    new ButtonBuilder().setCustomId("bug_fixed").setLabel("Fixed").setStyle(ButtonStyle.Success)
+  );
+
+  const row2 = new ActionRowBuilder().addComponents(
     new ButtonBuilder().setCustomId("bug_duplicate").setLabel("Duplicate").setStyle(ButtonStyle.Danger),
     new ButtonBuilder().setCustomId("bug_close").setLabel("Close").setStyle(ButtonStyle.Secondary)
   );
 
-  const msg = await channel.send({ embeds: [embed], components: [row] });
+  const msg = await channel.send({ embeds: [embed], components: [row1, row2] });
 
   await msg.startThread({
     name: `bug-${msg.id}`,
@@ -128,6 +147,9 @@ async function postBugReport(user, data, client) {
   });
 }
 
+// ===============================
+// STATUS BUTTON HANDLER
+// ===============================
 export async function handleBugStatus(interaction) {
   const allowed = interaction.member.permissions.has(PermissionFlagsBits.ManageGuild);
   if (!allowed)
