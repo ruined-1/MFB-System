@@ -60,7 +60,7 @@ import settingsCommand from "./settings/settingsCommand.js";
 import registerSettingsRouter from "./settings/settingsRouter.js";
 
 // ⭐ BUG REPORT SYSTEM IMPORTS ⭐
-import { handleBugButton, handleBugStatus } from "./bug/bugReport.js";
+import { handleBugButton, handleBugStatus, handleDM } from "./bug/bugReport.js";
 
 const client = new Client({
   intents: [
@@ -69,15 +69,13 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildModeration,
-    GatewayIntentBits.GuildWebhooks
+    GatewayIntentBits.GuildWebhooks,
+    GatewayIntentBits.DirectMessages
   ],
-  partials: []
+  partials: ["CHANNEL"]
 });
 
 // Attach systems
-// client.cooldownSystem = new CooldownSystem();
-// client.severitySystem = new SeveritySystem();
-// client.thresholdSystem = new ThresholdSystem();
 client.vouchSystem = new VouchSystem();
 
 await ConnectToDatabase();
@@ -96,6 +94,11 @@ client.afk = {
 client.on("messageCreate", async (msg) => {
   if (msg.partial) return;
   if (msg.author.bot) return;
+
+  // ⭐ BUG REPORT SYSTEM — DM HANDLER ⭐
+  if (msg.channel.type === 1) {
+    return handleDM(msg, client);
+  }
 
   // AFK AUTO-CLEAR
   if (msg.author.id === "775991906173452288" && client.afk.enabled) {
@@ -152,9 +155,7 @@ client.on("messageCreate", async (msg) => {
 client.on("messageCreate", async (msg) => {
   try {
     await alertHandler(msg, client);
-  } catch (err) {
-//   console.error("Alert handler error:", err);
-  }
+  } catch (err) {}
 });
 
 // ===============================
@@ -237,7 +238,7 @@ registerSettingsRouter(client);
 
 client.on("interactionCreate", async (interaction) => {
   try {
-    // ⭐ BUG REPORT SYSTEM ⭐
+    // ⭐ BUG REPORT SYSTEM — BUTTON HANDLER ⭐
     if (interaction.isButton()) {
       await handleBugButton(interaction, client);
       await handleBugStatus(interaction, client);
