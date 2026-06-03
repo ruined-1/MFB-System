@@ -61,12 +61,11 @@ export default {
       url: process.env.MB_WEBHOOK_URL
     });
 
-    //  SEND WEBHOOK MESSAGE WITH AVATAR
+    //  SEND WEBHOOK MESSAGE
     await webhook.send({
-      username: displayName,
-      avatarURL: avatarUrl || undefined,
-      content: `<@${pingUser.id}> **${displayName}** (${robloxId}) has been banned for duping.`
+      content: `<@${pingUser.id}>  ${displayName} (${robloxId}) has been banned for duping.`
     });
+
 
     // Acknowledge the slash command
     await interaction.reply({
