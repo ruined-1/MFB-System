@@ -72,10 +72,6 @@ import {
   handleSuggestionDM
 } from "./suggestions/suggestionSystem.js";
 
-// Prefix ban commands
-// import banCommand from "./commands/ban.js";
-// import unbanCommand from "./commands/unban.js";
-
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,

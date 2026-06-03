@@ -205,8 +205,8 @@ export default async function prefix(msg, client) {
  // import banCommand from "./commands/ban.js";
  // import unbanCommand from "./commands/unban.js";
 
-  if (cmd === "ban") return banCommand(msg, client);
-  if (cmd === "unban") return unbanCommand(msg, client);
+ // if (cmd === "ban") return banCommand(msg, client);
+ // if (cmd === "unban") return unbanCommand(msg, client);
 
  // import mbCommand from "./commands/mb.js";
 
