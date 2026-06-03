@@ -197,10 +197,20 @@ export default async function prefix(msg, client) {
     return msg.channel.send(getBugReportPanel());
   }
 
-  // ⭐ SUGGESTION PANEL ⭐
+  //  SUGGESTION PANEL 
   if (command === "suggestpanel") {
     return msg.channel.send(getSuggestionPanel());
   }
+
+  import banCommand from "./commands/ban.js";
+  import unbanCommand from "./commands/unban.js";
+
+  if (cmd === "ban") return banCommand(msg, client);
+  if (cmd === "unban") return unbanCommand(msg, client);
+
+  import mbCommand from "./commands/mb.js";
+
+  if (cmd === "mb") return mbCommand(msg, client);
 
   // -----------------------------
   // UNKNOWN COMMAND

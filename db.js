@@ -79,3 +79,38 @@ export async function DeleteVouch(vouchId) {
         throw new Error("Failed to delete vouch: " + err);
     }
 }
+
+// ===============================
+// BAN SYSTEM
+// ===============================
+export async function AddBan(userId, reason, moderator) {
+  const { db } = await ConnectToDatabase();
+  const bans = db.collection("bans");
+
+  await bans.updateOne(
+    { userId },
+    {
+      $set: {
+        userId,
+        reason,
+        moderator,
+        date: Date.now()
+      }
+    },
+    { upsert: true }
+  );
+}
+
+export async function RemoveBan(userId) {
+  const { db } = await ConnectToDatabase();
+  const bans = db.collection("bans");
+
+  await bans.deleteOne({ userId });
+}
+
+export async function GetBan(userId) {
+  const { db } = await ConnectToDatabase();
+  const bans = db.collection("bans");
+
+  return await bans.findOne({ userId });
+}

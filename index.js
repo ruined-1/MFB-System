@@ -25,19 +25,25 @@ import express from "express";
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use(express.json());
+
+// Ban API route
+import banRoutes from "./api/banRoutes.js";
+app.use("/api", banRoutes);
+
 app.get("/", (req, res) => res.send("Bot is running"));
 app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 
 // ===============================
 // DISCORD BOT
 // ===============================
-import { Client, GatewayIntentBits, ActivityType } from "discord.js";
+import { Client, GatewayIntentBits, ActivityType, Collection } from "discord.js";
 import { CloseDatabaseConnection, ConnectToDatabase } from "./db.js";
+import fs from "fs";
+import path from "path";
 
 // Handlers
 import prefix from "./prefix.js";
-// import alertHandler from "./dupe_DISABLED/alerts.js";
-// import resetCooldown from "./dupe_DISABLED/resetCooldown.js";
 import boostTracker from "./boostTracker.js";
 
 import { handleJoin, handleMessage } from "./antiRaid.js";
@@ -50,9 +56,6 @@ import {
 } from "./antiNuke.js";
 
 // Systems
-// import CooldownSystem from "./cooldownSystem.js";
-// import SeveritySystem from "./severitySystem.js";
-// import ThresholdSystem from "./thresholdSystem.js";
 import VouchSystem from "./vouchSystem.js";
 
 // SETTINGS SYSTEM
@@ -62,12 +65,16 @@ import registerSettingsRouter from "./settings/settingsRouter.js";
 // BUG REPORT SYSTEM IMPORTS
 import { handleBugButton, handleBugStatus, handleDM } from "./bug/bugReport.js";
 
-// SUGGESTION SYSTEM IMPORTS (NO DEV BUTTONS)
+// SUGGESTION SYSTEM IMPORTS
 import {
   getSuggestionPanel,
   handleSuggestionButton,
   handleSuggestionDM
 } from "./suggestions/suggestionSystem.js";
+
+// Prefix ban commands
+import banCommand from "./commands/ban.js";
+import unbanCommand from "./commands/unban.js";
 
 const client = new Client({
   intents: [
@@ -86,6 +93,21 @@ const client = new Client({
 client.vouchSystem = new VouchSystem();
 
 await ConnectToDatabase();
+
+// ===============================
+// LOAD SLASH COMMANDS
+// ===============================
+client.slashCommands = new Collection();
+
+const commandsPath = path.resolve("./commands");
+const commandFiles = fs.readdirSync(commandsPath).filter(f => f.endsWith(".js"));
+
+for (const file of commandFiles) {
+  const cmd = await import(`./commands/${file}`);
+  if (cmd.default?.data) {
+    client.slashCommands.set(cmd.default.data.name, cmd.default);
+  }
+}
 
 // ===============================
 // AFK SYSTEM
@@ -150,21 +172,18 @@ client.on("messageCreate", async (msg) => {
 
   // PREFIX COMMANDS
   if (msg.content.startsWith("!")) {
+    const args = msg.content.slice(1).split(" ");
+    const cmd = args.shift().toLowerCase();
+
+    if (cmd === "ban") return banCommand(msg, client);
+    if (cmd === "unban") return unbanCommand(msg, client);
+
     try {
       await prefix(msg, client);
     } catch (err) {
       console.error("Prefix error:", err);
     }
   }
-});
-
-// ===============================
-// ALERTS
-// ===============================
-client.on("messageCreate", async (msg) => {
-  try {
-    await alertHandler(msg, client);
-  } catch (err) {}
 });
 
 // ===============================
@@ -247,20 +266,20 @@ registerSettingsRouter(client);
 
 client.on("interactionCreate", async (interaction) => {
   try {
-    if (interaction.isButton()) {
-      // BUG REPORT SYSTEM
-      await handleBugButton(interaction, client);
-      await handleBugStatus(interaction, client);
-
-      // SUGGESTION SYSTEM
-      await handleSuggestionButton(interaction, client);
+    // Slash commands
+    if (interaction.isChatInputCommand()) {
+      const cmd = client.slashCommands.get(interaction.commandName);
+      if (cmd) return cmd.execute(interaction);
     }
 
-    // Existing cooldown handler (if enabled)
-    await resetCooldown?.(interaction, client);
-
+    // Buttons
+    if (interaction.isButton()) {
+      await handleBugButton(interaction, client);
+      await handleBugStatus(interaction, client);
+      await handleSuggestionButton(interaction, client);
+    }
   } catch (err) {
-    console.error("Button error:", err);
+    console.error("Interaction error:", err);
   }
 });
 
