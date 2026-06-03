@@ -63,7 +63,7 @@ export default {
 
     //  SEND WEBHOOK MESSAGE
     await webhook.send({
-      content: `<@${pingUser.id}>  ${displayName} (${robloxId}) has been banned for duping.`
+      content: `<@${pingUser.id}>  **${displayName}** (${robloxId}) has been banned for duping.`
     });
 
 
