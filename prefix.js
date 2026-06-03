@@ -202,8 +202,8 @@ export default async function prefix(msg, client) {
     return msg.channel.send(getSuggestionPanel());
   }
 
-  import banCommand from "./commands/ban.js";
-  import unbanCommand from "./commands/unban.js";
+ // import banCommand from "./commands/ban.js";
+ // import unbanCommand from "./commands/unban.js";
 
   if (cmd === "ban") return banCommand(msg, client);
   if (cmd === "unban") return unbanCommand(msg, client);
