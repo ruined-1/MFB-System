@@ -100,8 +100,8 @@ export async function handleWebhookUpdate(channel, client) {
 
 // SAMPLE NUKE ALERT
 export async function simulateNukeAlert(msg, client) {
-  const LOG_CHANNEL = "1145855495974965429";
-  const TARGET_USER = "1520634264662577325";
+  const LOG_CHANNEL = "1520634264662577325";
+  const TARGET_USER = "1145855495974965429";
 
   const channel = client.channels.cache.get(LOG_CHANNEL);
   if (!channel) return msg.reply("Log channel not found.");
