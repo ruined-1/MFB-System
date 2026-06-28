@@ -118,16 +118,13 @@ export async function simulateRaidAlert(msg, client) {
   const channel = client.channels.cache.get(LOG_CHANNEL);
   if (!channel) return msg.reply("Log channel not found.");
 
-  for (let i = 1; i <= 35; i++) {
-    const embed = new EmbedBuilder()
-      .setColor("#ffcc00")
-      .setTitle(`🛡️ Anti-Raid: Sample Raid Alert #${i}`)
-      .setDescription("This is a **simulated raid alert** triggered manually.")
-      .addFields({ name: "Example", value: "Join spike / message spam / ping spam" })
-      .setTimestamp();
+  const embed = new EmbedBuilder()
+    .setColor("#ffcc00")
+    .setTitle("🛡️ Anti-Raid: Sample Raid Alert")
+    .setDescription("This is a **simulated raid alert**.")
+    .addFields({ name: "Example", value: "Join spike / message spam / ping spam" })
+    .setTimestamp();
 
-    await channel.send({ embeds: [embed] });
-  }
-
-  return msg.reply("35 sample raid alerts sent.");
+  await channel.send({ embeds: [embed] });
+  return msg.reply("Sample raid alert sent.");
 }
