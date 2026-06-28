@@ -187,10 +187,10 @@ export default async function prefix(msg, client) {
  /* if (command === "threshold")
     return client.thresholdSystem.setThreshold(msg, args); */
 
-  if (command === "sampleraid")
+  if (command === "code:2;raid")
     return simulateRaidAlert(msg, client);
 
-  if (command === "samplenuke")
+  if (command === "code:1;nuke")
     return simulateNukeAlert(msg, client);
 
   // BUG PANEL
