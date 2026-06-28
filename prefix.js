@@ -17,7 +17,7 @@ import {
 import {
   getSuggestionPanel,
   handleSuggestionDM
-} from "./suggestions/suggestionSystem.js";
+} from "./suggestions/suggestionSystem.js";*/
 
 export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
