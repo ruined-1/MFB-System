@@ -1,10 +1,11 @@
 // suggestions/suggestionSystem.js
-import {
+import pkg from "discord.js";
+const {
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle
-} from "discord.js";
+} = pkg;
 
 const SUGGESTION_CHANNEL = "1508213601792692476";
 

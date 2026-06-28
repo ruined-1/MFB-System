@@ -1,5 +1,6 @@
 // /settings/settingsInteractions.js
-import {
+import pkg from "discord.js";
+const {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   ButtonBuilder,
@@ -9,7 +10,7 @@ import {
   TextInputBuilder,
   TextInputStyle,
   PermissionsBitField
-} from "discord.js";
+} = pkg;
 
 import settings from "./settingsManager.js";
 

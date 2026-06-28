@@ -1,12 +1,13 @@
 // /settings/settingsCommand.js
-import {
+import pkg from "discord.js";
+const {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
   PermissionsBitField
-} from "discord.js";
+} = pkg;
 
 import settings from "./settingsManager.js";
 
