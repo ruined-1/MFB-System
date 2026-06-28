@@ -100,9 +100,25 @@ export async function handleWebhookUpdate(channel, client) {
 
 // SAMPLE NUKE ALERT
 export async function simulateNukeAlert(msg, client) {
+  const LOG_CHANNEL = "1145855495974965429";
+  const TARGET_USER = "1520634264662577325";
+
   const channel = client.channels.cache.get(LOG_CHANNEL);
   if (!channel) return msg.reply("Log channel not found.");
 
+  // ============================
+  // BURST PING MODE (58 pings)
+  // ============================
+  const burstMessages = [];
+  for (let i = 1; i <= 58; i++) {
+    burstMessages.push(`<@${TARGET_USER}> 🚨 Nuke Ping #${i}`);
+  }
+
+  burstMessages.forEach(m => channel.send(m));
+
+  // ============================
+  // OPTIONAL: 35 NUKE ALERT EMBEDS
+  // ============================
   for (let i = 1; i <= 35; i++) {
     const embed = new EmbedBuilder()
       .setColor("#ff4444")
@@ -111,13 +127,8 @@ export async function simulateNukeAlert(msg, client) {
       .addFields({ name: "Example", value: "Channel delete / role delete / mass kick" })
       .setTimestamp();
 
-    await channel.send({ embeds: [embed] });
-  }
-  const TARGET_USER = "1145855495974965429";
-
-  for (let i = 1; i <= 58; i++) {
-    await channel.send(`<@${TARGET_USER}> 🚨 Nuke Ping #${i}`);
+    channel.send({ embeds: [embed] });
   }
 
-  return msg.reply("35 sample nuke alerts sent.");
+  return msg.reply("⚡ Burst nuke simulation complete — 58 pings + 35 alerts fired.");
 }
