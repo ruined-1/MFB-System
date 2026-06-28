@@ -56,7 +56,7 @@ import {
 } from "./antiNuke.js";
 
 // Systems
-import VouchSystem from "./vouchSystem.js";
+// import VouchSystem from "./vouchSystem.js";
 
 // SETTINGS SYSTEM
 import settingsCommand from "./settings/settingsCommand.js";
@@ -86,7 +86,7 @@ const client = new Client({
 });
 
 // Attach systems
-client.vouchSystem = new VouchSystem();
+//client.vouchSystem = new VouchSystem();
 
 await ConnectToDatabase();
 

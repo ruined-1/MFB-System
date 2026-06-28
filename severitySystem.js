@@ -1,5 +1,5 @@
 // severitySystem.js
-import { EmbedBuilder } from "discord.js";
+/* import { EmbedBuilder } from "discord.js";
 
 export const severityLevels = {
   YELLOW: 20,
@@ -38,4 +38,4 @@ export default class SeveritySystem {
 
     return msg.reply({ embeds: [embed] });
   }
-}
+} */

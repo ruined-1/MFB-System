@@ -65,13 +65,13 @@ export default async function prefix(msg, client) {
   }
 
   // Vouch system
-  if (command === "vouch") return client.vouchSystem.handleVouch(msg, args);
+  /* if (command === "vouch") return client.vouchSystem.handleVouch(msg, args);
   if (command === "unvouch") return client.vouchSystem.handleUnvouch(msg, args);
   if (command === "vouches") return client.vouchSystem.handleVouches(msg);
   if (command === "leaderboard" || command === "vouchlb" || command === "lb")
     return client.vouchSystem.handleLeaderboard(msg);
   if (command === "cleanvouch")
-    return client.vouchSystem.handleCleanVouch(msg, args);
+    return client.vouchSystem.handleCleanVouch(msg, args); */
 
   // Boost stats
   if (command === "boosts") return boostCommand(msg);
@@ -179,11 +179,11 @@ export default async function prefix(msg, client) {
   if (command === "cooldowns" || command === "cooldown")
     return client.cooldownSystem.showCooldowns(msg);
 
-  if (command === "severity")
-    return client.severitySystem.testSeverity(msg, args);
+ /* if (command === "severity")
+    return client.severitySystem.testSeverity(msg, args); */
 
-  if (command === "threshold")
-    return client.thresholdSystem.setThreshold(msg, args);
+ /* if (command === "threshold")
+    return client.thresholdSystem.setThreshold(msg, args); */
 
   if (command === "sampleraid")
     return simulateRaidAlert(msg, client);

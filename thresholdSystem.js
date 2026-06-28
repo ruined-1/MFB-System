@@ -1,5 +1,5 @@
 // thresholdSystem.js
-export default class ThresholdSystem {
+/*export default class ThresholdSystem {
   constructor() {
     this.threshold = 20;
   }
@@ -12,4 +12,4 @@ export default class ThresholdSystem {
     this.threshold = value;
     return msg.reply(`Threshold updated to **${value}**.`);
   }
-}
+} */

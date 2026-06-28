@@ -1,4 +1,4 @@
-import { EmbedBuilder } from "discord.js";
+/* import { EmbedBuilder } from "discord.js";
 import { GetVouches, SaveVouch, GetAllVouches, DeleteVouch } from "./db.js";
 import { Flags, hasRoleOrHigher, IsModOrHigher } from "./flags.js";
 
@@ -251,4 +251,4 @@ export default class VouchSystem {
 
     return msg.reply({ embeds: [embed] });
   }
-}
+} */
