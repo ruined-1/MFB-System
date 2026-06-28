@@ -1,7 +1,7 @@
 // antiRaid.js
 import { EmbedBuilder } from "discord.js";
 
-const LOG_CHANNEL = "1500667249000841367";
+const LOG_CHANNEL = "1520634264662577325";
 
 // thresholds (soft)
 const JOIN_WINDOW_MS = 10_000;

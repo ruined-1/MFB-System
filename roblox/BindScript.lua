@@ -1,4 +1,4 @@
-local HttpService = game:GetService("HttpService")
+/* local HttpService = game:GetService("HttpService")
 
 local API_URL = "https://YOUR-RENDER-URL/api/checkBan"
 local API_KEY = "YOUR_API_KEY"

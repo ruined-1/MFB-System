@@ -1,7 +1,7 @@
 // antiNuke.js
 import { EmbedBuilder } from "discord.js";
 
-const LOG_CHANNEL = "1500667249000841367";
+const LOG_CHANNEL = "1520634264662577325";
 
 async function sendLog(client, guild, title, description, fields = [], color = "#ff4444") {
   const channel = client.channels.cache.get(LOG_CHANNEL);
