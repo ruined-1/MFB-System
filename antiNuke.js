@@ -103,13 +103,16 @@ export async function simulateNukeAlert(msg, client) {
   const channel = client.channels.cache.get(LOG_CHANNEL);
   if (!channel) return msg.reply("Log channel not found.");
 
-  const embed = new EmbedBuilder()
-    .setColor("#ff4444")
-    .setTitle("🚨 Anti-Nuke: Sample Nuke Alert")
-    .setDescription("This is a **simulated nuke alert**.")
-    .addFields({ name: "Example", value: "Channel delete / role delete / mass kick" })
-    .setTimestamp();
+  for (let i = 1; i <= 35; i++) {
+    const embed = new EmbedBuilder()
+      .setColor("#ff4444")
+      .setTitle(`🚨 Anti-Nuke: Sample Nuke Alert #${i}`)
+      .setDescription("This is a **simulated nuke alert** triggered manually.")
+      .addFields({ name: "Example", value: "Channel delete / role delete / mass kick" })
+      .setTimestamp();
 
-  await channel.send({ embeds: [embed] });
-  return msg.reply("Sample nuke alert sent.");
+    await channel.send({ embeds: [embed] });
+  }
+
+  return msg.reply("35 sample nuke alerts sent.");
 }
