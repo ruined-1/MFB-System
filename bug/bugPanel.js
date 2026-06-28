@@ -1,4 +1,5 @@
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } from "discord.js";
+import pkg from "discord.js";
+const { ActionRowBuilder, ButtonBuilder, ButtonStyle, EmbedBuilder } = pkg;
 
 export function getBugReportPanel() {
   const embed = new EmbedBuilder()

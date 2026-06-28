@@ -1,12 +1,13 @@
 // bugReport.js
-import {
+import pkg from "discord.js";
+const {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
   EmbedBuilder,
   PermissionFlagsBits,
   ThreadAutoArchiveDuration
-} from "discord.js";
+} = pkg;
 
 const BUG_CHANNEL = "1508141164602327210"; // Your bug report channel
 

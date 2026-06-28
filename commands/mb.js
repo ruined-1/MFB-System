@@ -1,4 +1,5 @@
-import { SlashCommandBuilder, WebhookClient } from "discord.js";
+import pkg from "discord.js";
+const { SlashCommandBuilder, WebhookClient } = pkg;
 import fetch from "node-fetch";
 
 export default {

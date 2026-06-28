@@ -37,7 +37,8 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // ===============================
 // DISCORD BOT
 // ===============================
-import { Client, GatewayIntentBits, ActivityType, Collection } from "discord.js";
+import pkg from "discord.js";
+const { Client, GatewayIntentBits, ActivityType, Collection } = pkg;
 import { CloseDatabaseConnection, ConnectToDatabase } from "./db.js";
 import fs from "fs";
 import path from "path";
