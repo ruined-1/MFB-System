@@ -1,4 +1,4 @@
-// suggestions/suggestionSystem.js
+/* suggestions/suggestionSystem.js
 import pkg from "discord.js";
 const {
   EmbedBuilder,
@@ -114,4 +114,4 @@ async function postSuggestion(user, data, client) {
 
   // No threads, no buttons — clean post
   await channel.send({ embeds: [embed] });
-}
+}*/

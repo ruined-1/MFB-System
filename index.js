@@ -66,12 +66,12 @@ import registerSettingsRouter from "./settings/settingsRouter.js";
 // BUG REPORT SYSTEM IMPORTS
 import { handleBugButton, handleBugStatus, handleDM } from "./bug/bugReport.js";
 
-// SUGGESTION SYSTEM IMPORTS
+/* SUGGESTION SYSTEM IMPORTS
 import {
   getSuggestionPanel,
   handleSuggestionButton,
   handleSuggestionDM
-} from "./suggestions/suggestionSystem.js";
+} from "./suggestions/suggestionSystem.js";*/
 
 const client = new Client({
   intents: [

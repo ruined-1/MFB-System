@@ -199,10 +199,10 @@ export default async function prefix(msg, client) {
     return msg.channel.send(getBugReportPanel());
   }
 
-  //  SUGGESTION PANEL 
+  /*  SUGGESTION PANEL 
   if (command === "suggestpanel") {
     return msg.channel.send(getSuggestionPanel());
-  }
+  } */
 
  // import banCommand from "./commands/ban.js";
  // import unbanCommand from "./commands/unban.js";
@@ -218,6 +218,6 @@ export default async function prefix(msg, client) {
   // UNKNOWN COMMAND
   // -----------------------------
   return msg.reply(
-    "Unknown command. Available: `!afk`, `!vouch`, `!unvouch`, `!vouches`, `!leaderboard`, `!boosts`, `!cooldowns`, `!severity`, `!threshold`, `!sampleraid`, `!samplenuke`, `!aatime`, `!bugpanel`, `!suggestpanel`."
+    "Unknown command."
   );
 }
