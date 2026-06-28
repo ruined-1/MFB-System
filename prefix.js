@@ -13,7 +13,7 @@ import {
   handleBugStatus
 } from "./bug/bugReport.js";
 
-// Suggestion System Imports
+/* Suggestion System Imports
 import {
   getSuggestionPanel,
   handleSuggestionDM
@@ -23,12 +23,12 @@ export default async function prefix(msg, client) {
   if (!msg || !msg.content) return;
   if (msg.author.bot) return;
 
-  // Handle DM responses for bug report + suggestion system
+  /* Handle DM responses for bug report + suggestion system
   if (msg.channel.type === 1) {
     await handleDM(msg, client);
     await handleSuggestionDM(msg, client);
     return;
-  }
+  }*/
 
   // Allow webhook messages ONLY if they are prefix commands
   if (msg.webhookId && !msg.content.startsWith("!")) return;
