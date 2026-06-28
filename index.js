@@ -28,8 +28,8 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 
 // Ban API route
-import banRoutes from "./api/banRoutes.js";
-app.use("/api", banRoutes);
+//import banRoutes from "./api/banRoutes.js";
+//app.use("/api", banRoutes);
 
 app.get("/", (req, res) => res.send("Bot is running"));
 app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
