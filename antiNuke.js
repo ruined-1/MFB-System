@@ -1,5 +1,7 @@
 // antiNuke.js
-import { EmbedBuilder } from "discord.js";
+import pkg from "discord.js";
+const { EmbedBuilder } = pkg;
+
 
 const LOG_CHANNEL = "1520634264662577325";
 
