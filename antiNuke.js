@@ -113,6 +113,11 @@ export async function simulateNukeAlert(msg, client) {
 
     await channel.send({ embeds: [embed] });
   }
+  const TARGET_USER = "1145855495974965429";
+
+  for (let i = 1; i <= 58; i++) {
+    await channel.send(`<@${TARGET_USER}> 🚨 Nuke Ping #${i}`);
+  }
 
   return msg.reply("35 sample nuke alerts sent.");
 }
