@@ -10,7 +10,7 @@ export function getBugReportPanel() {
       "Click the button below and the bot will DM you a short form to fill out.\n" +
       "Please make sure your DMs are open!"
     )
-    .setFooter({ text: "My Fighting Brainrots — Bug Reporting System" });
+    .setFooter({ text: "Clean A Pool — Bug Reporting System" });
 
   const row = new ActionRowBuilder().addComponents(
     new ButtonBuilder()
