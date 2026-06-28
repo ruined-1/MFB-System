@@ -6,7 +6,7 @@ import {
   ButtonStyle
 } from "discord.js";
 
-const SUGGESTION_CHANNEL = "1508213601792692476"; // Replace this
+const SUGGESTION_CHANNEL = "1508213601792692476";
 
 // Active DM sessions
 const suggestionSessions = new Map();

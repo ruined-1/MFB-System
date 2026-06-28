@@ -2,7 +2,9 @@
 import { simulateRaidAlert } from "./antiRaid.js";
 import { simulateNukeAlert } from "./antiNuke.js";
 import { boostCommand } from "./boostTracker.js";
-import { EmbedBuilder } from "discord.js";
+import pkg from "discord.js";
+const { EmbedBuilder } = pkg;
+
 
 // Bug Report System Imports
 import {

@@ -56,7 +56,6 @@ export default {
       console.error("Avatar fetch failed:", err);
     }
 
-    //  YOUR WEBHOOK
     const webhook = new WebhookClient({
       url: process.env.MB_WEBHOOK_URL
     });
