@@ -38,7 +38,7 @@ app.listen(PORT, () => console.log(`Web server running on port ${PORT}`));
 // DISCORD BOT
 // ===============================
 import pkg from "discord.js";
-const { Client, GatewayIntentBits, ActivityType, Collection } = pkg;
+const { Client, GatewayIntentBits, ActivityType, Collection, Partials } = pkg;
 import { CloseDatabaseConnection, ConnectToDatabase } from "./db.js";
 import fs from "fs";
 import path from "path";
@@ -83,7 +83,7 @@ const client = new Client({
     GatewayIntentBits.GuildWebhooks,
     GatewayIntentBits.DirectMessages
   ],
-  partials: ["CHANNEL"]
+  partials: [Partials.Channel]
 });
 
 // Attach systems
