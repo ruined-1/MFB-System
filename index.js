@@ -289,7 +289,7 @@ client.once("ready", () => {
       status: "online",
       activities: [
         {
-          name: "everything.",
+          name: "I Love Swimming.",
           type: 3 // Watching
         }
       ]

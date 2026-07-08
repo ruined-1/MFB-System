@@ -9,7 +9,7 @@ const {
   ThreadAutoArchiveDuration
 } = pkg;
 
-const BUG_CHANNEL = "1508141164602327210"; // Your bug report channel
+const BUG_CHANNEL = "1524464217518899424"; // Your bug report channel
 
 // Store active DM sessions
 const activeSessions = new Map();

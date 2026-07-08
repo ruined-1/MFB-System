@@ -21,8 +21,8 @@ function save() {
   fs.renameSync(tmp, filePath);
 }
 
-const BOOST_ROLE = "1487186035153702922";
-const LOG_CHANNEL = "1500564029444325416";
+const BOOST_ROLE = "1387648443631013959";
+const LOG_CHANNEL = "1520605698264797225";
 
 // ============================
 // MAIN HANDLER

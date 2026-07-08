@@ -14,13 +14,13 @@ export const Flags = {
 const RoleIds = ({
   [Flags.Invalid]: null,
 
-  [Flags.User]: "1139945613035847750",
-  [Flags.Mod]: "1139945562314129438",
-  [Flags.Admin]: "1139945433192476702",
-  [Flags.Director]: "1487503432549138503",
-  [Flags.CommunityManager]: "1139954764868763768",
+  [Flags.User]: "1520583350136606722",
+  [Flags.Mod]: "1520632040116981831",
+  [Flags.Admin]: "1520577819816497182",
+  [Flags.Director]: "1520631787070554182",
+  [Flags.CommunityManager]: "1520577654841938080",
   [Flags.Developer]: "1139945088957554721",
-  [Flags.Owner]: "1268309914858557562",
+  [Flags.Owner]: "1385653102476263565",
 });
 
 const RoleHierarchy = [
